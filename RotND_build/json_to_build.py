@@ -2,13 +2,52 @@ import json
 from typing import Self
 
 
+class FmodTimeCapsule:
+    def __init__(self, Time, DeltaTime, BeatLengthInSeconds, TrueBeatNumber):
+        self.Time = Time
+        self.DeltaTime = DeltaTime
+        self.BeatLengthInSeconds = BeatLengthInSeconds
+        self.TrueBeatNumber = TrueBeatNumber
+
+
+class BeatmapEventDataPair:
+    def __init__(self, eventDataKey, eventDataValue):
+        self._eventDataKey = eventDataKey
+        self._eventDataValue = eventDataValue
+
+
+class BeatmapEvent:
+    def __init__(self, track, startBeatNumber, endBeatNumber, type, dataPairs):
+        self.track = track
+        self.startBeatNumber = startBeatNumber
+        self.endBeatNumber = endBeatNumber
+        self.type = type
+        self.dataPairs: list[BeatmapEventDataPair] = dataPairs
+
+        self._data: dict[str, list[str]] = None
+
+    def GetFirstEventData(self, dataKey):
+        if self._data and dataKey in self._data:
+            pass
+
+    def InitializeEventDataDictionary(self):
+        self._data = {}
+        for dataPair in self.dataPairs:
+            # TODO
+            if dataPair["_eventDataKey"] == "EnemyId":
+                self._data["eventDataKey"] = dataPair["_eventDataValue"]
+
+
 class BeatmapAnalyzer:
     def __init__(self, beatmap, _sampleRate):
-        self.activeBeatmap: Beatmap = beatmap
+        self._activeBeatmap: Beatmap = beatmap
         self.SampleRate = _sampleRate
 
-    def CalculateCurrentTrueBeatNumber(self, cur_time):
-        beatmap = self.activeBeatmap
+        self._previousFmodTime = 0
+        self._beatEventIndex = 0
+
+    def CalculateCurrentTrueBeatNumber(self, currentTime):
+        beatmap = self._activeBeatmap
         activeBeatTimings = beatmap.beatTimings
         timing_cnt = len(activeBeatTimings)
         if activeBeatTimings:
@@ -22,18 +61,18 @@ class BeatmapAnalyzer:
                 )
                 next_extendedBeatTiming = cur_extendedBeatTiming + last_beatDiff
 
-                if cur_time >= next_extendedBeatTiming:
+                if currentTime >= next_extendedBeatTiming:
                     self._activeBeatmapBeatTimingIndex += 1
                     currentTrueBeatNumber = (
                         1.0
                         + self._activeBeatmapBeatTimingIndex
-                        + (cur_time - next_extendedBeatTiming) / last_beatDiff
+                        + (currentTime - next_extendedBeatTiming) / last_beatDiff
                     )
                 else:
                     currentTrueBeatNumber = (
                         1.0
                         + self._activeBeatmapBeatTimingIndex
-                        + (cur_time - cur_extendedBeatTiming) / last_beatDiff
+                        + (currentTime - cur_extendedBeatTiming) / last_beatDiff
                     )
             else:
                 cur_beatTiming = activeBeatTimings[self._activeBeatmapBeatTimingIndex]
@@ -44,7 +83,7 @@ class BeatmapAnalyzer:
                         self._activeBeatmapBeatTimingIndex + 1
                     ]
 
-                if cur_time >= next_beatTiming:
+                if currentTime >= next_beatTiming:
                     self._activeBeatmapBeatTimingIndex += 1
                     if self._activeBeatmapBeatTimingIndex >= timing_cnt - 1:
                         cur_beatDiff = next_beatTiming - cur_beatTiming
@@ -60,11 +99,32 @@ class BeatmapAnalyzer:
                 currentTrueBeatNumber = (
                     1.0
                     + self._activeBeatmapBeatTimingIndex
-                    + (cur_time - cur_beatTiming) / cur_beatDiff
+                    + (currentTime - cur_beatTiming) / cur_beatDiff
                 )
         else:
-            currentTrueBeatNumber = 1.0 + cur_time * beatmap.bpm / 60.0
+            currentTrueBeatNumber = 1.0 + currentTime * beatmap.bpm / 60.0
         return currentTrueBeatNumber
+
+    def GetCurrentBeatLengthInSeconds(self, currentBeatNumber: int):
+        beatTimings = self._activeBeatmap.beatTimings
+        if beatTimings and currentBeatNumber < len(beatTimings):
+            return beatTimings[currentBeatNumber] - beatTimings[currentBeatNumber - 1]
+        return 60.0 / self._activeBeatmap.bpm
+
+    def ProcessBeatEvent(currentTime, beatEvent: BeatmapEvent, isAddedEvent=False):
+        if beatEvent.type == "SpawnEnemy":
+            pass
+
+    def ProcessBeatEvents(self, currentTime):
+        activeBeatmap = self._activeBeatmap
+        cur_beat = self.FmodTimeCapsule.TrueBeatNumber - 1.0
+        while self._beatEventIndex < activeBeatmap.NumBeatmapEvents:
+            beatmapEvent: BeatmapEvent = activeBeatmap.BeatmapEvents[
+                self._beatEventIndex
+            ]
+            if beatmapEvent.startBeatNumber <= cur_beat:
+                if cur_beat <= beatmapEvent.endBeatNumber:
+                    pass
 
     def analyze(self):
         cur_frame = 0
@@ -73,6 +133,16 @@ class BeatmapAnalyzer:
         while True:
             cur_time = cur_frame * (1 / self.SampleRate)
             currentTrueBeatNumber = self.CalculateCurrentTrueBeatNumber(cur_time)
+            self.FmodTimeCapsule = FmodTimeCapsule(
+                cur_time,
+                cur_time - self._previousFmodTime,
+                self.GetCurrentBeatLengthInSeconds(int(currentTrueBeatNumber)),
+                currentTrueBeatNumber,
+            )
+            if currentTrueBeatNumber - 1.0 > self._activeBeatmap.DurationInBeats():
+                break
+            self.ProcessBeatEvents(cur_time)
+            # TODO
 
             cur_frame += 1
 
@@ -85,6 +155,7 @@ class Beatmap:
         self.beatTimings = beatTimings
 
         self.endBeatNumberBacking = -1.0
+        self.beatmapEventsBacking: list = {}
 
     def EndBeatNumber(self):
         if self.endBeatNumberBacking >= 0.0:
@@ -105,6 +176,17 @@ class Beatmap:
         if self.beatTimings:
             return self.beatTimings[len(self.beatTimings) - 1]
         return self.EndBeatNumber() * self.BeatLengthInSeconds()
+
+    def DurationInBeats(self):
+        if self.beatTimings:
+            return len(self.beatTimings)
+        return self.OriginalDuration() / self.BeatLengthInSeconds()
+
+    def NumBeatmapEvents(self):
+        return len(self.beatmapEventsBacking)
+
+    def BeatmapEvents(self):
+        return self.beatmapEventsBacking
 
     @classmethod
     def LoadFromJson(cls, path) -> Self:
@@ -129,25 +211,8 @@ class Beatmap:
             beatmapEvent.InitializeEventDataDictionary()
             beatmap.events[event_idx] = beatmapEvent
 
-        beatmap.events.sort(key=lambda beatmapEvent: beatmapEvent.startBeatNumber)
+        beatmap.beatmapEventsBacking = beatmap.events
         return beatmap
-
-
-class BeatmapEvent:
-    def __init__(self, track, startBeatNumber, endBeatNumber, type, dataPairs):
-        self.track = track
-        self.startBeatNumber = startBeatNumber
-        self.endBeatNumber = endBeatNumber
-        self.type = type
-        self.dataPairs = dataPairs
-
-        self.hasBeenProcessed = False
-
-    def InitializeEventDataDictionary(self):
-        self._data = {}
-        for dataPair in self.dataPairs:
-            if dataPair["_eventDataKey"] == "EnemyId":
-                self._data["eventDataKey"] = dataPair["_eventDataValue"]
 
 
 class InputRatingsDefinition:
