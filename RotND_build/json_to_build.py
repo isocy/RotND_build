@@ -15,6 +15,12 @@ class BeatmapEventDataPair:
         self._eventDataKey = eventDataKey
         self._eventDataValue = eventDataValue
 
+    def EventDataKey(self):
+        return self._eventDataKey
+
+    def EventDataValue(self):
+        return self._eventDataValue
+
 
 class BeatmapEvent:
     def __init__(self, track, startBeatNumber, endBeatNumber, type, dataPairs):
@@ -26,16 +32,32 @@ class BeatmapEvent:
 
         self._data: dict[str, list[str]] = None
 
-    def GetFirstEventData(self, dataKey):
+    def GetFirstEventDataAsString(self, dataKey):
         if self._data and dataKey in self._data:
-            pass
+            return next((dataVal for dataVal in self._data[dataKey] if dataVal), "")
+        return ""
+
+    def GetFirstEventDataAsInt(self, dataKey):
+        eventDataAsString = self.GetFirstEventDataAsString(dataKey)
+        try:
+            result = int(eventDataAsString)
+            return result
+        except (TypeError, ValueError):
+            return None
+
+    def AddEventData(self, dataKey, dataValue):
+        if not self._data:
+            self._data = {}
+        if dataKey in self._data:
+            self._data[dataKey].append(dataValue)
+        else:
+            self._data[dataKey] = [dataValue]
 
     def InitializeEventDataDictionary(self):
         self._data = {}
         for dataPair in self.dataPairs:
-            # TODO
-            if dataPair["_eventDataKey"] == "EnemyId":
-                self._data["eventDataKey"] = dataPair["_eventDataValue"]
+            if dataPair.EventDataKey() and dataPair.EventDataValue():
+                self.AddEventData(dataPair.EventDataKey(), dataPair.EventDataValue())
 
 
 class BeatmapAnalyzer:
@@ -151,7 +173,7 @@ class Beatmap:
     def __init__(self, bpm, events, beatDivision=2, beatTimings=None):
         self.bpm = bpm
         self.beatDivision = beatDivision
-        self.events: list = events
+        self.events: list[dict] = events
         self.beatTimings = beatTimings
 
         self.endBeatNumberBacking = -1.0
@@ -194,8 +216,9 @@ class Beatmap:
             beatmap: dict = json.load(f)
         beatmap: Beatmap = Beatmap(
             beatmap["bpm"],
-            beatmap["beatDivisions"],
+            # TODO
             beatmap["events"],
+            beatmap["beatDivisions"],
             beatmap["BeatTimings"],
         )
 
@@ -206,7 +229,14 @@ class Beatmap:
                 event["startBeatNumber"],
                 event["endBeatNumber"],
                 event["type"],
-                event["dataPairs"],
+                list(
+                    map(
+                        lambda dict: BeatmapEventDataPair(
+                            dict["_eventDataKey"], dict["_eventDataValue"]
+                        ),
+                        event["dataPairs"],
+                    )
+                ),
             )
             beatmapEvent.InitializeEventDataDictionary()
             beatmap.events[event_idx] = beatmapEvent
@@ -238,6 +268,7 @@ class InputRatingsDefinition:
 beatmap = Beatmap.LoadFromJson(
     "RotND_build/rhythmrift/RhythmRift_Overthinker_Expert.json"
 )
+print(beatmap.DurationInBeats())
 
 
 # bpm = beatmap["bpm"]
