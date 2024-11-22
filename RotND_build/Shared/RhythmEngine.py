@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 import json
-from typing import Self
 from enum import Enum
 
 
 class FmodTimeCapsule:
-    def __init__(self, Time, DeltaTime, BeatLengthInSeconds, TrueBeatNumber):
+    def __init__(
+        self, Time, DeltaTime, BeatLengthInSeconds, TrueBeatNumber, BeatDivisions
+    ):
         self.Time = Time
         self.DeltaTime = DeltaTime
         self.BeatLengthInSeconds = BeatLengthInSeconds
         self.TrueBeatNumber = TrueBeatNumber
+        self.BeatDivisions = BeatDivisions
 
 
 class BeatTrackLaneDesignation(Enum):
@@ -93,10 +97,84 @@ class BeatmapEvent:
                 self.AddEventData(dataPair.EventDataKey(), dataPair.EventDataValue())
 
 
+class Beatmap:
+    def __init__(self, bpm, events, beatDivisions=2, beatTimings=None):
+        self.bpm = bpm
+        self.beatDivisions = beatDivisions
+        self.events: list[BeatmapEvent] = events
+        self.beatTimings = beatTimings
+
+        self.endBeatNumberBacking = -1.0
+        self.beatmapEventsBacking: list[BeatmapEvent] = {}
+
+    def EndBeatNumber(self):
+        if self.endBeatNumberBacking >= 0.0:
+            return self.endBeatNumberBacking
+
+        num = 0.0
+        for event in self.events:
+            if event.endBeatNumber >= num:
+                num = event.endBeatNumber
+
+        self.endBeatNumberBacking = num
+        return self.endBeatNumberBacking
+
+    def BeatLengthInSeconds(self):
+        return 60.0 / self.bpm
+
+    def OriginalDuration(self):
+        if self.beatTimings:
+            return self.beatTimings[len(self.beatTimings) - 1]
+        return self.EndBeatNumber() * self.BeatLengthInSeconds()
+
+    def DurationInBeats(self):
+        if self.beatTimings:
+            return len(self.beatTimings)
+        return self.OriginalDuration() / self.BeatLengthInSeconds()
+
+    def NumBeatmapEvents(self):
+        return len(self.beatmapEventsBacking)
+
+    def BeatmapEvents(self):
+        return self.beatmapEventsBacking
+
+    @classmethod
+    def LoadFromJson(cls, path) -> Beatmap:
+        with open(path) as f:
+            beatmap: dict = json.load(f)
+        beatmap: Beatmap = Beatmap(
+            beatmap["bpm"],
+            [
+                BeatmapEvent(
+                    event["track"],
+                    event["startBeatNumber"],
+                    event["endBeatNumber"],
+                    event["type"],
+                    [BeatmapEventDataPair(**pair) for pair in event["dataPairs"]],
+                )
+                for event in beatmap["events"]
+            ],
+            beatmap["beatDivisions"],
+            beatmap["BeatTimings"],
+        )
+
+        for event_idx in range(len(beatmap.events)):
+            event = beatmap.events[event_idx]
+            event.InitializeEventDataDictionary()
+            beatmap.events[event_idx] = event
+
+        beatmap.beatmapEventsBacking = beatmap.events
+        return beatmap
+
+
 class BeatmapPlayer:
-    def __init__(self, beatmap, _sampleRate):
-        self._activeBeatmap: Beatmap = beatmap
+    def __init__(self, beatmap: Beatmap, _sampleRate):
+        self._activeBeatmap = beatmap
         self.SampleRate = _sampleRate
+
+        self.CurrentBeatmapStartBeatNum = 1.0
+        self._currentBpm = self._activeBeatmap.bpm
+        self._activeBeatDivisions = self._activeBeatmap.beatDivisions
 
         self._previousFmodTime = 0
         self._beatEventIndex = 0
@@ -167,6 +245,9 @@ class BeatmapPlayer:
             return beatTimings[currentBeatNumber] - beatTimings[currentBeatNumber - 1]
         return 60.0 / self._activeBeatmap.bpm
 
+    def ActiveInputRatingsDefinition(self):
+        pass
+
     def ProcessBeatEvents(self, currentTime):
         activeBeatmap = self._activeBeatmap
         cur_beat = self.FmodTimeCapsule.TrueBeatNumber - 1.0
@@ -186,82 +267,13 @@ class BeatmapPlayer:
             cur_time - self._previousFmodTime,
             self.GetCurrentBeatLengthInSeconds(int(currentTrueBeatNumber)),
             currentTrueBeatNumber,
+            self._activeBeatDivisions,
         )
         if currentTrueBeatNumber - 1.0 > self._activeBeatmap.DurationInBeats():
             self._activeBeatmap = None
             return
         self.ProcessBeatEvents(cur_time)
         # TODO
-
-
-class Beatmap:
-    def __init__(self, bpm, events, beatDivision=2, beatTimings=None):
-        self.bpm = bpm
-        self.beatDivision = beatDivision
-        self.events: list[BeatmapEvent] = events
-        self.beatTimings = beatTimings
-
-        self.endBeatNumberBacking = -1.0
-        self.beatmapEventsBacking: list[BeatmapEvent] = {}
-
-    def EndBeatNumber(self):
-        if self.endBeatNumberBacking >= 0.0:
-            return self.endBeatNumberBacking
-
-        num = 0.0
-        for event in self.events:
-            if event.endBeatNumber >= num:
-                num = event.endBeatNumber
-
-        self.endBeatNumberBacking = num
-        return self.endBeatNumberBacking
-
-    def BeatLengthInSeconds(self):
-        return 60.0 / self.bpm
-
-    def OriginalDuration(self):
-        if self.beatTimings:
-            return self.beatTimings[len(self.beatTimings) - 1]
-        return self.EndBeatNumber() * self.BeatLengthInSeconds()
-
-    def DurationInBeats(self):
-        if self.beatTimings:
-            return len(self.beatTimings)
-        return self.OriginalDuration() / self.BeatLengthInSeconds()
-
-    def NumBeatmapEvents(self):
-        return len(self.beatmapEventsBacking)
-
-    def BeatmapEvents(self):
-        return self.beatmapEventsBacking
-
-    @classmethod
-    def LoadFromJson(cls, path) -> Self:
-        with open(path) as f:
-            beatmap: dict = json.load(f)
-        beatmap: Beatmap = Beatmap(
-            beatmap["bpm"],
-            [
-                BeatmapEvent(
-                    event["track"],
-                    event["startBeatNumber"],
-                    event["endBeatNumber"],
-                    event["type"],
-                    [BeatmapEventDataPair(**pair) for pair in event["dataPairs"]],
-                )
-                for event in beatmap["events"]
-            ],
-            beatmap["beatDivisions"],
-            beatmap["BeatTimings"],
-        )
-
-        for event_idx in range(len(beatmap.events)):
-            event = beatmap.events[event_idx]
-            event.InitializeEventDataDictionary()
-            beatmap.events[event_idx] = event
-
-        beatmap.beatmapEventsBacking = beatmap.events
-        return beatmap
 
 
 class InputRatingsDefinition:
@@ -282,3 +294,32 @@ class InputRatingsDefinition:
         self._truePerfectBonusMinimumValue = _truePerfectBonusMinimumValue
         self._perfectBonusScore = _perfectBonusScore
         self._truePerfectBonusScore = _truePerfectBonusScore
+
+
+class InputRatingsBpmMapping:
+    class InputRatingBpmPair:
+        def __init__(self, MinimumBpm, InputRatingsDefinition):
+            self.MinimumBpm = MinimumBpm
+            self.InputRatingsDefinition = InputRatingsDefinition
+
+    def __init__(
+        self, _inputRatingBpmPairs: list[InputRatingsBpmMapping.InputRatingBpmPair]
+    ):
+        self._inputRatingBpmPairs = _inputRatingBpmPairs
+
+    def GetInputRatingsDefinitionForBpm(self, bpm):
+        index = 0
+        while (
+            index < len(self._inputRatingBpmPairs)
+            and self._inputRatingBpmPairs[index].MinimumBpm <= bpm
+        ):
+            index += 1
+        index -= 1
+
+        return self._inputRatingBpmPairs[index].InputRatingsDefinition
+
+    @classmethod
+    def LoadFromJson(cls, path) -> InputRatingsBpmMapping:
+        with open(path) as f:
+            input_ratings_bpm_mapping: dict = json.load(f)
+        # TODO: load InputRatingBpmPairs with m_FileID/m_PathID

@@ -74,7 +74,20 @@ class RRStageController(StageController[RRBeatmapPlayer]):
         super(RRStageController, self).__init__(_beatmapPlayer)
 
         self._isVibeChainActive = False
-        self._finalVibeChainBeat = 0
+        self._haveVibeChainEnemiesReachedActionRow = False
+        self._finalVibeChainBeat = 0.0
+        self._numVibeChainEnemiesLeft = -1
+        self._maxVibePower = 100
+        self._currentVibePower = 0.0
+        self._percentOfMaxVibePowerRequiredToActivate = 50
+        self._percentOfMaxVibePowerLostPerSecond = 10
+
+        self._minVibePowerToActivate = int(
+            self._maxVibePower * (self._percentOfMaxVibePowerRequiredToActivate / 100.0)
+        )
+        self._calculatedVibePowerDecayPerSecond = self._maxVibePower * (
+            self._percentOfMaxVibePowerLostPerSecond / 100.0
+        )
 
     def HandleEnemySpawnBeatEvent(self, spawnEnemyData):
         pass
@@ -90,4 +103,19 @@ class RRStageController(StageController[RRBeatmapPlayer]):
             and fmodTimeCapsule.TrueBeatNumber >= self._finalVibeChainBeat
         ):
             self.DeactivateVibeChain()
+        if (
+            self._haveVibeChainEnemiesReachedActionRow
+            and self._numVibeChainEnemiesLeft < 1
+        ):
+            self._haveVibeChainEnemiesReachedActionRow = False
+        if self._isVibeChainActive:
+            if self._currentVibePower > 0.0:
+                self._currentVibePower -= (
+                    1 / self._beatmapPlayer.SampleRate
+                ) * self._calculatedVibePowerDecayPerSecond
+                if self._currentVibePower < 0.0:
+                    self._currentVibePower = 0.0
+                if self._currentVibePower == 0.0:
+                    num1 = 1 / fmodTimeCapsule.BeatDivisions
+                    pass
         # TODO

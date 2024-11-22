@@ -1,0 +1,45 @@
+{
+  "m_GameObject": {
+    "m_FileID": 0,
+    "m_PathID": 0
+  },
+  "m_Enabled": 1,
+  "m_Script": {
+    "m_FileID": 0,
+    "m_PathID": 2357810719738395332
+  },
+  "m_Name": "RhythmRift_InputRatingsDefinition",
+  "_beforeBeatHitWindow": 0.175,
+  "_afterBeatHitWindow": 0.175,
+  "_ratings": [
+    {
+      "inputRating": -1,
+      "minimumValue": 0,
+      "score": 0
+    },
+    {
+      "inputRating": 0,
+      "minimumValue": 0,
+      "score": 111
+    },
+    {
+      "inputRating": 1,
+      "minimumValue": 30,
+      "score": 222
+    },
+    {
+      "inputRating": 2,
+      "minimumValue": 50,
+      "score": 333
+    },
+    {
+      "inputRating": 3,
+      "minimumValue": 80,
+      "score": 555
+    }
+  ],
+  "_onBeatMinimumValue": 90,
+  "_truePerfectBonusMinimumValue": 98,
+  "_perfectBonusScore": 1,
+  "_truePerfectBonusScore": 2
+}
