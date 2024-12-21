@@ -1,6 +1,5 @@
 from Shared.RhythmEngine import *
 from Shared import *
-from events import Events
 
 
 class VibeChainStartData:
@@ -11,7 +10,7 @@ class VibeChainStartData:
 
 
 class RRBeatmapPlayer(BeatmapPlayer):
-    def __init__(self, beatmap, _sampleRate):
+    def __init__(self, beatmap, _sampleRate=60):
         super(RRBeatmapPlayer, self).__init__(beatmap, _sampleRate)
 
         self.currentVibeChains: list[VibeChainStartData] = []

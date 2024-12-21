@@ -1,10 +1,12 @@
 from Shared import *
 from RhythmRift import *
 
-beatmap = Beatmap.LoadFromJson(
-    "RotND_build/rhythmrift/RhythmRift_Overthinker_Expert.json"
-)
-beatmap_player = RRBeatmapPlayer(beatmap, 60)
+SAMPLE_RATE = 60
+
+BEATMAP_PATH = "RotND_build/rhythmrift/RhythmRift_Overthinker_Expert.json"
+
+beatmap = Beatmap.LoadFromJson(BEATMAP_PATH)
+beatmap_player = RRBeatmapPlayer(beatmap, SAMPLE_RATE)
 stage_controller = RRStageController(beatmap_player)
 
 cur_frame = 0

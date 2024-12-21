@@ -1,3 +1,5 @@
+from Shared import InputRating
+
 from __future__ import annotations
 
 import json
@@ -277,6 +279,13 @@ class BeatmapPlayer:
 
 
 class InputRatingsDefinition:
+    class Rating:
+        def __init__(self, inputRating, minimumValue, score):
+            self.inputRating = inputRating
+            assert 0 <= minimumValue <= 100
+            self.minimumValue = minimumValue
+            self.score = score
+
     def __init__(
         self,
         _beforeBeatHitWindow,
@@ -287,13 +296,45 @@ class InputRatingsDefinition:
         _perfectBonusScore,
         _truePerfectBonusScore,
     ):
+        assert _beforeBeatHitWindow + _afterBeatHitWindow <= 1.0010000467300415
         self.BeforeBeatHitWindow = _beforeBeatHitWindow
         self.AfterBeatHitWindow = _afterBeatHitWindow
-        self._ratings = _ratings
+        self._ratings: list[InputRatingsDefinition.Rating] = _ratings
         self._onBeatMinimumValue = _onBeatMinimumValue
         self._truePerfectBonusMinimumValue = _truePerfectBonusMinimumValue
         self._perfectBonusScore = _perfectBonusScore
         self._truePerfectBonusScore = _truePerfectBonusScore
+
+        self._precalcRatings = {}
+        self.PrecalculateRatings()
+
+    def PrecalculateRatings(self):
+        self._precalcRatings = {}
+        for inputRating in InputRating:
+            present_rating = next(
+                (
+                    rating
+                    for rating in self._ratings
+                    if rating.inputRating == inputRating
+                ),
+                None,
+            )
+            if present_rating != None:
+                self._precalcRatings[inputRating] = present_rating
+
+    @classmethod
+    def LoadFromJson(cls, path) -> InputRatingsDefinition:
+        with open(path) as f:
+            input_ratings_definition: dict = json.load(f)
+        return InputRatingsDefinition(
+            input_ratings_definition["_beforeBeatHitWindow"],
+            input_ratings_definition["_afterBeatHitWindow"],
+            [cls.Rating(**rating) for rating in input_ratings_definition["_ratings"]],
+            input_ratings_definition["_onBeatMinimumValue"],
+            input_ratings_definition["_truePerfectBonusMinimumValue"],
+            input_ratings_definition["_perfectBonusScore"],
+            input_ratings_definition["_truePerfectBonusScore"],
+        )
 
 
 class InputRatingsBpmMapping:
@@ -319,7 +360,19 @@ class InputRatingsBpmMapping:
         return self._inputRatingBpmPairs[index].InputRatingsDefinition
 
     @classmethod
-    def LoadFromJson(cls, path) -> InputRatingsBpmMapping:
+    def LoadFromJson(cls, path, sub_path) -> InputRatingsBpmMapping:
         with open(path) as f:
-            input_ratings_bpm_mapping: dict = json.load(f)
-        # TODO: load InputRatingBpmPairs with m_FileID/m_PathID
+            input_ratings_bpm_pairs: dict = json.load(f)["_inputRatingBpmPairs"]
+
+        _inputRatingBpmPairs = []
+        for pair_idx in range(len(input_ratings_bpm_pairs)):
+            input_rating_bpm_pair = input_ratings_bpm_pairs[pair_idx]
+            MinimumBpm = input_rating_bpm_pair["MinimumBpm"]
+            InputRatingsDefinition = InputRatingsDefinition.LoadFromJson(
+                sub_path[pair_idx]
+            )
+            _inputRatingBpmPairs.append(
+                cls.InputRatingBpmPair(MinimumBpm, InputRatingsDefinition)
+            )
+
+        return InputRatingsBpmMapping(_inputRatingBpmPairs)
