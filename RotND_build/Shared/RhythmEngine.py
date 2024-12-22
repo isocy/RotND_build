@@ -6,99 +6,6 @@ import json
 from enum import Enum
 
 
-class FmodTimeCapsule:
-    def __init__(
-        self, Time, DeltaTime, BeatLengthInSeconds, TrueBeatNumber, BeatDivisions
-    ):
-        self.Time = Time
-        self.DeltaTime = DeltaTime
-        self.BeatLengthInSeconds = BeatLengthInSeconds
-        self.TrueBeatNumber = TrueBeatNumber
-        self.BeatDivisions = BeatDivisions
-
-
-class BeatTrackLaneDesignation(Enum):
-    Left = 1
-    Mid = 2
-    Right = 3
-
-
-class SpawnEnemyData:
-    def __init__(
-        self,
-        EnemyId,
-        LaneDesignation,
-        SpawnTrueBeatNumber,
-        ItemToDropOnDeathId,
-        ShouldSpawnAsVibeChain,
-        BlademasterAttackRow,
-    ):
-        self.EnemyId = EnemyId
-        self.LaneDesignation = LaneDesignation
-        self.SpawnTrueBeatNumber = SpawnTrueBeatNumber
-        self.ItemToDropOnDeathId = ItemToDropOnDeathId
-        self.ShouldSpawnAsVibeChain = ShouldSpawnAsVibeChain
-        self.BlademasterAttackRow = BlademasterAttackRow
-
-
-class BeatmapEventDataPair:
-    def __init__(self, _eventDataKey, _eventDataValue):
-        self._eventDataKey = _eventDataKey
-        self._eventDataValue = _eventDataValue
-
-    def EventDataKey(self):
-        return self._eventDataKey
-
-    def EventDataValue(self):
-        return self._eventDataValue
-
-
-class BeatmapEvent:
-    def __init__(self, track, startBeatNumber, endBeatNumber, type, dataPairs):
-        self.track = track
-        self.startBeatNumber = startBeatNumber
-        self.endBeatNumber = endBeatNumber
-        self.type = type
-        self.dataPairs: list[BeatmapEventDataPair] = dataPairs
-
-        self._data: dict[str, list[str]] = None
-
-    def GetFirstEventDataAsString(self, dataKey):
-        if self._data and dataKey in self._data:
-            return next((dataVal for dataVal in self._data[dataKey] if dataVal), "")
-        return ""
-
-    def GetFirstEventDataAsInt(self, dataKey):
-        eventDataAsString = self.GetFirstEventDataAsString(dataKey)
-        try:
-            result = int(eventDataAsString)
-            return result
-        except (TypeError, ValueError):
-            return None
-
-    def GetFirstEventDataAsBool(self, dataKey):
-        eventDataAsString = self.GetFirstEventDataAsString(dataKey)
-        try:
-            result = bool(eventDataAsString)
-            return result
-        except (TypeError, ValueError):
-            return None
-
-    def AddEventData(self, dataKey, dataValue):
-        if not self._data:
-            self._data = {}
-        if dataKey in self._data:
-            self._data[dataKey].append(dataValue)
-        else:
-            self._data[dataKey] = [dataValue]
-
-    def InitializeEventDataDictionary(self):
-        self._data = {}
-        for dataPair in self.dataPairs:
-            if dataPair.EventDataKey() and dataPair.EventDataValue():
-                self.AddEventData(dataPair.EventDataKey(), dataPair.EventDataValue())
-
-
 class Beatmap:
     def __init__(self, bpm, events, beatDivisions=2, beatTimings=None):
         self.bpm = bpm
@@ -169,6 +76,64 @@ class Beatmap:
         return beatmap
 
 
+class BeatmapEvent:
+    def __init__(self, track, startBeatNumber, endBeatNumber, type, dataPairs):
+        self.track = track
+        self.startBeatNumber = startBeatNumber
+        self.endBeatNumber = endBeatNumber
+        self.type = type
+        self.dataPairs: list[BeatmapEventDataPair] = dataPairs
+
+        self._data: dict[str, list[str]] = None
+
+    def GetFirstEventDataAsString(self, dataKey):
+        if self._data and dataKey in self._data:
+            return next((dataVal for dataVal in self._data[dataKey] if dataVal), "")
+        return ""
+
+    def GetFirstEventDataAsInt(self, dataKey):
+        eventDataAsString = self.GetFirstEventDataAsString(dataKey)
+        try:
+            result = int(eventDataAsString)
+            return result
+        except (TypeError, ValueError):
+            return None
+
+    def GetFirstEventDataAsBool(self, dataKey):
+        eventDataAsString = self.GetFirstEventDataAsString(dataKey)
+        try:
+            result = bool(eventDataAsString)
+            return result
+        except (TypeError, ValueError):
+            return None
+
+    def AddEventData(self, dataKey, dataValue):
+        if not self._data:
+            self._data = {}
+        if dataKey in self._data:
+            self._data[dataKey].append(dataValue)
+        else:
+            self._data[dataKey] = [dataValue]
+
+    def InitializeEventDataDictionary(self):
+        self._data = {}
+        for dataPair in self.dataPairs:
+            if dataPair.EventDataKey() and dataPair.EventDataValue():
+                self.AddEventData(dataPair.EventDataKey(), dataPair.EventDataValue())
+
+
+class BeatmapEventDataPair:
+    def __init__(self, _eventDataKey, _eventDataValue):
+        self._eventDataKey = _eventDataKey
+        self._eventDataValue = _eventDataValue
+
+    def EventDataKey(self):
+        return self._eventDataKey
+
+    def EventDataValue(self):
+        return self._eventDataValue
+
+
 class BeatmapPlayer:
     def __init__(self, beatmap: Beatmap, _sampleRate):
         self._activeBeatmap = beatmap
@@ -181,6 +146,9 @@ class BeatmapPlayer:
         self._previousFmodTime = 0
         self._beatEventIndex = 0
         self._activeBeatmapBeatTimingIndex = 0
+
+    def HasActiveBeatmap(self):
+        return self._activeBeatmap != None
 
     def CalculateCurrentTrueBeatNumber(self, currentTime):
         beatmap = self._activeBeatmap
@@ -252,7 +220,7 @@ class BeatmapPlayer:
 
     def ProcessBeatEvents(self, currentTime):
         activeBeatmap = self._activeBeatmap
-        cur_beat = self.FmodTimeCapsule.TrueBeatNumber - 1.0
+        cur_beat = self.FmodTimeCapsule.TrueBeatNumber - 1
         while self._beatEventIndex < activeBeatmap.NumBeatmapEvents():
             beatmapEvent: BeatmapEvent = activeBeatmap.BeatmapEvents()[
                 self._beatEventIndex
@@ -271,11 +239,74 @@ class BeatmapPlayer:
             currentTrueBeatNumber,
             self._activeBeatDivisions,
         )
-        if currentTrueBeatNumber - 1.0 > self._activeBeatmap.DurationInBeats():
+        self._previousFmodTime = cur_time
+        if (
+            currentTrueBeatNumber - self.CurrentBeatmapStartBeatNum
+            > self._activeBeatmap.DurationInBeats()
+        ):
             self._activeBeatmap = None
             return
-        self.ProcessBeatEvents(cur_time)
-        # TODO
+        if self.HasActiveBeatmap():
+            self.ProcessBeatEvents(cur_time)
+            # TODO
+
+
+class BeatTrackLaneDesignation(Enum):
+    Left = 1
+    Mid = 2
+    Right = 3
+
+
+class FmodTimeCapsule:
+    def __init__(
+        self, Time, DeltaTime, BeatLengthInSeconds, TrueBeatNumber, BeatDivisions
+    ):
+        self.Time = Time
+        self.DeltaTime = DeltaTime
+        self.BeatLengthInSeconds = BeatLengthInSeconds
+        self.TrueBeatNumber = TrueBeatNumber
+        self.BeatDivisions = BeatDivisions
+
+
+class InputRatingsBpmMapping:
+    class InputRatingBpmPair:
+        def __init__(self, MinimumBpm, InputRatingsDefinition):
+            self.MinimumBpm = MinimumBpm
+            self.InputRatingsDefinition = InputRatingsDefinition
+
+    def __init__(
+        self, _inputRatingBpmPairs: list[InputRatingsBpmMapping.InputRatingBpmPair]
+    ):
+        self._inputRatingBpmPairs = _inputRatingBpmPairs
+
+    def GetInputRatingsDefinitionForBpm(self, bpm):
+        index = 0
+        while (
+            index < len(self._inputRatingBpmPairs)
+            and self._inputRatingBpmPairs[index].MinimumBpm <= bpm
+        ):
+            index += 1
+        index -= 1
+
+        return self._inputRatingBpmPairs[index].InputRatingsDefinition
+
+    @classmethod
+    def LoadFromJson(cls, path, sub_path) -> InputRatingsBpmMapping:
+        with open(path) as f:
+            input_ratings_bpm_pairs: dict = json.load(f)["_inputRatingBpmPairs"]
+
+        _inputRatingBpmPairs = []
+        for pair_idx in range(len(input_ratings_bpm_pairs)):
+            input_rating_bpm_pair = input_ratings_bpm_pairs[pair_idx]
+            MinimumBpm = input_rating_bpm_pair["MinimumBpm"]
+            InputRatingsDefinition = InputRatingsDefinition.LoadFromJson(
+                sub_path[pair_idx]
+            )
+            _inputRatingBpmPairs.append(
+                cls.InputRatingBpmPair(MinimumBpm, InputRatingsDefinition)
+            )
+
+        return InputRatingsBpmMapping(_inputRatingBpmPairs)
 
 
 class InputRatingsDefinition:
@@ -337,42 +368,67 @@ class InputRatingsDefinition:
         )
 
 
-class InputRatingsBpmMapping:
-    class InputRatingBpmPair:
-        def __init__(self, MinimumBpm, InputRatingsDefinition):
-            self.MinimumBpm = MinimumBpm
-            self.InputRatingsDefinition = InputRatingsDefinition
-
+class SpawnEnemyData:
     def __init__(
-        self, _inputRatingBpmPairs: list[InputRatingsBpmMapping.InputRatingBpmPair]
+        self,
+        EnemyId,
+        LaneDesignation,
+        SpawnTrueBeatNumber,
+        ItemToDropOnDeathId,
+        ShouldSpawnAsVibeChain,
+        BlademasterAttackRow,
     ):
-        self._inputRatingBpmPairs = _inputRatingBpmPairs
+        self.EnemyId = EnemyId
+        self.LaneDesignation = LaneDesignation
+        self.SpawnTrueBeatNumber = SpawnTrueBeatNumber
+        self.ItemToDropOnDeathId = ItemToDropOnDeathId
+        self.ShouldSpawnAsVibeChain = ShouldSpawnAsVibeChain
+        self.BlademasterAttackRow = BlademasterAttackRow
 
-    def GetInputRatingsDefinitionForBpm(self, bpm):
-        index = 0
-        while (
-            index < len(self._inputRatingBpmPairs)
-            and self._inputRatingBpmPairs[index].MinimumBpm <= bpm
-        ):
-            index += 1
-        index -= 1
 
-        return self._inputRatingBpmPairs[index].InputRatingsDefinition
+class StageScoringDefinition:
+    def __init__(
+        self,
+        _consecutiveHitsForComboStart,
+        _consecutiveHitsForComboMultiplierIncrease,
+        _maximumComboMultiplier,
+        _holdNotePerBeatHeldBonus,
+        _vibePowerScoreMultiplier,
+    ):
+        self._consecutiveHitsForComboStart = _consecutiveHitsForComboStart
+        self._consecutiveHitsForComboMultiplierIncrease = (
+            _consecutiveHitsForComboMultiplierIncrease
+        )
+        self._maximumComboMultiplier = _maximumComboMultiplier
+        self._holdNotePerBeatHeldBonus = _holdNotePerBeatHeldBonus
+        self._vibePowerScoreMultiplier = _vibePowerScoreMultiplier
 
     @classmethod
-    def LoadFromJson(cls, path, sub_path) -> InputRatingsBpmMapping:
-        with open(path) as f:
-            input_ratings_bpm_pairs: dict = json.load(f)["_inputRatingBpmPairs"]
+    def LoadFromJson(cls, path) -> Beatmap:
+        pass
+        # TODO
+        # with open(path) as f:
+        #     beatmap: dict = json.load(f)
+        # beatmap: Beatmap = Beatmap(
+        #     beatmap["bpm"],
+        #     [
+        #         BeatmapEvent(
+        #             event["track"],
+        #             event["startBeatNumber"],
+        #             event["endBeatNumber"],
+        #             event["type"],
+        #             [BeatmapEventDataPair(**pair) for pair in event["dataPairs"]],
+        #         )
+        #         for event in beatmap["events"]
+        #     ],
+        #     beatmap["beatDivisions"],
+        #     beatmap["BeatTimings"],
+        # )
 
-        _inputRatingBpmPairs = []
-        for pair_idx in range(len(input_ratings_bpm_pairs)):
-            input_rating_bpm_pair = input_ratings_bpm_pairs[pair_idx]
-            MinimumBpm = input_rating_bpm_pair["MinimumBpm"]
-            InputRatingsDefinition = InputRatingsDefinition.LoadFromJson(
-                sub_path[pair_idx]
-            )
-            _inputRatingBpmPairs.append(
-                cls.InputRatingBpmPair(MinimumBpm, InputRatingsDefinition)
-            )
+        # for event_idx in range(len(beatmap.events)):
+        #     event = beatmap.events[event_idx]
+        #     event.InitializeEventDataDictionary()
+        #     beatmap.events[event_idx] = event
 
-        return InputRatingsBpmMapping(_inputRatingBpmPairs)
+        # beatmap.beatmapEventsBacking = beatmap.events
+        # return beatmap
