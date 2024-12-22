@@ -1,0 +1,7 @@
+bpm: 130
+beatDivisions: 2
+multiplier: 2
+22(+1),44,66
+
+1 2 1
+33 + 67 + 27 = 127
