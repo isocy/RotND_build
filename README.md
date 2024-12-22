@@ -1,0 +1,3 @@
+- open RotND_build/rift_build.py
+- change constants appropriately
+- run the python program
