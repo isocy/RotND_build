@@ -1,5 +1,3 @@
-from Shared import InputRating
-
 from __future__ import annotations
 
 import json
@@ -147,8 +145,9 @@ class BeatmapPlayer:
         self._beatEventIndex = 0
         self._activeBeatmapBeatTimingIndex = 0
 
-    def HasActiveBeatmap(self):
-        return self._activeBeatmap != None
+    def ActiveInputRatingsDefinition(self):
+        # TODO: After implementing _inputRatingsBpmMapping
+        pass
 
     def CalculateCurrentTrueBeatNumber(self, currentTime):
         beatmap = self._activeBeatmap
@@ -215,8 +214,8 @@ class BeatmapPlayer:
             return beatTimings[currentBeatNumber] - beatTimings[currentBeatNumber - 1]
         return 60.0 / self._activeBeatmap.bpm
 
-    def ActiveInputRatingsDefinition(self):
-        pass
+    def HasActiveBeatmap(self):
+        return self._activeBeatmap != None
 
     def ProcessBeatEvents(self, currentTime):
         activeBeatmap = self._activeBeatmap
@@ -386,6 +385,12 @@ class SpawnEnemyData:
         self.BlademasterAttackRow = BlademasterAttackRow
 
 
+class StageInputRecord:
+    def __init__(self, stageScoringDefinition, inputRatingsDefinition):
+        self._stageScoringDefinition = stageScoringDefinition
+        self._inputRatingsDefinition = inputRatingsDefinition
+
+
 class StageScoringDefinition:
     def __init__(
         self,
@@ -404,31 +409,13 @@ class StageScoringDefinition:
         self._vibePowerScoreMultiplier = _vibePowerScoreMultiplier
 
     @classmethod
-    def LoadFromJson(cls, path) -> Beatmap:
-        pass
-        # TODO
-        # with open(path) as f:
-        #     beatmap: dict = json.load(f)
-        # beatmap: Beatmap = Beatmap(
-        #     beatmap["bpm"],
-        #     [
-        #         BeatmapEvent(
-        #             event["track"],
-        #             event["startBeatNumber"],
-        #             event["endBeatNumber"],
-        #             event["type"],
-        #             [BeatmapEventDataPair(**pair) for pair in event["dataPairs"]],
-        #         )
-        #         for event in beatmap["events"]
-        #     ],
-        #     beatmap["beatDivisions"],
-        #     beatmap["BeatTimings"],
-        # )
-
-        # for event_idx in range(len(beatmap.events)):
-        #     event = beatmap.events[event_idx]
-        #     event.InitializeEventDataDictionary()
-        #     beatmap.events[event_idx] = event
-
-        # beatmap.beatmapEventsBacking = beatmap.events
-        # return beatmap
+    def LoadFromJson(cls, path) -> StageScoringDefinition:
+        with open(path) as f:
+            stage_scoring_def = json.load(f)
+        return StageScoringDefinition(
+            stage_scoring_def["_consecutiveHitsForComboStart"],
+            stage_scoring_def["_consecutiveHitsForComboMultiplierIncrease"],
+            stage_scoring_def["_maximumComboMultiplier"],
+            stage_scoring_def["_holdNotePerBeatHeldBonus"],
+            stage_scoring_def["_vibePowerScoreMultiplier"],
+        )

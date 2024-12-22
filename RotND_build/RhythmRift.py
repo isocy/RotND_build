@@ -69,8 +69,8 @@ class RREnemyController:
 
 
 class RRStageController(StageController[RRBeatmapPlayer]):
-    def __init__(self, _beatmapPlayer):
-        super(RRStageController, self).__init__(_beatmapPlayer)
+    def __init__(self, _beatmapPlayer, _stageScoringDefinition):
+        super(RRStageController, self).__init__(_beatmapPlayer, _stageScoringDefinition)
 
         self._isVibeChainActive = False
         self._haveVibeChainEnemiesReachedActionRow = False
