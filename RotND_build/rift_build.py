@@ -3,7 +3,7 @@ from RhythmRift import *
 
 SAMPLE_RATE = 60
 
-BEATMAP_PATH = "C:/Users/mschoi/Saved Games/Rift of the NecroDancer/Rift of the NecroDancer Demo 2/builds/exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Expert"
+BEATMAP_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Expert"
 SCORING_DEF_PATH = "exports/bundles/Assets/Shared/ScriptableObjects/RatingsDefinitions/DefaultStageScoringDefinition.json"
 RATINGS_BPM_MAP_PATH = "exports/bundles/RR_InputRatingsBpmMapping.json"
 
