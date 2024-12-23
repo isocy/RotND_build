@@ -1,11 +1,15 @@
 from Shared.RhythmEngine import *
 from RhythmRift import *
+from UnityEngine import Time
 
+FPS = 60
 SAMPLE_RATE = 60
 
 BEATMAP_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Expert"
 SCORING_DEF_PATH = "exports/bundles/Assets/Shared/ScriptableObjects/RatingsDefinitions/DefaultStageScoringDefinition.json"
 RATINGS_BPM_MAP_PATH = "exports/bundles/RR_InputRatingsBpmMapping.json"
+
+Time.deltaTime = 1 / FPS
 
 scoring_def = StageScoringDefinition.LoadFromJson(SCORING_DEF_PATH)
 ratings_bpm_map = InputRatingsBpmMapping.LoadFromJson(RATINGS_BPM_MAP_PATH)
