@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import Enum, auto
 import json
+from typing import Self
 
 BEAT_OFFSET = 1.5
 ROWS = 9
@@ -15,7 +16,8 @@ DISCO_DISASTER_EASY_PATH = (
 
 class EnemyDB:
     @classmethod
-    def load_dict(self, path):
+    def load_json(self, path) -> dict:
+        """Construct dictionary as enemy database with given json file"""
         with open(path) as f:
             enemy_defs: list[dict] = json.load(f)["_enemyDefinitions"]
 
@@ -24,8 +26,8 @@ class EnemyDB:
             id = enemy_def.pop("_id")
 
             # keys of enemy_def:
-            # name, health, total_hits, player_dmg, beat_for_move,
-            # priority, properties, shield, enemy_on_death_id
+            #   name, health, total_hits, player_dmg, beat_for_move,
+            #   priority, properties, shield, enemy_on_death_id
             enemy_def["name"] = enemy_def["_displayName"]
             enemy_def["health"] = enemy_def["_maxHealth"]
             enemy_def["total_hits"] = enemy_def["_totalHitsAddedToStage"]
@@ -47,40 +49,48 @@ class EnemyDB:
         return enemy_db
 
 
+class ObjectType(Enum):
+    ENEMY = auto()
+
+
 class Object:
-    pass
+    def __init__(self, appear_lane):
+        self.type: ObjectType
+
+        self.appear_lane = appear_lane
+
+    @abstractmethod
+    def get_cooltime(self) -> float:
+        pass
 
 
 class Enemy(Object, ABC):
-    @property
-    @abstractmethod
-    def BeatForMove(self):
-        """The number of beats for an enemy to move once"""
-        return 1
+    appear_row = ROWS - 1
 
-    @property
-    @abstractmethod
-    def DistForMove(self):
-        """The number of grids an enemy takes to move"""
-        return 1
+    def __init__(self, appear_lane):
+        super(Enemy, self).__init__(appear_lane)
+        self.type = ObjectType.ENEMY
 
-    @property
     @abstractmethod
-    def Health(self):
-        return 1
-
-    @property
-    @abstractmethod
-    def Shield(self):
-        return 0
+    def get_cooltime(self):
+        pass
 
 
 class Slime(Enemy):
-    pass
+    dist_for_move = 1
+
+    def __init__(self, appear_lane):
+        super(Slime, self).__init__(appear_lane)
+
+    def get_cooltime(self):
+        return getattr(GreenSlime, "beat_for_move")
 
 
 class GreenSlime(Slime):
-    pass
+    def __init__(self, appear_lane):
+        super(GreenSlime, self).__init__(appear_lane)
+        self.health = getattr(GreenSlime, "max_health")
+        self.shield = getattr(GreenSlime, "max_shield")
 
 
 class Grid:
@@ -96,7 +106,9 @@ class Map:
     def __init__(self, lanes, rows):
         self.lanes = lanes
         self.rows = rows
-        self.grids = [[Grid() for j in range(rows)] for i in range(lanes)]
+        self.grids: list[list[Grid]] = [
+            [Grid() for j in range(rows)] for i in range(lanes)
+        ]
 
     def is_clean(self):
         for i in range(self.lanes):
@@ -107,40 +119,55 @@ class Map:
 
 
 class EventType(Enum):
-    ENEMY = 0
+    ENEMY = auto()
+    VIBE = auto()
 
 
 class Event:
     def __init__(self):
-        self.type = EventType.ENEMY
-
-        self.row_idx = ROWS - 1
+        self.type: EventType
 
     @classmethod
     @abstractmethod
     def load_dict(cls, event: dict):
+        """Construct Event with given dictionary"""
         if event["type"] == "SpawnEnemy":
             return EnemyEvent.load_dict(event)
+        elif event["type"] == "StartVibeChain":
+            return VibeEvent.load_dict(event)
 
 
 class EnemyEvent(Event):
-    def __init__(self, lane, beat_appear, enemy_id):
-        super(EnemyEvent, self).__init__()
+    def __init__(self, lane, appear_beat, enemy_id):
+        self.type = EventType.ENEMY
         self.lane = lane
-        self.beat_appear = beat_appear
+        self.appear_beat = appear_beat
         self.enemy_id = enemy_id
 
     @classmethod
     def load_dict(cls, event):
-        """Construct EnemyEvent with given dictionary"""
         return EnemyEvent(
             event["track"],
-            event["startBeatNumber"],
+            BEAT_OFFSET + event["startBeatNumber"],
             next(
-                pair["_eventDataValue"]
+                int(pair["_eventDataValue"])
                 for pair in iter(event["dataPairs"])
                 if pair["_eventDataKey"] == "EnemyId"
             ),
+        )
+
+
+class VibeEvent(Event):
+    def __init__(self, start_beat, end_beat):
+        self.type = EventType.VIBE
+        self.start_beat = start_beat
+        self.end_beat = end_beat
+
+    @classmethod
+    def load_dict(cls, event):
+        return VibeEvent(
+            event["startBeatNumber"],
+            event["endBeatNumber"],
         )
 
 
@@ -163,14 +190,13 @@ class RawBeatmap:
 
 
 class Node:
-    def __init__(self, object: Object, update_period):
+    def __init__(self, object: Object, appear_beat):
         """Initialize a node which will be present at some grids for a period of time"""
         self.object = object
-        self.period = update_period
-        self.lifetime = self.period
+        self.cooltime = appear_beat
 
     @classmethod
-    def events_to_nodes(cls, events: list[Event], enemy_db: EnemyDB):
+    def events_to_nodes(cls, events: list[Event], enemy_db: EnemyDB) -> list[Self]:
         nodes: list[Node] = []
         for event in events:
             if event.type == EventType.ENEMY:
@@ -178,8 +204,17 @@ class Node:
                 enemy_id = event.enemy_id
                 enemy_def: dict = enemy_db[enemy_id]
 
-                if enemy_id == 1722:
-                    nodes.append(Node(GreenSlime(), enemy_def["beat_for_move"]))
+                # TODO
+                if enemy_def["name"] == "Green Slime":
+                    nodes.append(Node(GreenSlime(event.lane), event.appear_beat))
+
+        return nodes
+
+    def __eq__(self, other: Self):
+        return self.object == other.object
+
+    def __repr__(self):
+        return f"{self.cooltime}"
 
 
 class Beat:
@@ -187,16 +222,139 @@ class Beat:
         self.lane = lane
         self.beat = beat
 
+    def __repr__(self):
+        return f"{self.beat} {self.lane}"
+
 
 map = Map(LANES, ROWS)
 
-enemy_db = EnemyDB.load_dict(ENEMY_DB_PATH)
+enemy_db = EnemyDB.load_json(ENEMY_DB_PATH)
+
+for enemy_def in enemy_db.values():
+    if enemy_def["name"] == "Green Slime":
+        setattr(GreenSlime, "beat_for_move", enemy_def["beat_for_move"])
+        setattr(GreenSlime, "max_health", enemy_def["health"])
+        setattr(GreenSlime, "max_shield", enemy_def["shield"])
 
 raw_beatmap_path = DISCO_DISASTER_EASY_PATH
 raw_beatmap = RawBeatmap.load_json(raw_beatmap_path)
-events = raw_beatmap.events
+events = Node.events_to_nodes(raw_beatmap.events, enemy_db)
+print(events)
 events_len = len(events)
 
+beatmap: list[Beat] = []
 event_idx = 0
-while event_idx < events_len or not map.is_clean():
-    pass
+cur_beat = 0
+next_node = events[event_idx]
+# cooltime changes of nodes in 'events' for each iteration of the outmost loop cost a lot,
+# so the cooltime corrections occur for each node when the node is 'next_node'.
+next_node.cooltime -= cur_beat
+while event_idx < events_len:
+    min_cooltime = next_node.cooltime
+    target_nodes = []
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            for enemy_node in map.grids[i][j].enemies:
+                if enemy_node.cooltime < min_cooltime:
+                    min_cooltime = enemy_node.cooltime
+                    target_nodes = [enemy_node]
+                elif enemy_node.cooltime == min_cooltime:
+                    target_nodes.append(enemy_node)
+            for trap_node in map.grids[i][j].traps:
+                if trap_node.cooltime < min_cooltime:
+                    min_cooltime = trap_node.cooltime
+                    target_nodes = [trap_node]
+                elif trap_node.cooltime == min_cooltime:
+                    target_nodes.append(trap_node)
+
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            grid = map.grids[i][j]
+            enemy_nodes = grid.enemies
+            for enemy_node in enemy_nodes:
+                if enemy_node in target_nodes:
+                    enemy_node.cooltime = enemy_node.object.get_cooltime()
+                    enemy_nodes.remove(enemy_node)
+                    map.grids[i][j - 1].enemies.append(enemy_node)
+                    target_nodes.remove(enemy_node)
+                else:
+                    enemy_node.cooltime -= min_cooltime
+            trap_nodes = grid.traps
+            for trap_node in trap_nodes:
+                if trap_node in target_nodes:
+                    trap_nodes.remove(trap_node)
+                    target_nodes.remove(trap_node)
+                else:
+                    trap_node.cooltime -= min_cooltime
+
+    while min_cooltime == next_node.cooltime:
+        object = next_node.object
+        next_node.cooltime = object.get_cooltime()
+        if object.type == ObjectType.ENEMY:
+            map.grids[object.appear_lane - 1][Enemy.appear_row].enemies.append(
+                next_node
+            )
+
+        event_idx += 1
+        if event_idx >= events_len:
+            break
+        next_node = events[event_idx]
+        next_node.cooltime -= cur_beat
+
+    cur_beat += min_cooltime
+
+    # TODO
+
+    for i in range(map.lanes):
+        for enemy in map.grids[i][0].enemies:
+            beatmap.append(Beat(i, cur_beat))
+        map.grids[i][0].enemies.clear()
+
+# This while loop is almost same as the above one
+# Here is no 'next_node' to appear
+while not map.is_clean():
+    min_cooltime = float("inf")
+    target_nodes = []
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            for enemy_node in map.grids[i][j].enemies:
+                if enemy_node.cooltime < min_cooltime:
+                    min_cooltime = enemy_node.cooltime
+                    target_nodes = [enemy_node]
+                elif enemy_node.cooltime == min_cooltime:
+                    target_nodes.append(enemy_node)
+            for trap_node in map.grids[i][j].traps:
+                if trap_node.cooltime < min_cooltime:
+                    min_cooltime = trap_node.cooltime
+                    target_nodes = [trap_node]
+                elif trap_node.cooltime == min_cooltime:
+                    target_nodes.append(trap_node)
+
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            grid = map.grids[i][j]
+            enemy_nodes = grid.enemies
+            for enemy_node in enemy_nodes:
+                if enemy_node in target_nodes:
+                    enemy_node.cooltime = enemy_node.object.get_cooltime()
+                    enemy_nodes.remove(enemy_node)
+                    map.grids[i][j - 1].enemies.append(enemy_node)
+                    target_nodes.remove(enemy_node)
+                else:
+                    enemy_node.cooltime -= min_cooltime
+            trap_nodes = grid.traps
+            for trap_node in trap_nodes:
+                if trap_node in target_nodes:
+                    trap_nodes.remove(trap_node)
+                    target_nodes.remove(trap_node)
+                else:
+                    trap_node.cooltime -= min_cooltime
+
+    cur_beat += min_cooltime
+
+    # TODO
+
+    for i in range(map.lanes):
+        for enemy in map.grids[i][0].enemies:
+            beatmap.append(Beat(i, cur_beat))
+        map.grids[i][0].enemies.clear()
