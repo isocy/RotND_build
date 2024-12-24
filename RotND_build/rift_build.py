@@ -9,6 +9,40 @@ LANES = 3
 
 ENEMY_DB_PATH = "exports/bundles/RREnemyDatabase.json"
 
+GREEN_SLIME = "Green Slime"
+BLUE_SLIME = "Blue Slime"
+YELLOW_SLIME = "Yellow Slime"
+BLUE_BAT = "Blue Bat"
+YELLOW_BAT = "Yellow Bat"
+RED_BAT = "Red Bat"
+GREEN_ZOMBIE = "Green Zombie"
+BLUE_ZOMBIE = "Blue Zombie"
+RED_ZOMBIE = "Red Zombie"
+BASE_SKELETON = "Base Skeleton"
+SHIELDED_BASE_SKELETON = "Shielded Base Skeleton"
+TRIPLE_SHIELD_BASE_SKELETON = "Triple Shield Base Skeleton"
+BLUE_ARMADILLO = "Blue Armadillo"
+RED_ARMADILLO = "Red Armadillo"
+YELLOW_ARMADILLO = "Yellow Armadillo"
+YELLOW_SKELETON = "Yellow Skeleton"
+SHIELDED_YELLOW_SKELETON = "Shielded Yellow Skeleton"
+BLACK_SKELETON = "Black Skeleton"
+SHIELDED_BLACK_SKELETON = "Shielded Black Skeleton"
+BASE_WYRM = "Base Wyrm"
+BASE_HARPY = "Base Harpy"
+RED_HARPY = "Red Harpy"
+BLUE_HARPY = "Blue Harpy"
+APPLE = "Apple"
+CHEESE = "Cheese"
+DRUMSTICK = "Drumstick"
+HAM = "Ham"
+BASE_BLADEMASTER = "Base Blademaster"
+STRONG_BLADEMASTER = "Strong Blademaster"
+YELLOW_BLADEMASTER = "Yellow Blademaster"
+BASE_SKULL = "Base Skull"
+BLUE_SKULL = "Blue Skull"
+RED_SKULL = "Red Skull"
+
 DISCO_DISASTER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Easy"
 )
@@ -26,13 +60,13 @@ class EnemyDB:
             id = enemy_def.pop("_id")
 
             # keys of enemy_def:
-            #   name, health, total_hits, player_dmg, beat_for_move,
-            #   priority, properties, shield, enemy_on_death_id
+            #   name, health, total_hits, beat_for_move, priority,
+            #   properties, shield, enemy_on_death_id
             enemy_def["name"] = enemy_def["_displayName"]
             enemy_def["health"] = enemy_def["_maxHealth"]
             enemy_def["total_hits"] = enemy_def["_totalHitsAddedToStage"]
             del enemy_def["_totalEnemiesGenerated"]
-            enemy_def["player_dmg"] = enemy_def["_playerDamage"]
+            del enemy_def["_playerDamage"]
             del enemy_def["_hpAwardedOnDeath"]
             enemy_def["beat_for_move"] = enemy_def["_updateTempoInBeats"]
             enemy_def["priority"] = enemy_def["_collisionPriority"]
@@ -50,13 +84,14 @@ class EnemyDB:
 
 
 class ObjectType(Enum):
+    UNKNOWN = auto()
     ENEMY = auto()
+    FOOD = auto()
 
 
 class Object:
     def __init__(self, appear_lane: int):
-        self.type: ObjectType
-
+        self.type = ObjectType.UNKNOWN
         self.appear_lane = appear_lane
 
     @abstractmethod
@@ -68,10 +103,6 @@ class Object:
         pass
 
 
-class Trap(Object):
-    pass
-
-
 class Enemy(Object):
     dist_for_move: int
     appear_row = ROWS - 1
@@ -79,6 +110,7 @@ class Enemy(Object):
     def __init__(self, appear_lane):
         super(Enemy, self).__init__(appear_lane)
         self.type = ObjectType.ENEMY
+        self.health = 0
 
     @abstractmethod
     def __repr__(self):
@@ -113,6 +145,16 @@ class GreenSlime(Slime):
         return "GS"
 
 
+class BlueSlime(Slime):
+    def __init__(self, appear_lane):
+        super(BlueSlime, self).__init__(appear_lane)
+        self.health = getattr(BlueSlime, "max_health")
+        self.shield = getattr(BlueSlime, "max_shield")
+
+    def __repr__(self):
+        return "BS"
+
+
 class Skeleton(Enemy):
     dist_for_move = 1
 
@@ -124,17 +166,53 @@ class Skeleton(Enemy):
         pass
 
     def get_cooltime(self):
-        return getattr(WhiteSkeleton, "beat_for_move")
+        return getattr(BaseSkeleton, "beat_for_move")
 
 
-class WhiteSkeleton(Skeleton):
+class BaseSkeleton(Skeleton):
     def __init__(self, appear_lane):
-        super(WhiteSkeleton, self).__init__(appear_lane)
-        self.health = getattr(WhiteSkeleton, "max_health")
-        self.shield = getattr(WhiteSkeleton, "max_shield")
+        super(BaseSkeleton, self).__init__(appear_lane)
+        self.health = getattr(BaseSkeleton, "max_health")
+        self.shield = getattr(BaseSkeleton, "max_shield")
 
     def __repr__(self):
-        return "WSk"
+        return "BSk"
+
+
+class Food(Enemy):
+    dist_for_move = 1
+
+    def __init__(self, appear_lane):
+        super(Food, self).__init__(appear_lane)
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    def get_cooltime(self):
+        return getattr(Apple, "beat_for_move")
+
+
+class Apple(Food):
+    def __init__(self, appear_lane):
+        super(Apple, self).__init__(appear_lane)
+        self.health = getattr(Apple, "max_health")
+
+    def __repr__(self):
+        return "Ap"
+
+
+class Trap(Object):
+    pass
+
+
+class Beat:
+    def __init__(self, lane, beat):
+        self.lane = lane
+        self.beat = beat
+
+    def __repr__(self):
+        return f"{self.beat} {self.lane}"
 
 
 class Grid:
@@ -200,7 +278,9 @@ class Map:
                     if enemy_node in target_nodes:
                         enemy_node.cooltime = enemy_node.object.get_cooltime()
                         enemy_nodes.remove(enemy_node)
-                        map.grids[i][j - 1].enemies.append(enemy_node)
+                        map.grids[i][
+                            j - enemy_node.object.dist_for_move
+                        ].enemies.append(enemy_node)
                         target_nodes.remove(enemy_node)
                     else:
                         enemy_node.cooltime -= min_cooltime
@@ -213,6 +293,19 @@ class Map:
                         trap_node.cooltime -= min_cooltime
 
         return min_cooltime
+
+    def hit_notes(self, beatmap: list[Beat]):
+        for i in range(map.lanes):
+            for enemy_node in map.grids[i][0].enemies:
+                beatmap.append(Beat(i, cur_beat))
+                enemy = enemy_node.object
+                if enemy.health > 1:
+                    enemy.health -= 1
+                    enemy_node.cooltime = enemy.get_cooltime()
+                    map.grids[i][0].enemies.remove(enemy_node)
+                    map.grids[i][1].enemies.append(enemy_node)
+
+            map.grids[i][0].enemies.clear()
 
 
 class EventType(Enum):
@@ -308,21 +401,16 @@ class Node[T: Object]:
                 enemy_def: dict = enemy_db[enemy_id]
                 name = enemy_def["name"]
 
-                if name == "Green Slime":
+                if name == GREEN_SLIME:
                     nodes.append(Node(GreenSlime(event.lane), event.appear_beat))
-                elif name == "Base Skeleton":
-                    nodes.append(Node(WhiteSkeleton(event.lane), event.appear_beat))
+                elif name == BLUE_SLIME:
+                    nodes.append(Node(BlueSlime(event.lane), event.appear_beat))
+                elif name == BASE_SKELETON:
+                    nodes.append(Node(BaseSkeleton(event.lane), event.appear_beat))
+                elif name == APPLE:
+                    nodes.append(Node(Apple(event.lane), event.appear_beat))
 
         return nodes
-
-
-class Beat:
-    def __init__(self, lane, beat):
-        self.lane = lane
-        self.beat = beat
-
-    def __repr__(self):
-        return f"{self.beat} {self.lane}"
 
 
 map = Map(LANES, ROWS)
@@ -331,14 +419,21 @@ enemy_db = EnemyDB.load_json(ENEMY_DB_PATH)
 
 for enemy_def in enemy_db.values():
     name = enemy_def["name"]
-    if name == "Green Slime":
+    if name == GREEN_SLIME:
         setattr(GreenSlime, "beat_for_move", enemy_def["beat_for_move"])
         setattr(GreenSlime, "max_health", enemy_def["health"])
         setattr(GreenSlime, "max_shield", enemy_def["shield"])
-    elif name == "Base Skeleton":
-        setattr(WhiteSkeleton, "beat_for_move", enemy_def["beat_for_move"])
-        setattr(WhiteSkeleton, "max_health", enemy_def["health"])
-        setattr(WhiteSkeleton, "max_shield", enemy_def["shield"])
+    if name == BLUE_SLIME:
+        setattr(BlueSlime, "beat_for_move", enemy_def["beat_for_move"])
+        setattr(BlueSlime, "max_health", enemy_def["health"])
+        setattr(BlueSlime, "max_shield", enemy_def["shield"])
+    elif name == BASE_SKELETON:
+        setattr(BaseSkeleton, "beat_for_move", enemy_def["beat_for_move"])
+        setattr(BaseSkeleton, "max_health", enemy_def["health"])
+        setattr(BaseSkeleton, "max_shield", enemy_def["shield"])
+    elif name == APPLE:
+        setattr(Apple, "beat_for_move", enemy_def["beat_for_move"])
+        setattr(Apple, "max_health", enemy_def["health"])
 
 raw_beatmap_path = DISCO_DISASTER_EASY_PATH
 raw_beatmap = RawBeatmap.load_json(raw_beatmap_path)
@@ -357,7 +452,7 @@ while event_idx < events_len:
     next_node.cooltime -= min_cooltime
 
     while next_node.cooltime == 0:
-        object = next_node.object
+        object: Object = next_node.object
         next_node.cooltime = object.get_cooltime()
         if object.type == ObjectType.ENEMY:
             map.grids[object.appear_lane - 1][Enemy.appear_row].enemies.append(
@@ -374,10 +469,7 @@ while event_idx < events_len:
 
     # TODO
 
-    for i in range(map.lanes):
-        for enemy in map.grids[i][0].enemies:
-            beatmap.append(Beat(i, cur_beat))
-        map.grids[i][0].enemies.clear()
+    map.hit_notes(beatmap)
 
 # This while loop is almost same as the above one
 # Here is no 'next_node' to appear
@@ -387,10 +479,7 @@ while not map.is_clean():
 
     # TODO
 
-    for i in range(map.lanes):
-        for enemy in map.grids[i][0].enemies:
-            beatmap.append(Beat(i, cur_beat))
-        map.grids[i][0].enemies.clear()
+    map.hit_notes(beatmap)
 
 for beat in beatmap:
     print(beat)
