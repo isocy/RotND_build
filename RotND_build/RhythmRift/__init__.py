@@ -1,5 +1,9 @@
 from Shared.RhythmEngine import *
 from Shared import *
+from UnityEngine import Time
+from UnityEngine.AddressableAssets import AssetReference
+
+from enum import Enum, auto
 
 
 class VibeChainStartData:
@@ -10,8 +14,8 @@ class VibeChainStartData:
 
 
 class RRBeatmapPlayer(BeatmapPlayer):
-    def __init__(self, beatmap, _sampleRate=60):
-        super(RRBeatmapPlayer, self).__init__(beatmap, _sampleRate)
+    def __init__(self):
+        super(RRBeatmapPlayer, self).__init__(None)
 
         self.currentVibeChains: list[VibeChainStartData] = []
 
@@ -64,14 +68,84 @@ class RRBeatmapPlayer(BeatmapPlayer):
         return False
 
 
-class RREnemyController:
-    pass
+class RREnemyController(MonoBehaviourFmodSystem):
+    def __init__(self, _enemyDatabase):
+        self._enemyDatabase = _enemyDatabase
+
+    def UpdateSystem(self, fmodTimeCapsule):
+        pass
+
+
+class RREnemyDatabase(ScriptableObject):
+    def __init__(self, _enemyDefinitions):
+        self._enemyDefinitions = _enemyDefinitions
+
+    @classmethod
+    def LoadFromJson(self, path):
+        with open(path) as f:
+            _enemyDefinitions: dict = json.load(f)["_enemyDefinitions"]
+
+        enemy_defs = []
+        for enemy_def in _enemyDefinitions:
+            prefab_ref = enemy_def["_prefabAssetReference"]
+            held_prefab_ref = enemy_def["_heldPrefabAssetReference"]
+            enemy_def = RREnemyDefinition(
+                enemy_def["_id"],
+                enemy_def["_displayName"],
+                max(1, enemy_def["_maxHealth"]),
+                max(0, enemy_def["_totalHitsAddedToStage"]),
+                max(0, enemy_def["_totalEnemiesGenerated"]),
+                max(0, enemy_def["_playerDamage"]),
+                enemy_def["_hpAwardedOnDeath"],
+                max(0, enemy_def["_updateTempoInBeats"]),
+                max(1, enemy_def["_collisionPriority"]),
+                enemy_def["_specialProperties"],
+                enemy_def["_shieldHealth"],
+                AssetReference(
+                    prefab_ref["m_SubObjectName"],
+                    prefab_ref["m_SubObjectType"],
+                    prefab_ref["m_AssetGUID"],
+                ),
+                AssetReference(
+                    held_prefab_ref["m_SubObjectName"],
+                    held_prefab_ref["m_SubObjectType"],
+                    held_prefab_ref["m_AssetGUID"],
+                ),
+                enemy_def["_bodyEnemyId"],
+                enemy_def["_tailEnemyId"],
+                enemy_def["_enemySpawnedOnDeathId"],
+            )
+            enemy_defs.append(enemy_def)
+
+        return RREnemyDatabase(enemy_defs)
+
+
+class RREnemyDefinition:
+    def __init__(
+        self,
+        _id,
+        _displayName,
+        _maxHealth,
+        _totalHitsAddedToStage,
+        _totalEnemiesGenerated,
+        _playerDamage,
+        _hpAwardedOnDeath,
+        _updateTempoInBeats,
+        _collisionPriority,
+        _specialProperties,
+        _shieldHealth,
+        _prefabAssetReference,
+        _heldPrefabAssetReference,
+        _bodyEnemyId,
+        _tailEnemyId,
+        _enemySpawnedOnDeathId,
+    ):
+        # TODO
+        pass
 
 
 class RRStageController(StageController[RRBeatmapPlayer]):
-    def __init__(self, _beatmapPlayer, _stageScoringDefinition):
-        super(RRStageController, self).__init__(_beatmapPlayer, _stageScoringDefinition)
-
+    def __init__(self):
         self._isVibeChainActive = False
         self._haveVibeChainEnemiesReachedActionRow = False
         self._finalVibeChainBeat = 0.0
@@ -95,7 +169,7 @@ class RRStageController(StageController[RRBeatmapPlayer]):
         self._isVibeChainActive = False
 
     def Update(self, cur_frame):
-        fmodTimeCapsule = self.BeatmapPlayer().FmodTimeCapsule
+        fmodTimeCapsule = self.BeatmapPlayer.FmodTimeCapsule
 
         if (
             self._isVibeChainActive
@@ -110,11 +184,20 @@ class RRStageController(StageController[RRBeatmapPlayer]):
         if self._isVibeChainActive:
             if self._currentVibePower > 0.0:
                 self._currentVibePower -= (
-                    1 / self._beatmapPlayer.SampleRate
-                ) * self._calculatedVibePowerDecayPerSecond
+                    Time.deltaTime * self._calculatedVibePowerDecayPerSecond
+                )
                 if self._currentVibePower < 0.0:
                     self._currentVibePower = 0.0
                 if self._currentVibePower == 0.0:
                     num1 = 1 / fmodTimeCapsule.BeatDivisions
                     pass
         # TODO
+
+
+class RRTrapType(Enum):
+    Coals = auto()
+    PortalIn = auto()
+    PortalOut = auto()
+    Bounce = auto()
+    Wind = auto()
+    Freeze = auto()

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-import json
+from Shared import InputRating
+from UnityEngine import *
+
+from abc import ABC, abstractmethod
 from enum import Enum
+import json
 
 
 class Beatmap:
@@ -132,22 +136,28 @@ class BeatmapEventDataPair:
         return self._eventDataValue
 
 
-class BeatmapPlayer:
-    def __init__(self, beatmap: Beatmap, _sampleRate):
-        self._activeBeatmap = beatmap
-        self.SampleRate = _sampleRate
+class BeatmapPlayer(MonoBehaviour):
+    SingleInstance = None
 
-        self.CurrentBeatmapStartBeatNum = 1.0
-        self._currentBpm = self._activeBeatmap.bpm
-        self._activeBeatDivisions = self._activeBeatmap.beatDivisions
+    def __init__(self, _inputRatingsBpmMapping):
+        self._currentBpm = -1
+        self._activeBeatDivisions = 2
 
         self._previousFmodTime = 0
-        self._beatEventIndex = 0
         self._activeBeatmapBeatTimingIndex = 0
 
+        self._inputRatingsBpmMapping: InputRatingsBpmMapping = _inputRatingsBpmMapping
+
+        self.Awake()
+
     def ActiveInputRatingsDefinition(self):
-        # TODO: After implementing _inputRatingsBpmMapping
-        pass
+        return self._inputRatingsBpmMapping.GetInputRatingsDefinitionForBpm(
+            self._currentBpm
+        )
+
+    def Awake(self):
+        if BeatmapPlayer.SingleInstance == None:
+            BeatmapPlayer.SingleInstance = self
 
     def CalculateCurrentTrueBeatNumber(self, currentTime):
         beatmap = self._activeBeatmap
@@ -208,6 +218,10 @@ class BeatmapPlayer:
             currentTrueBeatNumber = 1.0 + currentTime * beatmap.bpm / 60.0
         return currentTrueBeatNumber
 
+    @property
+    def CurrentBeatmapStartBeatNum(self):
+        return 1
+
     def GetCurrentBeatLengthInSeconds(self, currentBeatNumber: int):
         beatTimings = self._activeBeatmap.beatTimings
         if beatTimings and currentBeatNumber < len(beatTimings):
@@ -216,6 +230,10 @@ class BeatmapPlayer:
 
     def HasActiveBeatmap(self):
         return self._activeBeatmap != None
+
+    @classmethod
+    def LoadFromJson(cls, map_path, map_paths) -> BeatmapPlayer:
+        return BeatmapPlayer(InputRatingsBpmMapping.LoadFromJson(map_path, map_paths))
 
     def ProcessBeatEvents(self, currentTime):
         activeBeatmap = self._activeBeatmap
@@ -229,7 +247,7 @@ class BeatmapPlayer:
                     pass
 
     def Update(self, cur_frame):
-        cur_time = cur_frame * (1 / self.SampleRate)
+        cur_time = cur_frame * Time.deltaTime
         currentTrueBeatNumber = self.CalculateCurrentTrueBeatNumber(cur_time)
         self.FmodTimeCapsule = FmodTimeCapsule(
             cur_time,
@@ -267,68 +285,31 @@ class FmodTimeCapsule:
         self.BeatDivisions = BeatDivisions
 
 
-class InputRatingsBpmMapping:
-    class InputRatingBpmPair:
-        def __init__(self, MinimumBpm, InputRatingsDefinition):
-            self.MinimumBpm = MinimumBpm
-            self.InputRatingsDefinition = InputRatingsDefinition
-
-    def __init__(
-        self, _inputRatingBpmPairs: list[InputRatingsBpmMapping.InputRatingBpmPair]
-    ):
-        self._inputRatingBpmPairs = _inputRatingBpmPairs
-
-    def GetInputRatingsDefinitionForBpm(self, bpm):
-        index = 0
-        while (
-            index < len(self._inputRatingBpmPairs)
-            and self._inputRatingBpmPairs[index].MinimumBpm <= bpm
-        ):
-            index += 1
-        index -= 1
-
-        return self._inputRatingBpmPairs[index].InputRatingsDefinition
-
-    @classmethod
-    def LoadFromJson(cls, path, sub_path) -> InputRatingsBpmMapping:
-        with open(path) as f:
-            input_ratings_bpm_pairs: dict = json.load(f)["_inputRatingBpmPairs"]
-
-        _inputRatingBpmPairs = []
-        for pair_idx in range(len(input_ratings_bpm_pairs)):
-            input_rating_bpm_pair = input_ratings_bpm_pairs[pair_idx]
-            MinimumBpm = input_rating_bpm_pair["MinimumBpm"]
-            InputRatingsDefinition = InputRatingsDefinition.LoadFromJson(
-                sub_path[pair_idx]
-            )
-            _inputRatingBpmPairs.append(
-                cls.InputRatingBpmPair(MinimumBpm, InputRatingsDefinition)
-            )
-
-        return InputRatingsBpmMapping(_inputRatingBpmPairs)
+class IFmodTimeSystem(ABC):
+    @abstractmethod
+    def UpdateSystem(self, fmodTimeCapsule):
+        pass
 
 
 class InputRatingsDefinition:
     class Rating:
         def __init__(self, inputRating, minimumValue, score):
             self.inputRating = inputRating
-            assert 0 <= minimumValue <= 100
-            self.minimumValue = minimumValue
+            self.minimumValue = max(0, min(100, minimumValue))
             self.score = score
 
     def __init__(
         self,
-        _beforeBeatHitWindow,
-        _afterBeatHitWindow,
         _ratings,
-        _onBeatMinimumValue,
-        _truePerfectBonusMinimumValue,
-        _perfectBonusScore,
-        _truePerfectBonusScore,
+        _beforeBeatHitWindow=0.5,
+        _afterBeatHitWindow=0.5,
+        _onBeatMinimumValue=90,
+        _truePerfectBonusMinimumValue=90,
+        _perfectBonusScore=1,
+        _truePerfectBonusScore=2,
     ):
-        assert _beforeBeatHitWindow + _afterBeatHitWindow <= 1.0010000467300415
-        self.BeforeBeatHitWindow = _beforeBeatHitWindow
-        self.AfterBeatHitWindow = _afterBeatHitWindow
+        self._beforeBeatHitWindow = max(0, min(1, _beforeBeatHitWindow))
+        self._afterBeatHitWindow = max(0, min(1, _afterBeatHitWindow))
         self._ratings: list[InputRatingsDefinition.Rating] = _ratings
         self._onBeatMinimumValue = _onBeatMinimumValue
         self._truePerfectBonusMinimumValue = _truePerfectBonusMinimumValue
@@ -337,6 +318,11 @@ class InputRatingsDefinition:
 
         self._precalcRatings = {}
         self.PrecalculateRatings()
+
+        self.OnValidate()
+
+    def OnValidate(self):
+        assert self._beforeBeatHitWindow + self._afterBeatHitWindow <= 1.001
 
     def PrecalculateRatings(self):
         self._precalcRatings = {}
@@ -357,14 +343,70 @@ class InputRatingsDefinition:
         with open(path) as f:
             input_ratings_definition: dict = json.load(f)
         return InputRatingsDefinition(
+            [cls.Rating(**rating) for rating in input_ratings_definition["_ratings"]],
             input_ratings_definition["_beforeBeatHitWindow"],
             input_ratings_definition["_afterBeatHitWindow"],
-            [cls.Rating(**rating) for rating in input_ratings_definition["_ratings"]],
             input_ratings_definition["_onBeatMinimumValue"],
             input_ratings_definition["_truePerfectBonusMinimumValue"],
             input_ratings_definition["_perfectBonusScore"],
             input_ratings_definition["_truePerfectBonusScore"],
         )
+
+
+class InputRatingsBpmMapping:
+    class InputRatingBpmPair:
+        def __init__(self, MinimumBpm, InputRatingsDefinition):
+            self.MinimumBpm = MinimumBpm
+            self.InputRatingsDefinition = InputRatingsDefinition
+
+    def __init__(
+        self, _inputRatingBpmPairs: list[InputRatingsBpmMapping.InputRatingBpmPair]
+    ):
+        self._inputRatingBpmPairs = _inputRatingBpmPairs
+
+    def GetInputRatingsDefinitionForBpm(self, bpm):
+        if len(self._inputRatingBpmPairs) < 1:
+            return None
+
+        index = 0
+        while (
+            index < len(self._inputRatingBpmPairs)
+            and self._inputRatingBpmPairs[index].MinimumBpm <= bpm
+        ):
+            index += 1
+        index -= 1
+
+        return self._inputRatingBpmPairs[index].InputRatingsDefinition
+
+    @classmethod
+    def LoadFromJson(cls, path, map_paths) -> InputRatingsBpmMapping:
+        with open(path) as f:
+            input_ratings_bpm_pairs: dict = json.load(f)["_inputRatingBpmPairs"]
+
+        _inputRatingBpmPairs = []
+        for pair_idx in range(len(input_ratings_bpm_pairs)):
+            input_rating_bpm_pair = input_ratings_bpm_pairs[pair_idx]
+            MinimumBpm = input_rating_bpm_pair["MinimumBpm"]
+            input_ratings_def = InputRatingsDefinition.LoadFromJson(map_paths[pair_idx])
+            _inputRatingBpmPairs.append(
+                cls.InputRatingBpmPair(MinimumBpm, input_ratings_def)
+            )
+
+        return InputRatingsBpmMapping(_inputRatingBpmPairs)
+
+
+class MonoBehaviourFmodSystem(MonoBehaviour, IFmodTimeSystem, ABC):
+    @abstractmethod
+    def UpdateSystem(self, fmodTimeCapsule):
+        pass
+
+
+class Object:
+    pass
+
+
+class ScriptableObject(Object):
+    pass
 
 
 class SpawnEnemyData:
