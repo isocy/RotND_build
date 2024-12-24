@@ -197,6 +197,7 @@ class Apple(Food):
     def __init__(self, appear_lane):
         super(Apple, self).__init__(appear_lane)
         self.health = getattr(Apple, "max_health")
+        self.shield = getattr(Apple, "max_shield")
 
     def __repr__(self):
         return "Ap"
@@ -295,6 +296,7 @@ class Map:
         return min_cooltime
 
     def hit_notes(self, beatmap: list[Beat]):
+        """Process nodes at the bottom row and update 'beatmap'"""
         for i in range(map.lanes):
             for enemy_node in map.grids[i][0].enemies:
                 beatmap.append(Beat(i, cur_beat))
@@ -423,7 +425,7 @@ for enemy_def in enemy_db.values():
         setattr(GreenSlime, "beat_for_move", enemy_def["beat_for_move"])
         setattr(GreenSlime, "max_health", enemy_def["health"])
         setattr(GreenSlime, "max_shield", enemy_def["shield"])
-    if name == BLUE_SLIME:
+    elif name == BLUE_SLIME:
         setattr(BlueSlime, "beat_for_move", enemy_def["beat_for_move"])
         setattr(BlueSlime, "max_health", enemy_def["health"])
         setattr(BlueSlime, "max_shield", enemy_def["shield"])
@@ -434,6 +436,7 @@ for enemy_def in enemy_db.values():
     elif name == APPLE:
         setattr(Apple, "beat_for_move", enemy_def["beat_for_move"])
         setattr(Apple, "max_health", enemy_def["health"])
+        setattr(Apple, "max_shield", enemy_def["shield"])
 
 raw_beatmap_path = DISCO_DISASTER_EASY_PATH
 raw_beatmap = RawBeatmap.load_json(raw_beatmap_path)
