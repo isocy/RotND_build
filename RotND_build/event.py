@@ -5,6 +5,7 @@ class Event:
     @classmethod
     def load_dict(cls, event: dict):
         """Construct Event with given dictionary"""
+        # TODO
         if event["type"] == "SpawnEnemy":
             return EnemyEvent.load_dict(event)
         elif event["type"] == "StartVibeChain":
@@ -40,13 +41,12 @@ class EnemyEvent(Event):
 
 
 class VibeEvent(Event):
-    def __init__(self, start_beat, end_beat):
-        self.start_beat = start_beat
+    def __init__(self, end_beat):
         self.end_beat = end_beat
+
+    def __repr__(self):
+        return f"{self.end_beat}"
 
     @classmethod
     def load_dict(cls, event):
-        return VibeEvent(
-            event["startBeatNumber"],
-            event["endBeatNumber"],
-        )
+        return VibeEvent(BEAT_OFFSET + event["endBeatNumber"])

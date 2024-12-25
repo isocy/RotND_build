@@ -111,14 +111,14 @@ class Map:
                 grid_enemies = grid.enemies
                 for grid_enemy in grid_enemies:
                     if grid_enemy in target_nodes:
-                        object = grid_enemy.object
-                        grid_enemy.cooltime = object.get_cooltime()
+                        obj = grid_enemy.obj
+                        grid_enemy.cooltime = obj.get_cooltime()
                         grid_enemies.remove(grid_enemy)
                         if (
-                            isinstance(object, Slime)
-                            or isinstance(object, BlueBat)
-                            or isinstance(object, Skeleton)
-                            or isinstance(object, Food)
+                            isinstance(obj, Slime)
+                            or isinstance(obj, BlueBat)
+                            or isinstance(obj, Skeleton)
+                            or isinstance(obj, Food)
                         ):
                             map.grids[i][j - 1].enemies.append(grid_enemy)
                         # TODO
@@ -142,7 +142,7 @@ class Map:
         for i in range(map.lanes):
             for enemy_node in map.grids[i][0].enemies:
                 beatmap.append(Beat(i, cur_beat))
-                enemy = enemy_node.object
+                enemy = enemy_node.obj
                 if enemy.health > 1:
                     enemy.health -= 1
                     enemy_node.cooltime = enemy.get_cooltime()
@@ -160,37 +160,48 @@ class Map:
 
 
 class RawBeatmap:
-    def __init__(self, bpm, beat_divs, events):
+    def __init__(self, bpm, beat_divs, obj_events, vibe_events):
         self.bpm = bpm
         self.beat_divs = beat_divs
-        self.events: list[Event] = events
+        self.obj_events: list[EnemyEvent] = obj_events
+        self.vibe_events: list[VibeEvent] = vibe_events
 
     @classmethod
     def load_json(cls, path):
         with open(path) as f:
             beatmap = json.load(f)
 
+        # TODO
+        obj_events = []
+        vibe_events = []
+        for event in beatmap["events"]:
+            if event["type"] == "SpawnEnemy":
+                obj_events.append(event)
+            elif event["type"] == "StartVibeChain":
+                vibe_events.append(event)
+
         return RawBeatmap(
             beatmap["bpm"],
             beatmap["beatDivisions"],
-            [Event.load_dict(event) for event in beatmap["events"]],
+            [Event.load_dict(event) for event in obj_events],
+            [VibeEvent.load_dict(vibe_event) for vibe_event in vibe_events],
         )
 
 
 class Node[T: Object]:
-    def __init__(self, object: T, appear_beat):
+    def __init__(self, obj: T, appear_beat):
         """Initialize a node which will be present at some grids for a period of time"""
-        self.object = object
+        self.obj = obj
         self.cooltime = appear_beat
 
     def __eq__(self, other: Self):
-        return self.object == other.object
+        return self.obj == other.obj
 
     def __repr__(self):
-        return f"{self.object} {self.cooltime}"
+        return f"{self.obj} {self.cooltime}"
 
     @classmethod
-    def events_to_nodes(cls, events: list[Event], enemy_db: EnemyDB) -> list[Self]:
+    def obj_events_to_nodes(cls, events: list[Event], enemy_db: EnemyDB) -> list[Self]:
         nodes: list[Node] = []
         for event in events:
             # TODO
@@ -212,6 +223,8 @@ class Node[T: Object]:
                     nodes.append(Node(BaseSkeleton(event.lane), event.appear_beat))
                 elif name == APPLE:
                     nodes.append(Node(Apple(event.lane), event.appear_beat))
+            elif isinstance(event, VibeEvent):
+                pass
 
         return nodes
 
@@ -246,33 +259,31 @@ for enemy_def in enemy_db.values():
 
 raw_beatmap_path = DISCO_DISASTER_EASY_PATH
 raw_beatmap = RawBeatmap.load_json(raw_beatmap_path)
-events = Node.events_to_nodes(raw_beatmap.events, enemy_db)
-print(events)
-events_len = len(events)
+obj_events = Node.obj_events_to_nodes(raw_beatmap.obj_events, enemy_db)
+obj_events_len = len(obj_events)
+vibe_events = raw_beatmap.vibe_events
 
 beatmap: list[Beat] = []
 event_idx = 0
 cur_beat = 0
-next_node = events[event_idx]
+next_node = obj_events[event_idx]
 # cooltime changes of nodes in 'events' for each iteration of the outmost loop cost a lot,
 # so the cooltime corrections occur for each node when the node is 'next_node'.
 next_node.cooltime -= cur_beat
-while event_idx < events_len:
+while event_idx < obj_events_len:
     min_cooltime = map.step(next_node.cooltime)
     next_node.cooltime -= min_cooltime
 
     while next_node.cooltime == 0:
-        object: Object = next_node.object
-        next_node.cooltime = object.get_cooltime()
-        if isinstance(object, Enemy):
-            map.grids[object.appear_lane - 1][Enemy.appear_row].enemies.append(
-                next_node
-            )
+        obj: Object = next_node.obj
+        next_node.cooltime = obj.get_cooltime()
+        if isinstance(obj, Enemy):
+            map.grids[obj.appear_lane - 1][Enemy.appear_row].enemies.append(next_node)
 
         event_idx += 1
-        if event_idx >= events_len:
+        if event_idx >= obj_events_len:
             break
-        next_node = events[event_idx]
+        next_node = obj_events[event_idx]
         next_node.cooltime -= cur_beat + min_cooltime
 
     cur_beat += min_cooltime
