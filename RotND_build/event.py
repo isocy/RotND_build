@@ -1,4 +1,4 @@
-from global_def import BEAT_OFFSET
+from global_def import BEAT_OFFSET, Facing
 
 
 class Event:
@@ -12,10 +12,11 @@ class Event:
 
 
 class EnemyEvent(Event):
-    def __init__(self, lane, appear_beat, enemy_id):
+    def __init__(self, lane, appear_beat, enemy_id, facing=Facing.LEFT):
         self.lane = lane
         self.appear_beat = appear_beat
         self.enemy_id = enemy_id
+        self.facing = facing
 
     @classmethod
     def load_dict(cls, event):
@@ -26,6 +27,14 @@ class EnemyEvent(Event):
                 int(pair["_eventDataValue"])
                 for pair in iter(event["dataPairs"])
                 if pair["_eventDataKey"] == "EnemyId"
+            ),
+            next(
+                (
+                    Facing.RIGHT if pair["_eventDataValue"] == "true" else Facing.LEFT
+                    for pair in iter(event["dataPairs"])
+                    if pair["_eventDataKey"] == "ShouldStartFacingRight"
+                ),
+                Facing.LEFT,
             ),
         )
 

@@ -1,7 +1,6 @@
-from global_def import ROWS
+from global_def import ROWS, Facing
 
 from abc import abstractmethod
-from enum import Enum, auto
 
 
 class Object:
@@ -85,6 +84,30 @@ class BaseSkeleton(Skeleton):
 
     def __repr__(self):
         return "BSk"
+
+
+class Bat(Enemy):
+    def __init__(self, appear_lane, facing=Facing.LEFT):
+        super(Bat, self).__init__(appear_lane)
+        self.facing = facing
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    def get_cooltime(self):
+        return getattr(BlueBat, "beat_for_move")
+
+
+class BlueBat(Bat):
+    def __init__(self, appear_lane, facing=Facing.LEFT):
+        super(BlueBat, self).__init__(appear_lane, facing)
+        self.health = getattr(BlueBat, "max_health")
+        self.shield = getattr(BlueBat, "max_shield")
+
+    def __repr__(self):
+        facing = "L" if self.facing == Facing.LEFT else "R"
+        return "BB" + facing
 
 
 class Food(Enemy):

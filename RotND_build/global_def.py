@@ -1,3 +1,6 @@
+from typing import Self
+from enum import Enum
+
 BEAT_OFFSET = 1.5
 ROWS = 9
 LANES = 3
@@ -41,3 +44,8 @@ ENEMY_DB_PATH = "exports/bundles/RREnemyDatabase.json"
 DISCO_DISASTER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Easy"
 )
+
+
+class Facing(Enum):
+    LEFT = 0
+    RIGHT = 1

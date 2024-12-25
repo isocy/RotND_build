@@ -116,12 +116,13 @@ class Map:
                         grid_enemies.remove(grid_enemy)
                         if (
                             isinstance(object, Slime)
+                            or isinstance(object, BlueBat)
                             or isinstance(object, Skeleton)
                             or isinstance(object, Food)
                         ):
                             map.grids[i][j - 1].enemies.append(grid_enemy)
-                        elif False:
-                            # TODO
+                        # TODO
+                        else:
                             pass
                         target_nodes.remove(grid_enemy)
                     else:
@@ -147,7 +148,13 @@ class Map:
                     enemy_node.cooltime = enemy.get_cooltime()
                     map.grids[i][0].enemies.remove(enemy_node)
                     # TODO: different 'dist_for_move' for different enemies
-                    map.grids[i][1].enemies.append(enemy_node)
+                    if isinstance(enemy, BlueBat):
+                        if enemy.facing == Facing.LEFT:
+                            map.grids[i - 1][1].enemies.append(enemy_node)
+                        else:
+                            map.grids[(i + 1) % 3][1].enemies.append(enemy_node)
+                    else:
+                        map.grids[i][1].enemies.append(enemy_node)
 
             map.grids[i][0].enemies.clear()
 
@@ -186,6 +193,7 @@ class Node[T: Object]:
     def events_to_nodes(cls, events: list[Event], enemy_db: EnemyDB) -> list[Self]:
         nodes: list[Node] = []
         for event in events:
+            # TODO
             if isinstance(event, EnemyEvent):
                 event: EnemyEvent = event
                 enemy_id = event.enemy_id
@@ -196,6 +204,10 @@ class Node[T: Object]:
                     nodes.append(Node(GreenSlime(event.lane), event.appear_beat))
                 elif name == BLUE_SLIME:
                     nodes.append(Node(BlueSlime(event.lane), event.appear_beat))
+                elif name == BLUE_BAT:
+                    nodes.append(
+                        Node(BlueBat(event.lane, event.facing), event.appear_beat)
+                    )
                 elif name == BASE_SKELETON:
                     nodes.append(Node(BaseSkeleton(event.lane), event.appear_beat))
                 elif name == APPLE:
@@ -210,6 +222,7 @@ enemy_db = EnemyDB.json_to_dict(ENEMY_DB_PATH)
 
 for enemy_def in enemy_db.values():
     name = enemy_def["name"]
+    # TODO
     if name == GREEN_SLIME:
         setattr(GreenSlime, "beat_for_move", enemy_def["beat_for_move"])
         setattr(GreenSlime, "max_health", enemy_def["health"])
@@ -218,6 +231,10 @@ for enemy_def in enemy_db.values():
         setattr(BlueSlime, "beat_for_move", enemy_def["beat_for_move"])
         setattr(BlueSlime, "max_health", enemy_def["health"])
         setattr(BlueSlime, "max_shield", enemy_def["shield"])
+    elif name == BLUE_BAT:
+        setattr(BlueBat, "beat_for_move", enemy_def["beat_for_move"])
+        setattr(BlueBat, "max_health", enemy_def["health"])
+        setattr(BlueBat, "max_shield", enemy_def["shield"])
     elif name == BASE_SKELETON:
         setattr(BaseSkeleton, "beat_for_move", enemy_def["beat_for_move"])
         setattr(BaseSkeleton, "max_health", enemy_def["health"])
@@ -230,6 +247,7 @@ for enemy_def in enemy_db.values():
 raw_beatmap_path = DISCO_DISASTER_EASY_PATH
 raw_beatmap = RawBeatmap.load_json(raw_beatmap_path)
 events = Node.events_to_nodes(raw_beatmap.events, enemy_db)
+print(events)
 events_len = len(events)
 
 beatmap: list[Beat] = []
@@ -259,7 +277,7 @@ while event_idx < events_len:
 
     cur_beat += min_cooltime
 
-    # TODO
+    # TODO: trap
 
     map.hit_notes(beatmap)
 
@@ -269,7 +287,7 @@ while not map.is_clean():
     min_cooltime = map.step()
     cur_beat += min_cooltime
 
-    # TODO
+    # TODO: trap
 
     map.hit_notes(beatmap)
 
