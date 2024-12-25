@@ -1,56 +1,14 @@
-from abc import abstractmethod
-from enum import Enum, auto
+from global_def import *
+from object import *
+from event import *
+
 import json
 from typing import Self
-
-BEAT_OFFSET = 1.5
-ROWS = 9
-LANES = 3
-
-ENEMY_DB_PATH = "exports/bundles/RREnemyDatabase.json"
-
-GREEN_SLIME = "Green Slime"
-BLUE_SLIME = "Blue Slime"
-YELLOW_SLIME = "Yellow Slime"
-BLUE_BAT = "Blue Bat"
-YELLOW_BAT = "Yellow Bat"
-RED_BAT = "Red Bat"
-GREEN_ZOMBIE = "Green Zombie"
-BLUE_ZOMBIE = "Blue Zombie"
-RED_ZOMBIE = "Red Zombie"
-BASE_SKELETON = "Base Skeleton"
-SHIELDED_BASE_SKELETON = "Shielded Base Skeleton"
-TRIPLE_SHIELD_BASE_SKELETON = "Triple Shield Base Skeleton"
-BLUE_ARMADILLO = "Blue Armadillo"
-RED_ARMADILLO = "Red Armadillo"
-YELLOW_ARMADILLO = "Yellow Armadillo"
-YELLOW_SKELETON = "Yellow Skeleton"
-SHIELDED_YELLOW_SKELETON = "Shielded Yellow Skeleton"
-BLACK_SKELETON = "Black Skeleton"
-SHIELDED_BLACK_SKELETON = "Shielded Black Skeleton"
-BASE_WYRM = "Base Wyrm"
-BASE_HARPY = "Base Harpy"
-RED_HARPY = "Red Harpy"
-BLUE_HARPY = "Blue Harpy"
-APPLE = "Apple"
-CHEESE = "Cheese"
-DRUMSTICK = "Drumstick"
-HAM = "Ham"
-BASE_BLADEMASTER = "Base Blademaster"
-STRONG_BLADEMASTER = "Strong Blademaster"
-YELLOW_BLADEMASTER = "Yellow Blademaster"
-BASE_SKULL = "Base Skull"
-BLUE_SKULL = "Blue Skull"
-RED_SKULL = "Red Skull"
-
-DISCO_DISASTER_EASY_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Easy"
-)
 
 
 class EnemyDB:
     @classmethod
-    def load_json(self, path) -> dict:
+    def json_to_dict(self, path) -> dict:
         """Construct dictionary as enemy database with given json file"""
         with open(path) as f:
             enemy_defs: list[dict] = json.load(f)["_enemyDefinitions"]
@@ -81,130 +39,6 @@ class EnemyDB:
             enemy_db[id] = enemy_def
 
         return enemy_db
-
-
-class ObjectType(Enum):
-    UNKNOWN = auto()
-    ENEMY = auto()
-    FOOD = auto()
-
-
-class Object:
-    def __init__(self, appear_lane: int):
-        self.type = ObjectType.UNKNOWN
-        self.appear_lane = appear_lane
-
-    @abstractmethod
-    def __repr__(self):
-        pass
-
-    @abstractmethod
-    def get_cooltime(self) -> float:
-        pass
-
-
-class Enemy(Object):
-    dist_for_move: int
-    appear_row = ROWS - 1
-
-    def __init__(self, appear_lane):
-        super(Enemy, self).__init__(appear_lane)
-        self.type = ObjectType.ENEMY
-        self.health = 0
-
-    @abstractmethod
-    def __repr__(self):
-        pass
-
-    @abstractmethod
-    def get_cooltime(self):
-        pass
-
-
-class Slime(Enemy):
-    dist_for_move = 1
-
-    def __init__(self, appear_lane):
-        super(Slime, self).__init__(appear_lane)
-
-    @abstractmethod
-    def __repr__(self):
-        pass
-
-    def get_cooltime(self):
-        return getattr(GreenSlime, "beat_for_move")
-
-
-class GreenSlime(Slime):
-    def __init__(self, appear_lane):
-        super(GreenSlime, self).__init__(appear_lane)
-        self.health = getattr(GreenSlime, "max_health")
-        self.shield = getattr(GreenSlime, "max_shield")
-
-    def __repr__(self):
-        return "GS"
-
-
-class BlueSlime(Slime):
-    def __init__(self, appear_lane):
-        super(BlueSlime, self).__init__(appear_lane)
-        self.health = getattr(BlueSlime, "max_health")
-        self.shield = getattr(BlueSlime, "max_shield")
-
-    def __repr__(self):
-        return "BS"
-
-
-class Skeleton(Enemy):
-    dist_for_move = 1
-
-    def __init__(self, appear_lane):
-        super(Skeleton, self).__init__(appear_lane)
-
-    @abstractmethod
-    def __repr__(self):
-        pass
-
-    def get_cooltime(self):
-        return getattr(BaseSkeleton, "beat_for_move")
-
-
-class BaseSkeleton(Skeleton):
-    def __init__(self, appear_lane):
-        super(BaseSkeleton, self).__init__(appear_lane)
-        self.health = getattr(BaseSkeleton, "max_health")
-        self.shield = getattr(BaseSkeleton, "max_shield")
-
-    def __repr__(self):
-        return "BSk"
-
-
-class Food(Enemy):
-    dist_for_move = 1
-
-    def __init__(self, appear_lane):
-        super(Food, self).__init__(appear_lane)
-
-    @abstractmethod
-    def __repr__(self):
-        pass
-
-    def get_cooltime(self):
-        return getattr(Apple, "beat_for_move")
-
-
-class Apple(Food):
-    def __init__(self, appear_lane):
-        super(Apple, self).__init__(appear_lane)
-        self.health = getattr(Apple, "max_health")
-        self.shield = getattr(Apple, "max_shield")
-
-    def __repr__(self):
-        return "Ap"
-
-
-class Trap(Object):
-    pass
 
 
 class Beat:
@@ -310,59 +144,6 @@ class Map:
             map.grids[i][0].enemies.clear()
 
 
-class EventType(Enum):
-    ENEMY = auto()
-    VIBE = auto()
-
-
-class Event:
-    def __init__(self):
-        self.type: EventType
-
-    @classmethod
-    @abstractmethod
-    def load_dict(cls, event: dict):
-        """Construct Event with given dictionary"""
-        if event["type"] == "SpawnEnemy":
-            return EnemyEvent.load_dict(event)
-        elif event["type"] == "StartVibeChain":
-            return VibeEvent.load_dict(event)
-
-
-class EnemyEvent(Event):
-    def __init__(self, lane, appear_beat, enemy_id):
-        self.type = EventType.ENEMY
-        self.lane = lane
-        self.appear_beat = appear_beat
-        self.enemy_id = enemy_id
-
-    @classmethod
-    def load_dict(cls, event):
-        return EnemyEvent(
-            event["track"],
-            BEAT_OFFSET + event["startBeatNumber"],
-            next(
-                int(pair["_eventDataValue"])
-                for pair in iter(event["dataPairs"])
-                if pair["_eventDataKey"] == "EnemyId"
-            ),
-        )
-
-
-class VibeEvent(Event):
-    def __init__(self, start_beat, end_beat):
-        self.type = EventType.VIBE
-        self.start_beat = start_beat
-        self.end_beat = end_beat
-
-    @classmethod
-    def load_dict(cls, event):
-        return VibeEvent(
-            event["startBeatNumber"],
-            event["endBeatNumber"],
-        )
-
-
 class RawBeatmap:
     def __init__(self, bpm, beat_divs, events):
         self.bpm = bpm
@@ -417,7 +198,7 @@ class Node[T: Object]:
 
 map = Map(LANES, ROWS)
 
-enemy_db = EnemyDB.load_json(ENEMY_DB_PATH)
+enemy_db = EnemyDB.json_to_dict(ENEMY_DB_PATH)
 
 for enemy_def in enemy_db.values():
     name = enemy_def["name"]
