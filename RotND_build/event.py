@@ -3,15 +3,7 @@ from global_def import BEAT_OFFSET
 from enum import Enum, auto
 
 
-class EventType(Enum):
-    ENEMY = auto()
-    VIBE = auto()
-
-
 class Event:
-    def __init__(self):
-        self.type: EventType
-
     @classmethod
     def load_dict(cls, event: dict):
         """Construct Event with given dictionary"""
@@ -23,7 +15,6 @@ class Event:
 
 class EnemyEvent(Event):
     def __init__(self, lane, appear_beat, enemy_id):
-        self.type = EventType.ENEMY
         self.lane = lane
         self.appear_beat = appear_beat
         self.enemy_id = enemy_id
@@ -43,7 +34,6 @@ class EnemyEvent(Event):
 
 class VibeEvent(Event):
     def __init__(self, start_beat, end_beat):
-        self.type = EventType.VIBE
         self.start_beat = start_beat
         self.end_beat = end_beat
 

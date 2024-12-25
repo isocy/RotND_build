@@ -178,7 +178,7 @@ class Node[T: Object]:
     def events_to_nodes(cls, events: list[Event], enemy_db: EnemyDB) -> list[Self]:
         nodes: list[Node] = []
         for event in events:
-            if event.type == EventType.ENEMY:
+            if isinstance(event, EnemyEvent):
                 event: EnemyEvent = event
                 enemy_id = event.enemy_id
                 enemy_def: dict = enemy_db[enemy_id]
