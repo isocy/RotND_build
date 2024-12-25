@@ -108,17 +108,24 @@ class Map:
         for i in range(map.lanes):
             for j in range(map.rows):
                 grid = map.grids[i][j]
-                enemy_nodes = grid.enemies
-                for enemy_node in enemy_nodes:
-                    if enemy_node in target_nodes:
-                        enemy_node.cooltime = enemy_node.object.get_cooltime()
-                        enemy_nodes.remove(enemy_node)
-                        map.grids[i][
-                            j - enemy_node.object.dist_for_move
-                        ].enemies.append(enemy_node)
-                        target_nodes.remove(enemy_node)
+                grid_enemies = grid.enemies
+                for grid_enemy in grid_enemies:
+                    if grid_enemy in target_nodes:
+                        object = grid_enemy.object
+                        grid_enemy.cooltime = object.get_cooltime()
+                        grid_enemies.remove(grid_enemy)
+                        if (
+                            isinstance(object, Slime)
+                            or isinstance(object, Skeleton)
+                            or isinstance(object, Food)
+                        ):
+                            map.grids[i][j - 1].enemies.append(grid_enemy)
+                        elif False:
+                            # TODO
+                            pass
+                        target_nodes.remove(grid_enemy)
                     else:
-                        enemy_node.cooltime -= min_cooltime
+                        grid_enemy.cooltime -= min_cooltime
                 trap_nodes = grid.traps
                 for trap_node in trap_nodes:
                     if trap_node in target_nodes:
@@ -139,6 +146,7 @@ class Map:
                     enemy.health -= 1
                     enemy_node.cooltime = enemy.get_cooltime()
                     map.grids[i][0].enemies.remove(enemy_node)
+                    # TODO: different 'dist_for_move' for different enemies
                     map.grids[i][1].enemies.append(enemy_node)
 
             map.grids[i][0].enemies.clear()

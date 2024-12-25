@@ -18,7 +18,6 @@ class Object:
 
 
 class Enemy(Object):
-    dist_for_move: int
     appear_row = ROWS - 1
 
     def __init__(self, appear_lane):
@@ -35,8 +34,6 @@ class Enemy(Object):
 
 
 class Slime(Enemy):
-    dist_for_move = 1
-
     def __init__(self, appear_lane):
         super(Slime, self).__init__(appear_lane)
 
@@ -69,8 +66,6 @@ class BlueSlime(Slime):
 
 
 class Skeleton(Enemy):
-    dist_for_move = 1
-
     def __init__(self, appear_lane):
         super(Skeleton, self).__init__(appear_lane)
 
@@ -93,8 +88,6 @@ class BaseSkeleton(Skeleton):
 
 
 class Food(Enemy):
-    dist_for_move = 1
-
     def __init__(self, appear_lane):
         super(Food, self).__init__(appear_lane)
 
