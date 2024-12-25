@@ -238,7 +238,7 @@ while event_idx < events_len:
     while next_node.cooltime == 0:
         object: Object = next_node.object
         next_node.cooltime = object.get_cooltime()
-        if object.type == ObjectType.ENEMY:
+        if isinstance(object, Enemy):
             map.grids[object.appear_lane - 1][Enemy.appear_row].enemies.append(
                 next_node
             )

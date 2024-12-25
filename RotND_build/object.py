@@ -4,15 +4,8 @@ from abc import abstractmethod
 from enum import Enum, auto
 
 
-class ObjectType(Enum):
-    UNKNOWN = auto()
-    ENEMY = auto()
-    FOOD = auto()
-
-
 class Object:
     def __init__(self, appear_lane: int):
-        self.type = ObjectType.UNKNOWN
         self.appear_lane = appear_lane
 
     @abstractmethod
@@ -30,7 +23,6 @@ class Enemy(Object):
 
     def __init__(self, appear_lane):
         super(Enemy, self).__init__(appear_lane)
-        self.type = ObjectType.ENEMY
         self.health = 0
 
     @abstractmethod
