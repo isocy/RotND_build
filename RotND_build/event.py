@@ -1,7 +1,5 @@
 from global_def import BEAT_OFFSET
 
-from enum import Enum, auto
-
 
 class Event:
     @classmethod
