@@ -19,9 +19,10 @@ class Object:
 class Enemy(Object):
     appear_row = ROWS - 1
 
-    def __init__(self, appear_lane):
+    def __init__(self, appear_lane, chained=False):
         super(Enemy, self).__init__(appear_lane)
         self.health = 0
+        self.chained = chained
 
     @abstractmethod
     def __repr__(self):
@@ -33,8 +34,8 @@ class Enemy(Object):
 
 
 class Slime(Enemy):
-    def __init__(self, appear_lane):
-        super(Slime, self).__init__(appear_lane)
+    def __init__(self, appear_lane, chained=False):
+        super(Slime, self).__init__(appear_lane, chained)
 
     @abstractmethod
     def __repr__(self):
@@ -45,8 +46,8 @@ class Slime(Enemy):
 
 
 class GreenSlime(Slime):
-    def __init__(self, appear_lane):
-        super(GreenSlime, self).__init__(appear_lane)
+    def __init__(self, appear_lane, chained=False):
+        super(GreenSlime, self).__init__(appear_lane, chained)
         self.health = getattr(GreenSlime, "max_health")
         self.shield = getattr(GreenSlime, "max_shield")
 
@@ -55,8 +56,8 @@ class GreenSlime(Slime):
 
 
 class BlueSlime(Slime):
-    def __init__(self, appear_lane):
-        super(BlueSlime, self).__init__(appear_lane)
+    def __init__(self, appear_lane, chained=False):
+        super(BlueSlime, self).__init__(appear_lane, chained)
         self.health = getattr(BlueSlime, "max_health")
         self.shield = getattr(BlueSlime, "max_shield")
 
@@ -65,8 +66,8 @@ class BlueSlime(Slime):
 
 
 class Skeleton(Enemy):
-    def __init__(self, appear_lane):
-        super(Skeleton, self).__init__(appear_lane)
+    def __init__(self, appear_lane, chained=False):
+        super(Skeleton, self).__init__(appear_lane, chained)
 
     @abstractmethod
     def __repr__(self):
@@ -77,8 +78,8 @@ class Skeleton(Enemy):
 
 
 class BaseSkeleton(Skeleton):
-    def __init__(self, appear_lane):
-        super(BaseSkeleton, self).__init__(appear_lane)
+    def __init__(self, appear_lane, chained=False):
+        super(BaseSkeleton, self).__init__(appear_lane, chained)
         self.health = getattr(BaseSkeleton, "max_health")
         self.shield = getattr(BaseSkeleton, "max_shield")
 
@@ -87,8 +88,8 @@ class BaseSkeleton(Skeleton):
 
 
 class Bat(Enemy):
-    def __init__(self, appear_lane, facing=Facing.LEFT):
-        super(Bat, self).__init__(appear_lane)
+    def __init__(self, appear_lane, facing=Facing.LEFT, chained=False):
+        super(Bat, self).__init__(appear_lane, chained)
         self.facing = facing
 
     @abstractmethod
@@ -100,8 +101,8 @@ class Bat(Enemy):
 
 
 class BlueBat(Bat):
-    def __init__(self, appear_lane, facing=Facing.LEFT):
-        super(BlueBat, self).__init__(appear_lane, facing)
+    def __init__(self, appear_lane, facing=Facing.LEFT, chained=False):
+        super(BlueBat, self).__init__(appear_lane, facing, chained)
         self.health = getattr(BlueBat, "max_health")
         self.shield = getattr(BlueBat, "max_shield")
 
@@ -111,8 +112,8 @@ class BlueBat(Bat):
 
 
 class Food(Enemy):
-    def __init__(self, appear_lane):
-        super(Food, self).__init__(appear_lane)
+    def __init__(self, appear_lane, chained=False):
+        super(Food, self).__init__(appear_lane, chained)
 
     @abstractmethod
     def __repr__(self):
@@ -123,8 +124,8 @@ class Food(Enemy):
 
 
 class Apple(Food):
-    def __init__(self, appear_lane):
-        super(Apple, self).__init__(appear_lane)
+    def __init__(self, appear_lane, chained=False):
+        super(Apple, self).__init__(appear_lane, chained)
         self.health = getattr(Apple, "max_health")
         self.shield = getattr(Apple, "max_shield")
 

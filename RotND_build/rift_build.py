@@ -2,7 +2,7 @@ from global_def import *
 from object import *
 from event import *
 
-from bisect import *
+from bisect import bisect_right
 import json
 from typing import Self
 
@@ -73,10 +73,13 @@ class Beat:
         return f"{self.beat} {self.lane}"
 
 
-class BeatCount:
-    def __init__(self, beat: float, count: int):
+class BeatCnt:
+    def __init__(self, beat: float, cnt: int):
         self.beat = beat
-        self.count = count
+        self.cnt = cnt
+
+    def __repr__(self):
+        return f"{self.beat} {self.cnt}"
 
 
 class Grid:
@@ -166,27 +169,6 @@ class Map:
 
         return min_cooltime
 
-    def hit_notes(self, beatmap: list[Beat]):
-        """Process nodes at the bottom row and update 'beatmap'"""
-        for i in range(map.lanes):
-            for enemy_node in map.grids[i][0].enemies:
-                beatmap.append(Beat(i, cur_beat))
-                enemy = enemy_node.obj
-                if enemy.health > 1:
-                    enemy.health -= 1
-                    enemy_node.cooltime = enemy.get_cooltime()
-                    map.grids[i][0].enemies.remove(enemy_node)
-                    # TODO: different 'dist_for_move' for different enemies
-                    if isinstance(enemy, BlueBat):
-                        if enemy.facing == Facing.LEFT:
-                            map.grids[i - 1][1].enemies.append(enemy_node)
-                        else:
-                            map.grids[(i + 1) % 3][1].enemies.append(enemy_node)
-                    else:
-                        map.grids[i][1].enemies.append(enemy_node)
-
-            map.grids[i][0].enemies.clear()
-
 
 class RawBeatmap:
     def __init__(self, bpm, beat_divs, enemy_events, vibe_events):
@@ -230,32 +212,54 @@ class Node[T: Object]:
         return f"{self.obj} {self.cooltime}"
 
     @classmethod
-    def obj_events_to_nodes(cls, events: list[Event], enemy_db: EnemyDB) -> list[Self]:
+    def enemy_events_to_nodes(
+        cls,
+        enemy_events: list[EnemyEvent],
+        vibe_events: list[VibeEvent],
+        enemy_db: EnemyDB,
+    ) -> tuple[list[Self], list[int]]:
         nodes: list[Node] = []
-        for event in events:
+
+        vibe_events_len = len(vibe_events)
+        chain_cnts = []
+        chain_cnt = 0
+
+        for enemy_event in enemy_events:
+            lane = enemy_event.lane
+            appear_beat = enemy_event.appear_beat
+
+            enemy_id = enemy_event.enemy_id
+            enemy_def: dict = enemy_db[enemy_id]
+            name = enemy_def["name"]
+
+            chained = False
+            while len(chain_cnts) < vibe_events_len:
+                cur_vibe_event = vibe_events[len(chain_cnts)]
+                if appear_beat < cur_vibe_event.start_beat:
+                    break
+                elif appear_beat < cur_vibe_event.end_beat:
+                    chain_cnt += 1
+                    chained = True
+                    break
+                else:
+                    chain_cnts.append(chain_cnt)
+                    chain_cnt = 0
+
             # TODO
-            if isinstance(event, EnemyEvent):
-                event: EnemyEvent = event
-                enemy_id = event.enemy_id
-                enemy_def: dict = enemy_db[enemy_id]
-                name = enemy_def["name"]
+            if name == GREEN_SLIME:
+                nodes.append(Node(GreenSlime(lane, chained), appear_beat))
+            elif name == BLUE_SLIME:
+                nodes.append(Node(BlueSlime(lane, chained), appear_beat))
+            elif name == BLUE_BAT:
+                nodes.append(
+                    Node(BlueBat(lane, enemy_event.facing, chained), appear_beat)
+                )
+            elif name == BASE_SKELETON:
+                nodes.append(Node(BaseSkeleton(lane, chained), appear_beat))
+            elif name == APPLE:
+                nodes.append(Node(Apple(lane, chained), appear_beat))
 
-                if name == GREEN_SLIME:
-                    nodes.append(Node(GreenSlime(event.lane), event.appear_beat))
-                elif name == BLUE_SLIME:
-                    nodes.append(Node(BlueSlime(event.lane), event.appear_beat))
-                elif name == BLUE_BAT:
-                    nodes.append(
-                        Node(BlueBat(event.lane, event.facing), event.appear_beat)
-                    )
-                elif name == BASE_SKELETON:
-                    nodes.append(Node(BaseSkeleton(event.lane), event.appear_beat))
-                elif name == APPLE:
-                    nodes.append(Node(Apple(event.lane), event.appear_beat))
-            elif isinstance(event, VibeEvent):
-                pass
-
-        return nodes
+        return (nodes, chain_cnts)
 
 
 map = Map(LANES, ROWS)
@@ -292,61 +296,91 @@ after_window = input_ratings_def.after_window
 
 raw_beatmap_path = DISCO_DISASTER_EASY_PATH
 raw_beatmap = RawBeatmap.load_json(raw_beatmap_path)
-obj_events = Node.obj_events_to_nodes(raw_beatmap.obj_events, enemy_db)
-obj_events_len = len(obj_events)
-vibe_events = raw_beatmap.vibe_events
+(enemy_nodes, chain_cnts) = Node.enemy_events_to_nodes(
+    raw_beatmap.enemy_events, raw_beatmap.vibe_events, enemy_db
+)
+enemy_nodes_len = len(enemy_nodes)
+
+# These beats indicate the moment a vibe power is charged
+vibe_beats: list[float] = []
+chain_idx = 0
 
 beats: list[Beat] = []
-event_idx = 0
+node_idx = 0
 cur_beat = 0
-next_node = obj_events[event_idx]
-# cooltime changes of nodes in 'events' for each iteration of the outmost loop cost a lot,
+next_node = enemy_nodes[node_idx]
+# cooltime changes of nodes in 'enemy_nodes' for each iteration of the outmost loop cost a lot,
 # so the cooltime corrections occur for each node when the node is 'next_node'.
 next_node.cooltime -= cur_beat
-while event_idx < obj_events_len:
+while node_idx < enemy_nodes_len or not map.is_clean():
     min_cooltime = map.step(next_node.cooltime)
-    next_node.cooltime -= min_cooltime
 
-    while next_node.cooltime == 0:
-        obj: Object = next_node.obj
-        next_node.cooltime = obj.get_cooltime()
-        if isinstance(obj, Enemy):
-            map.grids[obj.appear_lane - 1][Enemy.appear_row].enemies.append(next_node)
+    if node_idx < enemy_nodes_len:
+        next_node.cooltime -= min_cooltime
 
-        event_idx += 1
-        if event_idx >= obj_events_len:
-            break
-        next_node = obj_events[event_idx]
-        next_node.cooltime -= cur_beat + min_cooltime
+        while next_node.cooltime == 0:
+            obj: Object = next_node.obj
+            next_node.cooltime = obj.get_cooltime()
+            # TODO: traps
+            if isinstance(obj, Enemy):
+                map.grids[obj.appear_lane - 1][Enemy.appear_row].enemies.append(
+                    next_node
+                )
+
+            node_idx += 1
+            if node_idx >= enemy_nodes_len:
+                break
+            next_node = enemy_nodes[node_idx]
+            next_node.cooltime -= cur_beat + min_cooltime
 
     cur_beat += min_cooltime
 
     # TODO: trap
 
-    map.hit_notes(beats)
+    # hit_notes()
+    for i in range(map.lanes):
+        for enemy_node in map.grids[i][0].enemies:
+            beats.append(Beat(i, cur_beat))
+            enemy = enemy_node.obj
+            if enemy.health > 1:
+                enemy.health -= 1
+                enemy_node.cooltime = enemy.get_cooltime()
+                map.grids[i][0].enemies.remove(enemy_node)
+                # TODO: different 'dist_for_move' for different enemies
+                if isinstance(enemy, BlueBat):
+                    if enemy.facing == Facing.LEFT:
+                        map.grids[i - 1][1].enemies.append(enemy_node)
+                    else:
+                        map.grids[(i + 1) % 3][1].enemies.append(enemy_node)
+                else:
+                    map.grids[i][1].enemies.append(enemy_node)
+            elif enemy.chained:
+                chain_cnts[chain_idx] -= 1
 
-# This while loop is almost same as the above one
-# Here is no 'next_node' to appear
-while not map.is_clean():
-    min_cooltime = map.step()
-    cur_beat += min_cooltime
+                if chain_cnts[chain_idx] == 0:
+                    # TODO: special case for wyrms
+                    vibe_beats.append(cur_beat)
+                    chain_idx += 1
 
-    # TODO: trap
+        map.grids[i][0].enemies.clear()
 
-    map.hit_notes(beats)
 
 raw_beats = [beat.beat for beat in beats]
-# These beats do not necessarily indicate the moment a vibe power is charged,
-# but some arbitrary beat which comes right after the last beat of the vibe chain
-vibe_beats = [vibe_event.end_beat for vibe_event in vibe_events]
-div_beats = vibe_beats + [raw_beats[-1]]
+raw_beats_len = len(raw_beats)
+vibe_beats_len = len(vibe_beats)
 
-one_vibe_beatcounts: list[list[BeatCount]] = []
-for vibe_idx in range(len(vibe_beats)):
-    beatcounts: list[BeatCount] = []
+one_vibe_beatcnts: list[list[BeatCnt]] = []
+for vibe_idx in range(vibe_beats_len):
+    vibe_beatcnts: list[BeatCnt] = []
     beat_idx = bisect_right(raw_beats, vibe_beats[vibe_idx])
     while True:
+        # For when 'vibe_idx' is equal to 'len(vibe_beats) - 1'
+        if beat_idx >= raw_beats_len:
+            break
+
         target_beat = raw_beats[beat_idx]
+        if vibe_idx < vibe_beats_len - 1 and target_beat >= vibe_beats[vibe_idx + 1]:
+            break
         time_until_vibe_power_zero = after_window + (16 + 2 / 3) * 302
         # TODO: consider bpm change
         # beat_until_vibe_power_zero = time_until_vibe_power_zero * (raw_beatmap.bpm / 60)
@@ -355,7 +389,45 @@ for vibe_idx in range(len(vibe_beats)):
             + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm)
             + before_window
         )
-        beat_until_vibe_power_ends = time_until_vibe_power_ends * (raw_beatmap.bpm / 60)
+        beat_until_vibe_power_ends = (
+            time_until_vibe_power_ends * raw_beatmap.bpm / 60000
+        )
         target_end_beat = target_beat + beat_until_vibe_power_ends
-        if target_end_beat <= div_beats[vibe_idx + 1]:
-            beatcounts.append(BeatCount(target_beat, bisect_))
+
+        if vibe_idx < vibe_beats_len - 1:
+            if target_end_beat <= vibe_beats[vibe_idx + 1]:
+                vibe_beatcnts.append(
+                    BeatCnt(
+                        target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
+                    )
+                )
+                beat_idx += 1
+            else:
+                # Even if 'target_end_beat' exceeds 'vibe_beats[vibe_idx + 1]',
+                # vibe power may be activated earlier in order not to extend vibe
+                vibe_beatcnts.append(
+                    BeatCnt(
+                        target_beat,
+                        (bisect_right(raw_beats, vibe_beats[vibe_idx + 1]) - 1)
+                        - beat_idx,
+                    )
+                )
+                break
+        else:
+            if target_end_beat <= raw_beats[-1]:
+                vibe_beatcnts.append(
+                    BeatCnt(
+                        target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
+                    )
+                )
+                beat_idx += 1
+            else:
+                vibe_beatcnts.append(BeatCnt(target_beat, raw_beats_len - beat_idx))
+                break
+    one_vibe_beatcnts.append(vibe_beatcnts)
+
+
+for vibe_beatcnts in one_vibe_beatcnts:
+    for beatcnt in vibe_beatcnts:
+        print(beatcnt)
+    print()
