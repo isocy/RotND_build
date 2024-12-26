@@ -50,4 +50,6 @@ class VibeEvent(Event):
 
     @classmethod
     def load_dict(cls, event):
-        return VibeEvent(event["startBeatNumber"], BEAT_OFFSET + event["endBeatNumber"])
+        return VibeEvent(
+            BEAT_OFFSET + event["startBeatNumber"], BEAT_OFFSET + event["endBeatNumber"]
+        )

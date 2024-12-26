@@ -189,10 +189,10 @@ class Map:
 
 
 class RawBeatmap:
-    def __init__(self, bpm, beat_divs, obj_events, vibe_events):
+    def __init__(self, bpm, beat_divs, enemy_events, vibe_events):
         self.bpm = bpm
         self.beat_divs = beat_divs
-        self.obj_events: list[EnemyEvent] = obj_events
+        self.enemy_events: list[EnemyEvent] = enemy_events
         self.vibe_events: list[VibeEvent] = vibe_events
 
     @classmethod
@@ -201,18 +201,18 @@ class RawBeatmap:
             raw_beatmap = json.load(f)
 
         # TODO
-        obj_events = []
+        enemy_events = []
         vibe_events = []
         for event in raw_beatmap["events"]:
             if event["type"] == "SpawnEnemy":
-                obj_events.append(event)
+                enemy_events.append(event)
             elif event["type"] == "StartVibeChain":
                 vibe_events.append(event)
 
         return RawBeatmap(
             raw_beatmap["bpm"],
             raw_beatmap["beatDivisions"],
-            [Event.load_dict(event) for event in obj_events],
+            [EnemyEvent.load_dict(event) for event in enemy_events],
             [VibeEvent.load_dict(vibe_event) for vibe_event in vibe_events],
         )
 
