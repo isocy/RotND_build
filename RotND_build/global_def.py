@@ -41,6 +41,8 @@ RED_SKULL = "Red Skull"
 
 ENEMY_DB_PATH = "exports/bundles/RREnemyDatabase.json"
 
+INPUT_RATINGS_DEF_PATH = "exports/bundles/Assets/Shared/Prefabs/ScoreResults/RhythmRift_InputRatingsDefinition.json"
+
 DISCO_DISASTER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Easy"
 )

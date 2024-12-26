@@ -2,6 +2,7 @@ from global_def import *
 from object import *
 from event import *
 
+from bisect import *
 import json
 from typing import Self
 
@@ -41,13 +42,41 @@ class EnemyDB:
         return enemy_db
 
 
+class InputRatingsDef:
+    def __init__(self, before_window: float, after_window: float):
+        self.before_window = before_window
+        self.after_window = after_window
+
+    @classmethod
+    def load_json(cls, path):
+        with open(path) as f:
+            input_ratings_def = json.load(f)
+
+        return InputRatingsDef(
+            input_ratings_def["_beforeBeatHitWindow"],
+            input_ratings_def["_afterBeatHitWindow"],
+        )
+
+
 class Beat:
     def __init__(self, lane, beat):
         self.lane = lane
         self.beat = beat
 
+    def __lt__(self, other):
+        if isinstance(other, Beat):
+            return self.beat < other.beat
+        else:
+            return self.beat < other
+
     def __repr__(self):
         return f"{self.beat} {self.lane}"
+
+
+class BeatCount:
+    def __init__(self, beat: float, count: int):
+        self.beat = beat
+        self.count = count
 
 
 class Grid:
@@ -169,20 +198,20 @@ class RawBeatmap:
     @classmethod
     def load_json(cls, path):
         with open(path) as f:
-            beatmap = json.load(f)
+            raw_beatmap = json.load(f)
 
         # TODO
         obj_events = []
         vibe_events = []
-        for event in beatmap["events"]:
+        for event in raw_beatmap["events"]:
             if event["type"] == "SpawnEnemy":
                 obj_events.append(event)
             elif event["type"] == "StartVibeChain":
                 vibe_events.append(event)
 
         return RawBeatmap(
-            beatmap["bpm"],
-            beatmap["beatDivisions"],
+            raw_beatmap["bpm"],
+            raw_beatmap["beatDivisions"],
             [Event.load_dict(event) for event in obj_events],
             [VibeEvent.load_dict(vibe_event) for vibe_event in vibe_events],
         )
@@ -257,13 +286,17 @@ for enemy_def in enemy_db.values():
         setattr(Apple, "max_health", enemy_def["health"])
         setattr(Apple, "max_shield", enemy_def["shield"])
 
+input_ratings_def = InputRatingsDef.load_json(INPUT_RATINGS_DEF_PATH)
+before_window = input_ratings_def.before_window
+after_window = input_ratings_def.after_window
+
 raw_beatmap_path = DISCO_DISASTER_EASY_PATH
 raw_beatmap = RawBeatmap.load_json(raw_beatmap_path)
 obj_events = Node.obj_events_to_nodes(raw_beatmap.obj_events, enemy_db)
 obj_events_len = len(obj_events)
 vibe_events = raw_beatmap.vibe_events
 
-beatmap: list[Beat] = []
+beats: list[Beat] = []
 event_idx = 0
 cur_beat = 0
 next_node = obj_events[event_idx]
@@ -290,7 +323,7 @@ while event_idx < obj_events_len:
 
     # TODO: trap
 
-    map.hit_notes(beatmap)
+    map.hit_notes(beats)
 
 # This while loop is almost same as the above one
 # Here is no 'next_node' to appear
@@ -300,7 +333,29 @@ while not map.is_clean():
 
     # TODO: trap
 
-    map.hit_notes(beatmap)
+    map.hit_notes(beats)
 
-for beat in beatmap:
-    print(beat)
+raw_beats = [beat.beat for beat in beats]
+# These beats do not necessarily indicate the moment a vibe power is charged,
+# but some arbitrary beat which comes right after the last beat of the vibe chain
+vibe_beats = [vibe_event.end_beat for vibe_event in vibe_events]
+div_beats = vibe_beats + [raw_beats[-1]]
+
+one_vibe_beatcounts: list[list[BeatCount]] = []
+for vibe_idx in range(len(vibe_beats)):
+    beatcounts: list[BeatCount] = []
+    beat_idx = bisect_right(raw_beats, vibe_beats[vibe_idx])
+    while True:
+        target_beat = raw_beats[beat_idx]
+        time_until_vibe_power_zero = after_window + (16 + 2 / 3) * 302
+        # TODO: consider bpm change
+        # beat_until_vibe_power_zero = time_until_vibe_power_zero * (raw_beatmap.bpm / 60)
+        time_until_vibe_power_ends = (
+            time_until_vibe_power_zero
+            + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm)
+            + before_window
+        )
+        beat_until_vibe_power_ends = time_until_vibe_power_ends * (raw_beatmap.bpm / 60)
+        target_end_beat = target_beat + beat_until_vibe_power_ends
+        if target_end_beat <= div_beats[vibe_idx + 1]:
+            beatcounts.append(BeatCount(target_beat, bisect_))

@@ -41,12 +41,13 @@ class EnemyEvent(Event):
 
 
 class VibeEvent(Event):
-    def __init__(self, end_beat):
+    def __init__(self, start_beat, end_beat):
+        self.start_beat = start_beat
         self.end_beat = end_beat
 
     def __repr__(self):
-        return f"{self.end_beat}"
+        return f"{self.start_beat} {self.end_beat}"
 
     @classmethod
     def load_dict(cls, event):
-        return VibeEvent(BEAT_OFFSET + event["endBeatNumber"])
+        return VibeEvent(event["startBeatNumber"], BEAT_OFFSET + event["endBeatNumber"])
