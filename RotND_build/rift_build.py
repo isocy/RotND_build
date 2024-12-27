@@ -42,6 +42,14 @@ class EnemyDB:
         return enemy_db
 
 
+class InputRating(Enum):
+    Miss = -1
+    Ok = 0
+    Good = 1
+    Great = 2
+    Perfect = 3
+
+
 class InputRatingsDef:
     # TODO: remove 'before_window' and 'after_window'
     def __init__(self, before_window: float, after_window: float):
