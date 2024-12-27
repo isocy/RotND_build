@@ -42,29 +42,23 @@ class EnemyDB:
         return enemy_db
 
 
-class InputRating(Enum):
-    Miss = -1
-    Ok = 0
-    Good = 1
-    Great = 2
-    Perfect = 3
-
-
 class InputRatingsDef:
-    # TODO: remove 'before_window' and 'after_window'
-    def __init__(self, before_window: float, after_window: float):
-        self.before_window = before_window
-        self.after_window = after_window
+    def __init__(self, perf_range: float, great_range: float):
+        self.perf_range = perf_range
+        self.great_range = great_range
 
     @classmethod
     def load_json(cls, path):
         with open(path) as f:
             input_ratings_def = json.load(f)
 
-        return InputRatingsDef(
-            input_ratings_def["_beforeBeatHitWindow"] * 1000,
-            input_ratings_def["_afterBeatHitWindow"] * 1000,
-        )
+        hit_window = input_ratings_def["_beforeBeatHitWindow"] * 1000
+        ratings = input_ratings_def["_ratings"]
+
+        perf_range = (100 - ratings[-1]["minimumValue"]) * hit_window / 100
+        great_range = (100 - ratings[-2]["minimumValue"]) * hit_window / 100
+
+        return InputRatingsDef(perf_range, great_range)
 
 
 class Beat:
@@ -303,9 +297,8 @@ for enemy_def in enemy_db.values():
         setattr(Apple, "max_shield", enemy_def["shield"])
 
 input_ratings_def = InputRatingsDef.load_json(INPUT_RATINGS_DEF_PATH)
-# TODO: obtain 37.5 from 'input_ratings_def'
-before_perf_window = 37.5
-after_perf_window = 37.5
+perf_range = input_ratings_def.perf_range
+great_range = input_ratings_def.great_range
 
 raw_beatmap_path = DISCO_DISASTER_EASY_PATH
 raw_beatmap = RawBeatmap.load_json(raw_beatmap_path)
@@ -394,13 +387,13 @@ for vibe_idx in range(vibe_beats_len):
         target_beat = raw_beats[beat_idx]
         if vibe_idx < vibe_beats_len - 1 and target_beat >= vibe_beats[vibe_idx + 1]:
             break
-        time_until_vibe_power_zero = after_perf_window + (16 + 2 / 3) * 302
+        time_until_vibe_power_zero = perf_range + (16 + 2 / 3) * 302
         # TODO: consider bpm change
         # beat_until_vibe_power_zero = time_until_vibe_power_zero * (raw_beatmap.bpm / 60)
         time_until_vibe_power_ends = (
             time_until_vibe_power_zero
             + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-            + before_perf_window
+            + perf_range
         )
         beat_until_vibe_power_ends = (
             time_until_vibe_power_ends * raw_beatmap.bpm / 60000
@@ -454,12 +447,12 @@ for vibe_idx in range(1, vibe_beats_len):
         target_beat = raw_beats[beat_idx]
         if vibe_idx < vibe_beats_len - 1 and target_beat >= vibe_beats[vibe_idx + 1]:
             break
-        time_until_vibe_power_zero = after_perf_window + (16 + 2 / 3) * 602
+        time_until_vibe_power_zero = perf_range + (16 + 2 / 3) * 602
         # TODO: consider bpm change
         time_until_vibe_power_ends = (
             time_until_vibe_power_zero
             + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-            + before_perf_window
+            + perf_range
         )
         beat_until_vibe_power_ends = (
             time_until_vibe_power_ends * raw_beatmap.bpm / 60000
@@ -510,12 +503,12 @@ for vibe_idx in range(1, vibe_beats_len):
             break
 
         # For the first vibe only
-        time_until_vibe_power_zero = after_perf_window + (16 + 2 / 3) * 302
+        time_until_vibe_power_zero = perf_range + (16 + 2 / 3) * 302
         # TODO: consider bpm change
         time_until_vibe_power_ends = (
             time_until_vibe_power_zero
             + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-            + before_perf_window
+            + perf_range
         )
         beat_until_vibe_power_ends = (
             time_until_vibe_power_ends * raw_beatmap.bpm / 60000
@@ -526,12 +519,12 @@ for vibe_idx in range(1, vibe_beats_len):
             break
 
         # For the entire vibe
-        time_until_vibe_power_zero = after_perf_window + (16 + 2 / 3) * 602
+        time_until_vibe_power_zero = perf_range + (16 + 2 / 3) * 602
         # TODO: consider bpm change
         time_until_vibe_power_ends = (
             time_until_vibe_power_zero
             + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-            + before_perf_window
+            + perf_range
         )
         beat_until_vibe_power_ends = (
             time_until_vibe_power_ends * raw_beatmap.bpm / 60000
