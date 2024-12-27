@@ -380,7 +380,8 @@ one_vibe_beatcnts: list[list[BeatCnt]] = []
 next_beat_idxs: list[int] = []
 for vibe_idx in range(vibe_beats_len):
     vibe_beatcnts: list[BeatCnt] = []
-    beat_idx = bisect_right(raw_beats, vibe_beats[vibe_idx])
+    start_idx = bisect_right(raw_beats, vibe_beats[vibe_idx])
+    beat_idx = start_idx
     # condition for when 'vibe_idx' is equal to 'len(vibe_beats) - 1'
     while beat_idx < raw_beats_len:
         target_beat = raw_beats[beat_idx]
@@ -405,6 +406,18 @@ for vibe_idx in range(vibe_beats_len):
                 )
                 beat_idx += 1
             else:
+                # very extreme case
+                if beat_idx == start_idx:
+                    min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 301
+                    min_beat_until_vibe_ends = (
+                        min_time_until_vibe_ends * raw_beatmap.bpm / 60000
+                    )
+                    target_end_beat = vibe_beats[vibe_idx] + min_beat_until_vibe_ends
+
+                    if target_end_beat >= vibe_beats[vibe_idx + 1]:
+                        next_beat_idxs.append(beat_idx)
+                        break
+
                 # Even if 'target_end_beat' >= 'vibe_beats[vibe_idx + 1]',
                 # vibe power may be activated earlier in order not to extend vibe
                 vibe_beatcnts.append(
@@ -433,7 +446,7 @@ for vibe_idx in range(vibe_beats_len):
 two_vibes_beatcnts: list[list[BeatCnt]] = []
 for vibe_idx in range(vibe_beats_len - 1):
     vibe_beatcnts: list[BeatCnt] = []
-    beat_idx = next_beat_idxs[vibe_idx]
+    beat_idx = next_beat_idxs.pop(0)
     while True:
         target_beat = raw_beats[beat_idx]
         max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 602
