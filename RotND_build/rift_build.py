@@ -391,8 +391,8 @@ for vibe_idx in range(vibe_beats_len):
             max_time_until_vibe_ends
             + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
         )
-        beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
-        target_end_beat = target_beat + beat_until_vibe_ends
+        max_beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
+        target_end_beat = target_beat + max_beat_until_vibe_ends
 
         if vibe_idx < vibe_beats_len - 1:
             if target_end_beat < vibe_beats[vibe_idx + 1]:
@@ -427,159 +427,222 @@ for vibe_idx in range(vibe_beats_len):
     one_vibe_beatcnts.append(vibe_beatcnts)
 
 
+# two_vibes_beatcnts: list[list[BeatCnt]] = []
+# for vibe_idx in range(1, vibe_beats_len):
+#     start_idx = bisect_right(raw_beats, vibe_beats[vibe_idx])
+#     # after the second vibe is charged
+#     vibe_beatcnts_forward: list[BeatCnt] = []
+#     beat_idx = start_idx
+#     while beat_idx < raw_beats_len:
+#         target_beat = raw_beats[beat_idx]
+#         if vibe_idx < vibe_beats_len - 1 and target_beat >= vibe_beats[vibe_idx + 1]:
+#             break
+#         max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 602
+#         # TODO: consider bpm change
+#         max_time_until_vibe_ends = (
+#             max_time_until_vibe_ends
+#             + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
+#         )
+#         max_beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
+#         target_end_beat = target_beat + max_beat_until_vibe_ends
+
+#         if vibe_idx < vibe_beats_len - 1:
+#             if target_end_beat < vibe_beats[vibe_idx + 1]:
+#                 vibe_beatcnts_forward.append(
+#                     BeatCnt(
+#                         target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
+#                     )
+#                 )
+#                 beat_idx += 1
+#             else:
+#                 vibe_beatcnts_forward.append(
+#                     BeatCnt(
+#                         target_beat,
+#                         (bisect_right(raw_beats, vibe_beats[vibe_idx + 1]) - 1)
+#                         - beat_idx,
+#                     )
+#                 )
+#                 break
+#         else:
+#             if target_end_beat < raw_beats[-1]:
+#                 vibe_beatcnts_forward.append(
+#                     BeatCnt(
+#                         target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
+#                     )
+#                 )
+#                 beat_idx += 1
+#             else:
+#                 vibe_beatcnts_forward.append(
+#                     BeatCnt(target_beat, raw_beats_len - beat_idx)
+#                 )
+#                 break
+#     # Before the second vibe is charged
+#     #
+#     # Go backward until the first vibe is no longer extendable
+#     # or the first vibe cannot be activated.
+#     vibe_beatcnts_backward: list[BeatCnt] = []
+#     # For the cases when vibe activates between the beats
+#     #
+#     # We determine whether 'temp_beatcnt' is appended
+#     # before exit of the while loop
+#     temp_beatcnt = None
+#     beat_idx = start_idx - 1
+#     while True:
+#         target_beat = raw_beats[beat_idx]
+#         if target_beat <= vibe_beats[vibe_idx - 1]:
+#             if temp_beatcnt:
+#                 min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 301
+#                 max_beat_until_vibe_ends = (
+#                     min_time_until_vibe_ends * raw_beatmap.bpm / 60000
+#                 )
+#                 target_end_beat = target_beat + max_beat_until_vibe_ends
+
+#                 if vibe_idx < vibe_beats_len - 1:
+#                     if target_end_beat < vibe_beats[vibe_idx + 1]:
+#                         vibe_beatcnts_backward.append(temp_beatcnt)
+#                 else:
+#                     vibe_beatcnts_backward.append(temp_beatcnt)
+#             break
+
+#         # For the first vibe only
+#         max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 302
+#         # TODO: consider bpm change
+#         max_time_until_vibe_ends = (
+#             max_time_until_vibe_ends
+#             + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
+#         )
+#         max_beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
+#         target_end_beat = target_beat + max_beat_until_vibe_ends
+
+#         if target_end_beat < vibe_beats[vibe_idx]:
+#             if temp_beatcnt:
+#                 min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 301
+#                 max_beat_until_vibe_ends = (
+#                     min_time_until_vibe_ends * raw_beatmap.bpm / 60000
+#                 )
+#                 target_end_beat = vibe_beats[vibe_idx] + max_beat_until_vibe_ends
+
+#                 if vibe_idx < vibe_beats_len - 1:
+#                     if target_end_beat < vibe_beats[vibe_idx + 1]:
+#                         vibe_beatcnts_backward.append(temp_beatcnt)
+#                 else:
+#                     vibe_beatcnts_backward.append(temp_beatcnt)
+#             break
+
+#         # For the entire vibe
+#         max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 602
+#         # TODO: consider bpm change
+#         max_time_until_vibe_ends = (
+#             max_time_until_vibe_ends
+#             + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
+#         )
+#         max_beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
+#         target_end_beat = target_beat + max_beat_until_vibe_ends
+
+#         if vibe_idx < vibe_beats_len - 1:
+#             if target_end_beat < vibe_beats[vibe_idx + 1]:
+#                 # Entering this if branch means
+#                 # It is possible to obtain such 'temp_beatcnt'
+#                 # if exists (i.e. at least one else branch was taken)
+#                 if temp_beatcnt:
+#                     vibe_beatcnts_backward.append(temp_beatcnt)
+#                     temp_beatcnt = None
+
+#                 vibe_beatcnts_backward.append(
+#                     BeatCnt(
+#                         target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
+#                     )
+#                 )
+#                 beat_idx -= 1
+#             else:
+#                 # Entering this else branch means
+#                 # it is the first while loop or all the previous loops were ended here.
+#                 temp_beatcnt = BeatCnt(
+#                     target_beat,
+#                     (bisect_right(raw_beats, vibe_beats[vibe_idx + 1]) - 1) - beat_idx,
+#                 )
+#                 beat_idx -= 1
+#         else:
+#             if target_end_beat < raw_beats[-1]:
+#                 if temp_beatcnt:
+#                     vibe_beatcnts_backward.append(temp_beatcnt)
+#                     temp_beatcnt = None
+
+#                 vibe_beatcnts_backward.append(
+#                     BeatCnt(
+#                         target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
+#                     )
+#                 )
+#                 beat_idx -= 1
+#             else:
+#                 temp_beatcnt = BeatCnt(target_beat, raw_beats_len - beat_idx)
+#                 beat_idx -= 1
+
+#     vibe_beatcnts_backward.sort(key=lambda beatcnt: beatcnt.beat)
+#     two_vibes_beatcnts.append(vibe_beatcnts_backward + vibe_beatcnts_forward)
+
 two_vibes_beatcnts: list[list[BeatCnt]] = []
-for vibe_idx in range(1, vibe_beats_len):
-    start_idx = bisect_right(raw_beats, vibe_beats[vibe_idx])
-    # after the second vibe is charged
-    vibe_beatcnts_forward: list[BeatCnt] = []
-    beat_idx = start_idx
-    while beat_idx < raw_beats_len:
+for vibe_idx in range(vibe_beats_len - 1):
+    vibe_beatcnts: list[BeatCnt] = []
+    beat_idx = bisect_right(raw_beats, vibe_beats[vibe_idx])
+    temp_target_end_beat = None
+    while True:
         target_beat = raw_beats[beat_idx]
-        if vibe_idx < vibe_beats_len - 1 and target_beat >= vibe_beats[vibe_idx + 1]:
-            break
+        if temp_target_end_beat == None:
+            max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 302
+            # TODO: consider bpm change
+            max_time_until_vibe_ends = (
+                max_time_until_vibe_ends
+                + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
+            )
+            max_beat_until_vibe_ends = (
+                max_time_until_vibe_ends * raw_beatmap.bpm / 60000
+            )
+            temp_target_end_beat = target_beat + max_beat_until_vibe_ends
+
+            if temp_target_end_beat < vibe_beats[vibe_idx + 1]:
+                temp_target_end_beat = None
+                beat_idx += 1
+                continue
+
         max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 602
         # TODO: consider bpm change
         max_time_until_vibe_ends = (
             max_time_until_vibe_ends
             + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
         )
-        beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
-        target_end_beat = target_beat + beat_until_vibe_ends
+        max_beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
+        target_end_beat = target_beat + max_beat_until_vibe_ends
 
-        if vibe_idx < vibe_beats_len - 1:
-            if target_end_beat < vibe_beats[vibe_idx + 1]:
-                vibe_beatcnts_forward.append(
+        if vibe_idx < vibe_beats_len - 2:
+            if target_end_beat < vibe_beats[vibe_idx + 2]:
+                vibe_beatcnts.append(
                     BeatCnt(
                         target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
                     )
                 )
                 beat_idx += 1
             else:
-                vibe_beatcnts_forward.append(
+                vibe_beatcnts.append(
                     BeatCnt(
                         target_beat,
-                        (bisect_right(raw_beats, vibe_beats[vibe_idx + 1]) - 1)
+                        (bisect_right(raw_beats, vibe_beats[vibe_idx + 2]) - 1)
                         - beat_idx,
                     )
                 )
                 break
         else:
             if target_end_beat < raw_beats[-1]:
-                vibe_beatcnts_forward.append(
+                vibe_beatcnts.append(
                     BeatCnt(
                         target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
                     )
                 )
                 beat_idx += 1
             else:
-                vibe_beatcnts_forward.append(
-                    BeatCnt(target_beat, raw_beats_len - beat_idx)
-                )
+                vibe_beatcnts.append(BeatCnt(target_beat, raw_beats_len - beat_idx))
                 break
-    # Before the second vibe is charged
-    #
-    # Go backward until the first vibe is no longer extendable
-    # or the first vibe cannot be activated.
-    vibe_beatcnts_backward: list[BeatCnt] = []
-    # For the cases when vibe activates between the beats
-    #
-    # We determine whether 'temp_beatcnt' is appended
-    # before exit of the while loop
-    temp_beatcnt = None
-    beat_idx = start_idx - 1
-    while True:
-        target_beat = raw_beats[beat_idx]
-        if target_beat <= vibe_beats[vibe_idx - 1]:
-            if temp_beatcnt:
-                min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 301
-                beat_until_vibe_ends = (
-                    min_time_until_vibe_ends * raw_beatmap.bpm / 60000
-                )
-                target_end_beat = target_beat + beat_until_vibe_ends
-
-                if vibe_idx < vibe_beats_len - 1:
-                    if target_end_beat < vibe_beats[vibe_idx + 1]:
-                        vibe_beatcnts_backward.append(temp_beatcnt)
-                else:
-                    vibe_beatcnts_backward.append(temp_beatcnt)
-            break
-
-        # For the first vibe only
-        max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 302
-        # TODO: consider bpm change
-        max_time_until_vibe_ends = (
-            max_time_until_vibe_ends
-            + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-        )
-        beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
-        target_end_beat = target_beat + beat_until_vibe_ends
-
-        if target_end_beat < vibe_beats[vibe_idx]:
-            if temp_beatcnt:
-                min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 301
-                beat_until_vibe_ends = (
-                    min_time_until_vibe_ends * raw_beatmap.bpm / 60000
-                )
-                target_end_beat = vibe_beats[vibe_idx] + beat_until_vibe_ends
-
-                if vibe_idx < vibe_beats_len - 1:
-                    if target_end_beat < vibe_beats[vibe_idx + 1]:
-                        vibe_beatcnts_backward.append(temp_beatcnt)
-                else:
-                    vibe_beatcnts_backward.append(temp_beatcnt)
-            break
-
-        # For the entire vibe
-        max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 602
-        # TODO: consider bpm change
-        max_time_until_vibe_ends = (
-            max_time_until_vibe_ends
-            + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-        )
-        beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
-        target_end_beat = target_beat + beat_until_vibe_ends
-
-        if vibe_idx < vibe_beats_len - 1:
-            if target_end_beat < vibe_beats[vibe_idx + 1]:
-                # Entering this if branch means
-                # It is possible to obtain such 'temp_beatcnt'
-                # if exists (i.e. at least one else branch was taken)
-                if temp_beatcnt:
-                    vibe_beatcnts_backward.append(temp_beatcnt)
-                    temp_beatcnt = None
-
-                vibe_beatcnts_backward.append(
-                    BeatCnt(
-                        target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
-                    )
-                )
-                beat_idx -= 1
-            else:
-                # Entering this else branch means
-                # it is the first while loop or all the previous loops were ended here.
-                temp_beatcnt = BeatCnt(
-                    target_beat,
-                    (bisect_right(raw_beats, vibe_beats[vibe_idx + 1]) - 1) - beat_idx,
-                )
-                beat_idx -= 1
-        else:
-            if target_end_beat < raw_beats[-1]:
-                if temp_beatcnt:
-                    vibe_beatcnts_backward.append(temp_beatcnt)
-                    temp_beatcnt = None
-
-                vibe_beatcnts_backward.append(
-                    BeatCnt(
-                        target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
-                    )
-                )
-                beat_idx -= 1
-            else:
-                temp_beatcnt = BeatCnt(target_beat, raw_beats_len - beat_idx)
-                beat_idx -= 1
-
-    vibe_beatcnts_backward.sort(key=lambda beatcnt: beatcnt.beat)
-    two_vibes_beatcnts.append(vibe_beatcnts_backward + vibe_beatcnts_forward)
+    two_vibes_beatcnts.append(vibe_beatcnts)
 
 for vibe_beatcnts in one_vibe_beatcnts:
     for beatcnt in vibe_beatcnts:
