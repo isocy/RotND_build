@@ -406,6 +406,8 @@ for vibe_idx in range(vibe_beats_len):
                 )
                 beat_idx += 1
             else:
+                next_beat_idxs.append(beat_idx)
+
                 # very extreme case
                 if beat_idx == start_idx:
                     min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 301
@@ -415,7 +417,6 @@ for vibe_idx in range(vibe_beats_len):
                     target_end_beat = vibe_beats[vibe_idx] + min_beat_until_vibe_ends
 
                     if target_end_beat >= vibe_beats[vibe_idx + 1]:
-                        next_beat_idxs.append(beat_idx)
                         break
 
                 # Even if 'target_end_beat' >= 'vibe_beats[vibe_idx + 1]',
@@ -427,7 +428,6 @@ for vibe_idx in range(vibe_beats_len):
                         - beat_idx,
                     )
                 )
-                next_beat_idxs.append(beat_idx)
                 break
         else:
             if target_end_beat < raw_beats[-1]:
@@ -446,7 +446,7 @@ for vibe_idx in range(vibe_beats_len):
 two_vibes_beatcnts: list[list[BeatCnt]] = []
 for vibe_idx in range(vibe_beats_len - 1):
     vibe_beatcnts: list[BeatCnt] = []
-    beat_idx = next_beat_idxs.pop(0)
+    beat_idx = next_beat_idxs[vibe_idx]
     while True:
         target_beat = raw_beats[beat_idx]
         max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 602
@@ -467,6 +467,32 @@ for vibe_idx in range(vibe_beats_len - 1):
                 )
                 beat_idx += 1
             else:
+                next_beat_idxs.append(beat_idx)
+
+                # very extreme cases
+                if beat_idx == next_beat_idxs[vibe_idx]:
+                    # case 1
+                    min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 301
+                    min_beat_until_vibe_ends = (
+                        min_time_until_vibe_ends * raw_beatmap.bpm / 60000
+                    )
+                    target_end_beat = (
+                        vibe_beats[vibe_idx + 1] + min_beat_until_vibe_ends
+                    )
+
+                    if target_end_beat >= vibe_beats[vibe_idx + 2]:
+                        break
+
+                    # case 2
+                    min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 601
+                    min_beat_until_vibe_ends = (
+                        min_time_until_vibe_ends * raw_beatmap.bpm / 60000
+                    )
+                    target_end_beat = vibe_beats[vibe_idx] + min_beat_until_vibe_ends
+
+                    if target_end_beat >= vibe_beats[vibe_idx + 2]:
+                        break
+
                 vibe_beatcnts.append(
                     BeatCnt(
                         target_beat,
