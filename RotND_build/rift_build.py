@@ -319,6 +319,7 @@ raw_beats = [beat.beat for beat in beats]
 raw_beats_len = len(raw_beats)
 vibe_beats_len = len(vibe_beats)
 
+# Let the user be cautious about four or more vibe activation in once
 vibe_idx = 0
 # Assume 3 consecutive vibe power activation is possible
 vibe_in_row = 3
