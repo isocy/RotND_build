@@ -321,6 +321,8 @@ vibe_beats_len = len(vibe_beats)
 
 one_vibe_beatcnts: list[list[BeatCnt]] = []
 next_beat_idxs: list[int] = []
+# 'vibe_idx' indicates which vibe_beat is the first one
+# which contributes to the current vibe activation
 for vibe_idx in range(vibe_beats_len):
     vibe_beatcnts: list[BeatCnt] = []
     start_idx = bisect_right(raw_beats, vibe_beats[vibe_idx])
@@ -353,6 +355,7 @@ for vibe_idx in range(vibe_beats_len):
 
                 # very extreme case
                 if beat_idx == start_idx:
+                    # case 1
                     min_time_until_vibe_ends = -2 * perf_range + FRAME_IN_MSEC * 301
                     min_beat_until_vibe_ends = (
                         min_time_until_vibe_ends * raw_beatmap.bpm / 60000
@@ -559,8 +562,6 @@ for vibe_idx in range(vibe_beats_len - 2):
                     break
         # else branch: vibe power loss
         else:
-            next_beat_idxs.append(beat_idx)
-
             loss_beat = target_end_beat - vibe_beats[vibe_idx + 2]
             loss_time = loss_beat * (60 / raw_beatmap.bpm) * 1000
             time_discount = 0
@@ -568,6 +569,8 @@ for vibe_idx in range(vibe_beats_len - 2):
                 time_discount = 2 * perf_range - loss_time
 
             if vibe_idx < vibe_beats_len - 3:
+                next_beat_idxs.append(beat_idx)
+
                 # case 1
                 min_time_until_vibe_ends = -2 * perf_range + FRAME_IN_MSEC * 601
                 min_beat_until_vibe_ends = (
