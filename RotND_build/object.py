@@ -1,4 +1,4 @@
-from global_def import ROWS, Facing
+from Global.const_def import ROWS, Facing
 
 from abc import abstractmethod
 

@@ -1,4 +1,4 @@
-from global_def import BEAT_OFFSET, Facing
+from Global.const_def import BEAT_OFFSET, Facing
 
 
 class Event:

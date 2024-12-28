@@ -1,4 +1,4 @@
-from global_def import *
+from Global.const_def import *
 from object import *
 
 import json

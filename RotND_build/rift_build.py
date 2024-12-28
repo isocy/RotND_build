@@ -1,9 +1,10 @@
-from global_def import *
+from Global import *
 from object import *
 from enemy_db import EnemyDB
 from event import *
 
 from bisect import bisect_right
+from heapq import nlargest
 import itertools
 import json
 from typing import Self
@@ -44,15 +45,20 @@ class Beat:
 
 
 class BeatCnt:
-    def __init__(self, beat: float, cnt: int):
-        self.beat = beat
+    def __init__(self, start_beat: float, cnt: int, beat_diff: float):
+        self.start_beat = start_beat
         self.cnt = cnt
+        self.beat_diff = beat_diff
 
     def __lt__(self, other: Self):
-        return self.cnt < other.cnt
+        if self.cnt < other.cnt:
+            return True
+        elif self.cnt == other.cnt:
+            return self.beat_diff > other.beat_diff
+        return False
 
     def __repr__(self):
-        return f"{self.beat} {self.cnt}"
+        return f"{self.start_beat} {self.cnt} {self.beat_diff}"
 
 
 class Grid:
@@ -244,8 +250,7 @@ input_ratings_def = InputRatingsDef.load_json(INPUT_RATINGS_DEF_PATH)
 perf_range = input_ratings_def.perf_range - 5
 great_range = input_ratings_def.great_range - 5
 
-raw_beatmap_path = DISCO_DISASTER_EASY_PATH
-raw_beatmap = RawBeatmap.load_json(raw_beatmap_path)
+raw_beatmap = RawBeatmap.load_json(RAW_BEATMAP_PATH)
 (enemy_nodes, chain_cnts) = Node.enemy_events_to_nodes(
     raw_beatmap.enemy_events, raw_beatmap.vibe_events, enemy_db
 )
@@ -359,6 +364,7 @@ for vibe_idx in range(vibe_beats_len):
     vibe_beatcnts: list[BeatCnt] = []
     start_idx = bisect_right(raw_beats, vibe_beats[vibe_idx])
     beat_idx = start_idx
+    extra_beatcnts_cnt = 1
     # condition for when 'vibe_idx' is equal to 'len(vibe_beats) - 1'
     while beat_idx < raw_beats_len:
         target_beat = raw_beats[beat_idx]
@@ -376,9 +382,12 @@ for vibe_idx in range(vibe_beats_len):
 
         if vibe_idx < vibe_beats_len - 1:
             if target_end_beat < vibe_beats[vibe_idx + 1]:
+                target_end_beat_idx = bisect_right(raw_beats, target_end_beat)
                 vibe_beatcnts.append(
                     BeatCnt(
-                        target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
+                        target_beat,
+                        target_end_beat_idx - beat_idx,
+                        raw_beats[target_end_beat_idx - 1] - target_beat,
                     )
                 )
                 beat_idx += 1
@@ -399,25 +408,41 @@ for vibe_idx in range(vibe_beats_len):
 
                 # Even if 'target_end_beat' >= 'vibe_beats[vibe_idx + 1]',
                 # vibe power may be activated earlier in order not to extend vibe
+                target_end_beat_idx = (
+                    bisect_right(raw_beats, vibe_beats[vibe_idx + 1]) - 1
+                )
                 vibe_beatcnts.append(
                     BeatCnt(
                         target_beat,
-                        (bisect_right(raw_beats, vibe_beats[vibe_idx + 1]) - 1)
-                        - beat_idx,
+                        target_end_beat_idx - beat_idx,
+                        raw_beats[target_end_beat_idx - 1] - target_beat,
                     )
                 )
                 break
         else:
             if target_end_beat < raw_beats[-1]:
+                target_end_beat_idx = bisect_right(raw_beats, target_end_beat)
                 vibe_beatcnts.append(
                     BeatCnt(
-                        target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
+                        target_beat,
+                        target_end_beat_idx - beat_idx,
+                        raw_beats[target_end_beat_idx - 1] - target_beat,
                     )
                 )
                 beat_idx += 1
             else:
-                vibe_beatcnts.append(BeatCnt(target_beat, raw_beats_len - beat_idx))
-                break
+                vibe_beatcnts.append(
+                    BeatCnt(
+                        target_beat,
+                        raw_beats_len - beat_idx,
+                        raw_beats[-1] - target_beat,
+                    )
+                )
+                if extra_beatcnts_cnt == 0:
+                    break
+                else:
+                    extra_beatcnts_cnt -= 1
+                    beat_idx += 1
     one_vibe_beatcnts.append(vibe_beatcnts)
 
 two_vibes_beatcnts: list[list[BeatCnt]] = []
@@ -425,6 +450,7 @@ for vibe_idx in range(vibe_beats_len - 1):
     vibe_beatcnts: list[BeatCnt] = []
     start_idx = next_beat_idxs.pop(0)
     beat_idx = start_idx
+    extra_beatcnts_cnt = 1
     while True:
         target_beat = raw_beats[beat_idx]
         max_time_until_vibe_ends = 2 * perf_range + FRAME_IN_MSEC * 602
@@ -438,9 +464,12 @@ for vibe_idx in range(vibe_beats_len - 1):
 
         if vibe_idx < vibe_beats_len - 2:
             if target_end_beat < vibe_beats[vibe_idx + 2]:
+                target_end_beat_idx = bisect_right(raw_beats, target_end_beat)
                 vibe_beatcnts.append(
                     BeatCnt(
-                        target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
+                        target_beat,
+                        target_end_beat_idx - beat_idx,
+                        raw_beats[target_end_beat_idx - 1] - target_beat,
                     )
                 )
                 beat_idx += 1
@@ -471,25 +500,41 @@ for vibe_idx in range(vibe_beats_len - 1):
                     if target_end_beat >= vibe_beats[vibe_idx + 2]:
                         break
 
+                target_end_beat_idx = (
+                    bisect_right(raw_beats, vibe_beats[vibe_idx + 2]) - 1
+                )
                 vibe_beatcnts.append(
                     BeatCnt(
                         target_beat,
-                        (bisect_right(raw_beats, vibe_beats[vibe_idx + 2]) - 1)
-                        - beat_idx,
+                        target_end_beat_idx - beat_idx,
+                        raw_beats[target_end_beat_idx - 1] - target_beat,
                     )
                 )
                 break
         else:
             if target_end_beat < raw_beats[-1]:
+                target_end_beat_idx = bisect_right(raw_beats, target_end_beat)
                 vibe_beatcnts.append(
                     BeatCnt(
-                        target_beat, bisect_right(raw_beats, target_end_beat) - beat_idx
+                        target_beat,
+                        target_end_beat_idx - beat_idx,
+                        raw_beats[target_end_beat_idx - 1] - target_beat,
                     )
                 )
                 beat_idx += 1
             else:
-                vibe_beatcnts.append(BeatCnt(target_beat, raw_beats_len - beat_idx))
-                break
+                vibe_beatcnts.append(
+                    BeatCnt(
+                        target_beat,
+                        raw_beats_len - beat_idx,
+                        raw_beats[-1] - target_beat,
+                    )
+                )
+                if extra_beatcnts_cnt == 0:
+                    break
+                else:
+                    extra_beatcnts_cnt -= 1
+                    beat_idx += 1
     two_vibes_beatcnts.append(vibe_beatcnts)
 
 three_vibes_beatcnts: list[list[BeatCnt]] = []
@@ -497,6 +542,7 @@ for vibe_idx in range(vibe_beats_len - 2):
     vibe_beatcnts: list[BeatCnt] = []
     start_idx = next_beat_idxs.pop(0)
     beat_idx = start_idx
+    extra_beatcnts_cnt = 1
     while True:
         target_beat = raw_beats[beat_idx]
 
@@ -524,10 +570,12 @@ for vibe_idx in range(vibe_beats_len - 2):
 
             if vibe_idx < vibe_beats_len - 3:
                 if target_end_beat < vibe_beats[vibe_idx + 3]:
+                    target_end_beat_idx = bisect_right(raw_beats, target_end_beat)
                     vibe_beatcnts.append(
                         BeatCnt(
                             target_beat,
-                            bisect_right(raw_beats, target_end_beat) - beat_idx,
+                            target_end_beat_idx - beat_idx,
+                            raw_beats[target_end_beat_idx - 1] - target_beat,
                         )
                     )
                     beat_idx += 1
@@ -572,26 +620,41 @@ for vibe_idx in range(vibe_beats_len - 2):
                         if target_end_beat >= vibe_beats[vibe_idx + 3]:
                             break
 
+                    target_end_beat_idx = (
+                        bisect_right(raw_beats, vibe_beats[vibe_idx + 2]) - 1
+                    )
                     vibe_beatcnts.append(
                         BeatCnt(
                             target_beat,
-                            (bisect_right(raw_beats, vibe_beats[vibe_idx + 2]) - 1)
-                            - beat_idx,
+                            target_end_beat_idx - beat_idx,
+                            raw_beats[target_end_beat_idx - 1] - target_beat,
                         )
                     )
                     break
             else:
                 if target_end_beat < raw_beats[-1]:
+                    target_end_beat_idx = bisect_right(raw_beats, target_end_beat)
                     vibe_beatcnts.append(
                         BeatCnt(
                             target_beat,
-                            bisect_right(raw_beats, target_end_beat) - beat_idx,
+                            target_end_beat_idx - beat_idx,
+                            raw_beats[target_end_beat_idx - 1] - target_beat,
                         )
                     )
                     beat_idx += 1
                 else:
-                    vibe_beatcnts.append(BeatCnt(target_beat, raw_beats_len - beat_idx))
-                    break
+                    vibe_beatcnts.append(
+                        BeatCnt(
+                            target_beat,
+                            raw_beats_len - beat_idx,
+                            raw_beats[-1] - target_beat,
+                        )
+                    )
+                    if extra_beatcnts_cnt == 0:
+                        break
+                    else:
+                        extra_beatcnts_cnt -= 1
+                        beat_idx += 1
         # else branch: vibe power loss
         else:
             loss_beat = target_end_beat - vibe_beats[vibe_idx + 2]
@@ -638,10 +701,12 @@ for vibe_idx in range(vibe_beats_len - 2):
                 target_end_beat = vibe_beats[vibe_idx + 2] + max_beat_until_vibe_ends
 
                 if target_end_beat < vibe_beats[vibe_idx + 3]:
+                    target_end_beat_idx = bisect_right(raw_beats, target_end_beat)
                     vibe_beatcnts.append(
                         BeatCnt(
                             target_beat,
-                            bisect_right(raw_beats, target_end_beat) - beat_idx,
+                            target_end_beat_idx - beat_idx,
+                            raw_beats[target_end_beat_idx - 1] - target_beat,
                         )
                     )
                 break
@@ -660,43 +725,52 @@ for vibe_idx in range(vibe_beats_len - 2):
                 target_end_beat = vibe_beats[vibe_idx + 2] + max_beat_until_vibe_ends
 
                 if target_end_beat < raw_beats[-1]:
+                    target_end_beat_idx = bisect_right(raw_beats, target_end_beat)
                     vibe_beatcnts.append(
                         BeatCnt(
                             target_beat,
-                            bisect_right(raw_beats, target_end_beat) - beat_idx,
+                            target_end_beat_idx - beat_idx,
+                            raw_beats[target_end_beat_idx - 1] - target_beat,
                         )
                     )
                     break
                 else:
-                    vibe_beatcnts.append(BeatCnt(target_beat, raw_beats_len - beat_idx))
-                    break
+                    vibe_beatcnts.append(
+                        BeatCnt(
+                            target_beat,
+                            raw_beats_len - beat_idx,
+                            raw_beats[-1] - target_beat,
+                        )
+                    )
+                    if extra_beatcnts_cnt == 0:
+                        break
+                    else:
+                        extra_beatcnts_cnt -= 1
+                        beat_idx += 1
     three_vibes_beatcnts.append(vibe_beatcnts)
 
-for vibe_beatcnts in one_vibe_beatcnts:
-    for beatcnt in vibe_beatcnts:
-        print(beatcnt)
-    print()
-    print(max(vibe_beatcnts))
-    print()
-print()
-
-for vibe_beatcnts in two_vibes_beatcnts:
-    for beatcnt in vibe_beatcnts:
-        print(beatcnt)
-    print()
-    print(max(vibe_beatcnts))
-    print()
-print()
-
-for vibe_beatcnts in three_vibes_beatcnts:
-    for beatcnt in vibe_beatcnts:
-        print(beatcnt)
-    print()
-    print(max(vibe_beatcnts))
-    print()
-print()
-
-print(raw_beatmap.vibe_events, end="\n\n")
+# For Debug
+# for vibe_beatcnts in one_vibe_beatcnts:
+#     for beatcnt in vibe_beatcnts:
+#         print(beatcnt)
+#     print()
+#     print(max(vibe_beatcnts))
+#     print()
+# print()
+# for vibe_beatcnts in two_vibes_beatcnts:
+#     for beatcnt in vibe_beatcnts:
+#         print(beatcnt)
+#     print()
+#     print(max(vibe_beatcnts))
+#     print()
+# print()
+# for vibe_beatcnts in three_vibes_beatcnts:
+#     for beatcnt in vibe_beatcnts:
+#         print(beatcnt)
+#     print()
+#     print(max(vibe_beatcnts))
+#     print()
+# print()
 
 
 # originated from efficient integer partitioning code from
@@ -732,9 +806,48 @@ partitions = [
     )
 ]
 
-max_one_vibe_beatcnts = [max(beatcnts) for beatcnts in one_vibe_beatcnts]
-max_two_vibes_beatcnts = [max(beatcnts) for beatcnts in two_vibes_beatcnts]
-max_three_vibes_beatcnts = [max(beatcnts) for beatcnts in three_vibes_beatcnts]
+max_one_vibe_beatcnts = []
+max_two_vibes_beatcnts = []
+max_three_vibes_beatcnts = []
+for beatcnts in one_vibe_beatcnts:
+    max_one_vibe_beatcnts.append(
+        max(
+            [
+                beatcnt
+                for beatcnt in beatcnts
+                if beatcnt.beat_diff < ONE_VIBE_MAX_BEAT_DIFF
+                and beatcnt.start_beat not in ONE_VIBE_START_BEAT_EXCEPT
+            ]
+        )
+    )
+for beatcnts in two_vibes_beatcnts:
+    max_two_vibes_beatcnts.append(
+        max(
+            [
+                beatcnt
+                for beatcnt in beatcnts
+                if beatcnt.beat_diff < TWO_VIBES_MAX_BEAT_DIFF
+                and beatcnt.start_beat not in TWO_VIBES_START_BEAT_EXCEPT
+            ]
+        )
+    )
+for beatcnts in three_vibes_beatcnts:
+    max_three_vibes_beatcnts.append(
+        max(
+            [
+                beatcnt
+                for beatcnt in beatcnts
+                if beatcnt.beat_diff < THREE_VIBES_MAX_BEAT_DIFF
+                and beatcnt.start_beat not in THREE_VIBES_START_BEAT_EXCEPT
+            ]
+        )
+    )
+
+practice_start_nums = [
+    vibe_event.start_beat + ROWS - 1 for vibe_event in raw_beatmap.vibe_events
+]
+print("\nPractice Start Numbers:")
+print(practice_start_nums, end="\n\n")
 
 for partition in partitions:
     max_beatcnts: list[BeatCnt] = []
@@ -749,4 +862,9 @@ for partition in partitions:
         else:
             max_beatcnts.append(max_three_vibes_beatcnts[vibe_idx])
             vibe_idx += 3
-    print(max_beatcnts, sum(max_beatcnt.cnt for max_beatcnt in max_beatcnts))
+    print(
+        str(partition)
+        + ", "
+        + str(sum(max_beatcnt.cnt for max_beatcnt in max_beatcnts))
+    )
+    print(max_beatcnts)

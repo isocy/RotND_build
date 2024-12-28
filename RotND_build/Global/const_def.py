@@ -1,4 +1,3 @@
-from typing import Self
 from enum import Enum
 
 BEAT_OFFSET = 1.5
