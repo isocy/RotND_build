@@ -4,6 +4,7 @@ from enemy_db import EnemyDB
 from event import *
 
 from bisect import bisect_right
+import itertools
 import json
 from typing import Self
 
@@ -691,3 +692,56 @@ for vibe_beatcnts in three_vibes_beatcnts:
     print()
     print(max(vibe_beatcnts))
     print()
+
+
+# originated from efficient integer partitioning code from
+# https://stackoverflow.com/questions/10035752/elegant-python-code-for-integer-partitioning
+def get_partitions(n):
+    a = [0 for i in range(n + 1)]
+    k = 1
+    y = n - 1
+    while k != 0:
+        x = a[k - 1] + 1
+        k -= 1
+        while 2 * x <= y:
+            a[k] = x
+            y -= x
+            k += 1
+        l = k + 1
+        while x <= y:
+            a[k] = x
+            a[l] = y
+            if [element for element in a[: k + 2] if element > 3] == []:
+                yield a[: k + 2]
+            x += 1
+            y -= 1
+        a[k] = x + y
+        y = x + y - 1
+        if [element for element in a[: k + 1] if element > 3] == []:
+            yield a[: k + 1]
+
+
+partitions = [
+    *itertools.chain.from_iterable(
+        set(itertools.permutations(p)) for p in get_partitions(vibe_beats_len)
+    )
+]
+
+max_one_vibe_beatcnts = [max(beatcnts) for beatcnts in one_vibe_beatcnts]
+max_two_vibes_beatcnts = [max(beatcnts) for beatcnts in two_vibes_beatcnts]
+max_three_vibes_beatcnts = [max(beatcnts) for beatcnts in three_vibes_beatcnts]
+
+for partition in partitions:
+    max_beatcnts: list[BeatCnt] = []
+    vibe_idx = 0
+    for num in partition:
+        if num == 1:
+            max_beatcnts.append(max_one_vibe_beatcnts[vibe_idx])
+            vibe_idx += 1
+        elif num == 2:
+            max_beatcnts.append(max_two_vibes_beatcnts[vibe_idx])
+            vibe_idx += 2
+        else:
+            max_beatcnts.append(max_three_vibes_beatcnts[vibe_idx])
+            vibe_idx += 3
+    print(max_beatcnts, sum(max_beatcnt.cnt for max_beatcnt in max_beatcnts))
