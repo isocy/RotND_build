@@ -4,7 +4,6 @@ from enemy_db import EnemyDB
 from event import *
 
 from bisect import bisect_right
-from heapq import nlargest
 import itertools
 import json
 from typing import Self
