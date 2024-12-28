@@ -815,7 +815,7 @@ for beatcnts in one_vibe_beatcnts:
                 beatcnt
                 for beatcnt in beatcnts
                 if beatcnt.beat_diff < ONE_VIBE_MAX_BEAT_DIFF
-                and beatcnt.start_beat not in ONE_VIBE_START_BEAT_EXCEPT
+                and beatcnt.start_beat not in ONE_VIBE_START_BEATS_EXCEPT
             ]
         )
     )
@@ -826,7 +826,7 @@ for beatcnts in two_vibes_beatcnts:
                 beatcnt
                 for beatcnt in beatcnts
                 if beatcnt.beat_diff < TWO_VIBES_MAX_BEAT_DIFF
-                and beatcnt.start_beat not in TWO_VIBES_START_BEAT_EXCEPT
+                and beatcnt.start_beat not in TWO_VIBES_START_BEATS_EXCEPT
             ]
         )
     )
@@ -837,7 +837,7 @@ for beatcnts in three_vibes_beatcnts:
                 beatcnt
                 for beatcnt in beatcnts
                 if beatcnt.beat_diff < THREE_VIBES_MAX_BEAT_DIFF
-                and beatcnt.start_beat not in THREE_VIBES_START_BEAT_EXCEPT
+                and beatcnt.start_beat not in THREE_VIBES_START_BEATS_EXCEPT
             ]
         )
     )
