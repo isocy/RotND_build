@@ -319,6 +319,36 @@ raw_beats = [beat.beat for beat in beats]
 raw_beats_len = len(raw_beats)
 vibe_beats_len = len(vibe_beats)
 
+vibe_idx = 0
+# Assume 3 consecutive vibe power activation is possible
+vibe_in_row = 3
+while vibe_idx < vibe_beats_len - 3:
+    # one vibe is used for ignitition
+    max_time_until_vibe_ends = 2 * perf_range + FRAME_IN_MSEC * (
+        (vibe_in_row - 1) * 300 + 2
+    )
+    # TODO: consider bpm change
+    max_time_until_vibe_ends = (
+        max_time_until_vibe_ends
+        + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
+    )
+    max_beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
+    target_end_beat = vibe_beats[vibe_idx + 2] + max_beat_until_vibe_ends
+
+    if target_end_beat < vibe_beats[vibe_idx + vibe_in_row]:
+        vibe_idx += 1
+        vibe_in_row = 3
+    else:
+        vibe_in_row += 1
+        print(
+            (
+                f"[Caution] As with the first vibe charge of 'vibe_idx' {vibe_idx}, "
+                + f"vibe power is extendable up to {vibe_in_row}. "
+                + "Check it for the better vibe build."
+            )
+        )
+
+
 one_vibe_beatcnts: list[list[BeatCnt]] = []
 next_beat_idxs: list[int] = []
 # 'vibe_idx' indicates which vibe_beat is the first one
