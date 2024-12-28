@@ -241,8 +241,8 @@ enemy_db = EnemyDB.json_to_dict(ENEMY_DB_PATH)
 EnemyDB.init_objs(enemy_db)
 
 input_ratings_def = InputRatingsDef.load_json(INPUT_RATINGS_DEF_PATH)
-perf_range = input_ratings_def.perf_range
-great_range = input_ratings_def.great_range
+perf_range = input_ratings_def.perf_range - 5
+great_range = input_ratings_def.great_range - 5
 
 raw_beatmap_path = DISCO_DISASTER_EASY_PATH
 raw_beatmap = RawBeatmap.load_json(raw_beatmap_path)
@@ -678,6 +678,7 @@ for vibe_beatcnts in one_vibe_beatcnts:
     print()
     print(max(vibe_beatcnts))
     print()
+print()
 
 for vibe_beatcnts in two_vibes_beatcnts:
     for beatcnt in vibe_beatcnts:
@@ -685,6 +686,7 @@ for vibe_beatcnts in two_vibes_beatcnts:
     print()
     print(max(vibe_beatcnts))
     print()
+print()
 
 for vibe_beatcnts in three_vibes_beatcnts:
     for beatcnt in vibe_beatcnts:
@@ -692,6 +694,9 @@ for vibe_beatcnts in three_vibes_beatcnts:
     print()
     print(max(vibe_beatcnts))
     print()
+print()
+
+print(raw_beatmap.vibe_events, end="\n\n")
 
 
 # originated from efficient integer partitioning code from
