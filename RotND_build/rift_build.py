@@ -388,7 +388,7 @@ for vibe_idx in range(vibe_beats_len):
         if vibe_idx < vibe_beats_len - 1 and target_beat >= vibe_beats[vibe_idx + 1]:
             next_beat_idxs.append(beat_idx)
             break
-        max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 302
+        max_time_until_vibe_ends = 2 * perf_range + FRAME_IN_MSEC * 302
         # TODO: consider bpm change
         max_time_until_vibe_ends = (
             max_time_until_vibe_ends
@@ -410,7 +410,7 @@ for vibe_idx in range(vibe_beats_len):
 
                 # very extreme case
                 if beat_idx == start_idx:
-                    min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 301
+                    min_time_until_vibe_ends = -2 * perf_range + FRAME_IN_MSEC * 301
                     min_beat_until_vibe_ends = (
                         min_time_until_vibe_ends * raw_beatmap.bpm / 60000
                     )
@@ -449,7 +449,7 @@ for vibe_idx in range(vibe_beats_len - 1):
     beat_idx = start_idx
     while True:
         target_beat = raw_beats[beat_idx]
-        max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 602
+        max_time_until_vibe_ends = 2 * perf_range + FRAME_IN_MSEC * 602
         # TODO: consider bpm change
         max_time_until_vibe_ends = (
             max_time_until_vibe_ends
@@ -472,7 +472,7 @@ for vibe_idx in range(vibe_beats_len - 1):
                 # very extreme cases
                 if beat_idx == start_idx:
                     # case 1
-                    min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 301
+                    min_time_until_vibe_ends = -2 * perf_range + FRAME_IN_MSEC * 301
                     min_beat_until_vibe_ends = (
                         min_time_until_vibe_ends * raw_beatmap.bpm / 60000
                     )
@@ -484,7 +484,7 @@ for vibe_idx in range(vibe_beats_len - 1):
                         break
 
                     # case 2
-                    min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 601
+                    min_time_until_vibe_ends = -2 * perf_range + FRAME_IN_MSEC * 601
                     min_beat_until_vibe_ends = (
                         min_time_until_vibe_ends * raw_beatmap.bpm / 60000
                     )
@@ -522,7 +522,7 @@ for vibe_idx in range(vibe_beats_len - 2):
     while True:
         target_beat = raw_beats[beat_idx]
 
-        max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 302
+        max_time_until_vibe_ends = 2 * perf_range + FRAME_IN_MSEC * 302
         # TODO: consider bpm change
         max_time_until_vibe_ends = (
             max_time_until_vibe_ends
@@ -533,7 +533,7 @@ for vibe_idx in range(vibe_beats_len - 2):
 
         # if branch: no vibe power loss
         if target_end_beat < vibe_beats[vibe_idx + 2]:
-            max_time_until_vibe_ends = 2 * perf_range + (16 + 2 / 3) * 902
+            max_time_until_vibe_ends = 2 * perf_range + FRAME_IN_MSEC * 902
             # TODO: consider bpm change
             max_time_until_vibe_ends = (
                 max_time_until_vibe_ends
@@ -559,7 +559,7 @@ for vibe_idx in range(vibe_beats_len - 2):
                     # very extreme cases
                     if beat_idx == start_idx:
                         # case 1
-                        min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 301
+                        min_time_until_vibe_ends = -2 * perf_range + FRAME_IN_MSEC * 301
                         min_beat_until_vibe_ends = (
                             min_time_until_vibe_ends * raw_beatmap.bpm / 60000
                         )
@@ -571,7 +571,7 @@ for vibe_idx in range(vibe_beats_len - 2):
                             break
 
                         # case 2
-                        min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 601
+                        min_time_until_vibe_ends = -2 * perf_range + FRAME_IN_MSEC * 601
                         min_beat_until_vibe_ends = (
                             min_time_until_vibe_ends * raw_beatmap.bpm / 60000
                         )
@@ -583,7 +583,7 @@ for vibe_idx in range(vibe_beats_len - 2):
                             break
 
                         # case 3
-                        min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 901
+                        min_time_until_vibe_ends = -2 * perf_range + FRAME_IN_MSEC * 901
                         min_beat_until_vibe_ends = (
                             min_time_until_vibe_ends * raw_beatmap.bpm / 60000
                         )
@@ -626,7 +626,7 @@ for vibe_idx in range(vibe_beats_len - 2):
 
             if vibe_idx < vibe_beats_len - 3:
                 # case 1
-                min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 601
+                min_time_until_vibe_ends = -2 * perf_range + FRAME_IN_MSEC * 601
                 min_beat_until_vibe_ends = (
                     min_time_until_vibe_ends * raw_beatmap.bpm / 60000
                 )
@@ -636,7 +636,7 @@ for vibe_idx in range(vibe_beats_len - 2):
                     break
 
                 # case 3
-                min_time_until_vibe_ends = -2 * perf_range + (16 + 2 / 3) * 901
+                min_time_until_vibe_ends = -2 * perf_range + FRAME_IN_MSEC * 901
                 min_beat_until_vibe_ends = (
                     min_time_until_vibe_ends * raw_beatmap.bpm / 60000
                 )
@@ -647,7 +647,7 @@ for vibe_idx in range(vibe_beats_len - 2):
 
                 # caution: slightly different calculation
                 max_time_until_vibe_ends = (
-                    2 * perf_range + (16 + 2 / 3) * 602 - time_discount
+                    2 * perf_range + FRAME_IN_MSEC * 602 - time_discount
                 )
                 # TODO: consider bpm change
                 max_time_until_vibe_ends = (
@@ -669,7 +669,7 @@ for vibe_idx in range(vibe_beats_len - 2):
                 break
             else:
                 max_time_until_vibe_ends = (
-                    2 * perf_range + (16 + 2 / 3) * 603 - time_discount
+                    2 * perf_range + FRAME_IN_MSEC * 603 - time_discount
                 )
                 # TODO: consider bpm change
                 max_time_until_vibe_ends = (

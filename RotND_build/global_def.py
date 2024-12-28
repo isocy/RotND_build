@@ -2,6 +2,8 @@ from typing import Self
 from enum import Enum
 
 BEAT_OFFSET = 1.5
+FRAME_IN_MSEC = 16 + 2 / 3
+
 ROWS = 9
 LANES = 3
 
