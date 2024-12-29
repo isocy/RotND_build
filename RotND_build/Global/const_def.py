@@ -47,6 +47,9 @@ INPUT_RATINGS_DEF_PATH = "exports/bundles/Assets/Shared/Prefabs/ScoreResults/Rhy
 DISCO_DISASTER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Easy"
 )
+OVERTHINKER_EASY_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Easy"
+)
 
 
 class Facing(Enum):

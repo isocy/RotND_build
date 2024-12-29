@@ -115,26 +115,39 @@ class Map:
                     elif trap_node.cooltime == min_cooltime:
                         target_nodes.append(trap_node)
 
+        # subset of 'target_nodes'
+        nodes_done = []
         for i in range(map.lanes):
             for j in range(map.rows):
                 grid = map.grids[i][j]
                 grid_enemies = grid.enemies
                 for grid_enemy in grid_enemies:
+                    if grid_enemy in nodes_done:
+                        continue
                     if grid_enemy in target_nodes:
                         obj = grid_enemy.obj
                         grid_enemy.cooltime = obj.get_cooltime()
                         grid_enemies.remove(grid_enemy)
-                        if (
-                            isinstance(obj, Slime)
-                            or isinstance(obj, BlueBat)
-                            or isinstance(obj, Skeleton)
-                            or isinstance(obj, Food)
-                        ):
-                            map.grids[i][j - 1].enemies.append(grid_enemy)
+                        if isinstance(obj, GreenZombie):
+                            if i == 0:
+                                map.grids[1][j - 1].enemies.append(grid_enemy)
+                            elif i == map.lanes - 1:
+                                map.grids[map.lanes - 2][j - 1].enemies.append(
+                                    grid_enemy
+                                )
+                            else:
+                                if obj.facing == Facing.LEFT:
+                                    map.grids[i - 1][j - 1].enemies.append(grid_enemy)
+                                    obj.facing = Facing.RIGHT
+                                else:
+                                    map.grids[i + 1][j - 1].enemies.append(grid_enemy)
+                                    obj.facing = Facing.LEFT
                         # TODO
-                        else:
+                        elif False:
                             pass
-                        target_nodes.remove(grid_enemy)
+                        else:
+                            map.grids[i][j - 1].enemies.append(grid_enemy)
+                        nodes_done.append(grid_enemy)
                     else:
                         grid_enemy.cooltime -= min_cooltime
                 trap_nodes = grid.traps
@@ -223,14 +236,22 @@ class Node[T: Object]:
                     chain_cnts.append(chain_cnt)
                     chain_cnt = 0
 
-            # TODO
             if name == GREEN_SLIME:
                 nodes.append(Node(GreenSlime(lane, chained), appear_beat))
             elif name == BLUE_SLIME:
                 nodes.append(Node(BlueSlime(lane, chained), appear_beat))
+            # TODO
             elif name == BLUE_BAT:
                 nodes.append(
                     Node(BlueBat(lane, enemy_event.facing, chained), appear_beat)
+                )
+            elif name == YELLOW_BAT:
+                nodes.append(
+                    Node(YellowBat(lane, enemy_event.facing, chained), appear_beat)
+                )
+            elif name == GREEN_ZOMBIE:
+                nodes.append(
+                    Node(GreenZombie(lane, enemy_event.facing, chained), appear_beat)
                 )
             elif name == BASE_SKELETON:
                 nodes.append(Node(BaseSkeleton(lane, chained), appear_beat))
@@ -301,7 +322,7 @@ while node_idx < enemy_nodes_len or not map.is_clean():
                 enemy_node.cooltime = enemy.get_cooltime()
                 map.grids[i][0].enemies.remove(enemy_node)
                 # TODO: different 'dist_for_move' for different enemies
-                if isinstance(enemy, BlueBat):
+                if isinstance(enemy, BlueBat) or isinstance(enemy, YellowBat):
                     if enemy.facing == Facing.LEFT:
                         map.grids[i - 1][1].enemies.append(enemy_node)
                     else:
