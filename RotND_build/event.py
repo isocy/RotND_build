@@ -1,18 +1,23 @@
-from Global.const_def import BEAT_OFFSET, Facing
+from Global.const_def import BEAT_OFFSET, Facing, TrapDir
 
 
 class Event:
     @classmethod
     def load_dict(cls, event: dict):
+        pass
+
+
+class ObjectEvent(Event):
+    @classmethod
+    def load_dict(cls, event):
         """Construct Event with given dictionary"""
-        # TODO
         if event["type"] == "SpawnEnemy":
             return EnemyEvent.load_dict(event)
-        elif event["type"] == "StartVibeChain":
-            return VibeEvent.load_dict(event)
+        elif event["type"] == "SpawnTrap":
+            return TrapEvent.load_dict(event)
 
 
-class EnemyEvent(Event):
+class EnemyEvent(ObjectEvent):
     def __init__(self, lane, appear_beat, enemy_id, facing=Facing.LEFT):
         self.lane = lane
         self.appear_beat = appear_beat
@@ -37,6 +42,60 @@ class EnemyEvent(Event):
                 ),
                 Facing.LEFT,
             ),
+        )
+
+
+class TrapEvent(ObjectEvent):
+    def __init__(
+        self,
+        lane: int,
+        row: int,
+        appear_beat: float,
+        duration: float,
+        trap_type: str,
+        dir: TrapDir,
+    ):
+        self.lane = lane
+        self.row = row
+        self.appear_beat = appear_beat
+        self.duration = duration
+        self.trap_type = trap_type
+        self.dir = dir
+
+    @classmethod
+    def load_dict(cls, event):
+        dir_num = next(
+            int(pair["_eventDataValue"])
+            for pair in iter(event["dataPairs"])
+            if pair["_eventDataKey"] == "TrapDirection"
+        )
+        if dir_num == 1:
+            dir = TrapDir.RIGHT
+        elif dir_num == 2:
+            dir = TrapDir.LEFT
+        # TODO: other directions
+        else:
+            dir = TrapDir.RIGHT
+
+        return TrapEvent(
+            event["track"],
+            next(
+                int(pair["_eventDataValue"])
+                for pair in iter(event["dataPairs"])
+                if pair["_eventDataKey"] == "TrapDropRow"
+            ),
+            BEAT_OFFSET + event["startBeatNumber"],
+            next(
+                float(pair["_eventDataValue"])
+                for pair in iter(event["dataPairs"])
+                if pair["_eventDataKey"] == "TrapHealthInBeats"
+            ),
+            next(
+                pair["_eventDataValue"]
+                for pair in iter(event["dataPairs"])
+                if pair["_eventDataKey"] == "TrapTypeToSpawn"
+            ),
+            dir,
         )
 
 

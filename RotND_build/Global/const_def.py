@@ -40,6 +40,8 @@ BASE_SKULL = "Base Skull"
 BLUE_SKULL = "Blue Skull"
 RED_SKULL = "Red Skull"
 
+BOUNCE = "Bounce"
+
 ENEMY_DB_PATH = "exports/bundles/RREnemyDatabase.json"
 
 INPUT_RATINGS_DEF_PATH = "exports/bundles/Assets/Shared/Prefabs/ScoreResults/RhythmRift_InputRatingsDefinition.json"
@@ -58,3 +60,8 @@ GLASS_CAGES_EASY_PATH = (
 class Facing(Enum):
     LEFT = 0
     RIGHT = 1
+
+
+class TrapDir(Enum):
+    RIGHT = 1
+    LEFT = 2
