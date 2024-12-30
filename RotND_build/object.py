@@ -147,6 +147,20 @@ class GreenZombie(Zombie):
         return getattr(GreenZombie, "beat_for_move")
 
 
+class RedZombie(Zombie):
+    def __init__(self, appear_lane, facing, chained=False):
+        super(RedZombie, self).__init__(appear_lane, facing, chained)
+        self.health = getattr(RedZombie, "max_health")
+        self.shield = getattr(RedZombie, "max_shield")
+
+    def __repr__(self):
+        facing = "L" if self.facing == Facing.LEFT else "R"
+        return "RZ" + facing
+
+    def get_cooltime(self):
+        return getattr(RedZombie, "beat_for_move")
+
+
 class Skeleton(Enemy):
     def __init__(self, appear_lane, chained=False):
         super(Skeleton, self).__init__(appear_lane, chained)

@@ -63,6 +63,10 @@ class EnemyDB:
                 setattr(GreenZombie, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(GreenZombie, "max_health", enemy_def["health"])
                 setattr(GreenZombie, "max_shield", enemy_def["shield"])
+            elif name == RED_ZOMBIE:
+                setattr(RedZombie, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(RedZombie, "max_health", enemy_def["health"])
+                setattr(RedZombie, "max_shield", enemy_def["shield"])
             elif name == BASE_SKELETON:
                 setattr(BaseSkeleton, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(BaseSkeleton, "max_health", enemy_def["health"])

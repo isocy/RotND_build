@@ -134,10 +134,12 @@ class Map:
                         if isinstance(obj, GreenZombie):
                             if i == 0:
                                 self.grids[1][j - 1].enemies.append(grid_enemy)
+                                obj.facing = Facing.LEFT
                             elif i == self.lanes - 1:
                                 self.grids[self.lanes - 2][j - 1].enemies.append(
                                     grid_enemy
                                 )
+                                obj.facing = Facing.RIGHT
                             else:
                                 if obj.facing == Facing.LEFT:
                                     self.grids[i - 1][j - 1].enemies.append(grid_enemy)
@@ -145,6 +147,13 @@ class Map:
                                 else:
                                     self.grids[i + 1][j - 1].enemies.append(grid_enemy)
                                     obj.facing = Facing.LEFT
+                        elif isinstance(obj, RedZombie):
+                            if obj.facing == Facing.LEFT:
+                                self.grids[i - 1][j - 1].enemies.append(grid_enemy)
+                            else:
+                                self.grids[(i + 1) % self.lanes][j - 1].enemies.append(
+                                    grid_enemy
+                                )
                         # TODO
                         elif False:
                             pass
@@ -256,6 +265,10 @@ class Node[T: Object]:
                 nodes.append(
                     Node(GreenZombie(lane, enemy_event.facing, chained), appear_beat)
                 )
+            elif name == RED_ZOMBIE:
+                nodes.append(
+                    Node(RedZombie(lane, enemy_event.facing, chained), appear_beat)
+                )
             elif name == BASE_SKELETON:
                 nodes.append(Node(BaseSkeleton(lane, chained), appear_beat))
             elif name == SHIELDED_BASE_SKELETON:
@@ -316,6 +329,10 @@ while node_idx < enemy_nodes_len or not map.is_clean():
             next_node.cooltime -= cur_beat + min_cooltime
 
     cur_beat += min_cooltime
+
+    # Debug: map
+    # print(cur_beat)
+    # print(map)
 
     # TODO: trap
 
