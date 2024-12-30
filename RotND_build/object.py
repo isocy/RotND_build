@@ -22,6 +22,7 @@ class Enemy(Object):
     def __init__(self, appear_lane, chained=False):
         super(Enemy, self).__init__(appear_lane)
         self.health = 0
+        self.facing = Facing.LEFT
         self.chained = chained
 
     @abstractmethod
@@ -41,8 +42,9 @@ class Slime(Enemy):
     def __repr__(self):
         pass
 
+    @abstractmethod
     def get_cooltime(self):
-        return getattr(GreenSlime, "beat_for_move")
+        pass
 
 
 class GreenSlime(Slime):
@@ -54,6 +56,9 @@ class GreenSlime(Slime):
     def __repr__(self):
         return "GS"
 
+    def get_cooltime(self):
+        return getattr(GreenSlime, "beat_for_move")
+
 
 class BlueSlime(Slime):
     def __init__(self, appear_lane, chained=False):
@@ -63,6 +68,82 @@ class BlueSlime(Slime):
 
     def __repr__(self):
         return "BS"
+
+    def get_cooltime(self):
+        return getattr(BlueSlime, "beat_for_move")
+
+
+# TODO: add classes whose super class is Enemy
+
+
+class Bat(Enemy):
+    def __init__(self, appear_lane, facing, chained=False):
+        super(Bat, self).__init__(appear_lane, chained)
+        self.facing = facing
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    @abstractmethod
+    def get_cooltime(self):
+        pass
+
+
+class BlueBat(Bat):
+    def __init__(self, appear_lane, facing, chained=False):
+        super(BlueBat, self).__init__(appear_lane, facing, chained)
+        self.health = getattr(BlueBat, "max_health")
+        self.shield = getattr(BlueBat, "max_shield")
+
+    def __repr__(self):
+        facing = "L" if self.facing == Facing.LEFT else "R"
+        return "BB" + facing
+
+    def get_cooltime(self):
+        return getattr(BlueBat, "beat_for_move")
+
+
+class YellowBat(Bat):
+    def __init__(self, appear_lane, facing, chained=False):
+        super(YellowBat, self).__init__(appear_lane, facing, chained)
+        self.health = getattr(YellowBat, "max_health")
+        self.shield = getattr(YellowBat, "max_shield")
+
+    def __repr__(self):
+        facing = "L" if self.facing == Facing.LEFT else "R"
+        return "YB" + facing
+
+    def get_cooltime(self):
+        return getattr(YellowBat, "beat_for_move")
+
+
+class Zombie(Enemy):
+    def __init__(self, appear_lane, facing, chained=False):
+        super(Zombie, self).__init__(appear_lane, chained)
+        self.facing = facing
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    @abstractmethod
+    def get_cooltime(self):
+        pass
+
+
+class GreenZombie(Zombie):
+    def __init__(self, appear_lane, facing, chained=False):
+        super(GreenZombie, self).__init__(appear_lane, facing, chained)
+        self.health = getattr(GreenZombie, "max_health")
+        self.shield = getattr(GreenZombie, "max_shield")
+
+    def __repr__(self):
+        facing = "L" if self.facing == Facing.LEFT else "R"
+        return "GZ" + facing
+
+    def get_cooltime(self):
+        return getattr(GreenZombie, "beat_for_move")
 
 
 class Skeleton(Enemy):
@@ -85,30 +166,6 @@ class BaseSkeleton(Skeleton):
 
     def __repr__(self):
         return "BSk"
-
-
-class Bat(Enemy):
-    def __init__(self, appear_lane, facing=Facing.LEFT, chained=False):
-        super(Bat, self).__init__(appear_lane, chained)
-        self.facing = facing
-
-    @abstractmethod
-    def __repr__(self):
-        pass
-
-    def get_cooltime(self):
-        return getattr(BlueBat, "beat_for_move")
-
-
-class BlueBat(Bat):
-    def __init__(self, appear_lane, facing=Facing.LEFT, chained=False):
-        super(BlueBat, self).__init__(appear_lane, facing, chained)
-        self.health = getattr(BlueBat, "max_health")
-        self.shield = getattr(BlueBat, "max_shield")
-
-    def __repr__(self):
-        facing = "L" if self.facing == Facing.LEFT else "R"
-        return "BB" + facing
 
 
 class Food(Enemy):
