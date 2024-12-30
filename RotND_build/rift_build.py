@@ -100,15 +100,15 @@ class Map:
         # return: elapsed beat for the update
         min_cooltime = init_cooltime
         target_nodes = []
-        for i in range(map.lanes):
-            for j in range(map.rows):
-                for enemy_node in map.grids[i][j].enemies:
+        for i in range(self.lanes):
+            for j in range(self.rows):
+                for enemy_node in self.grids[i][j].enemies:
                     if enemy_node.cooltime < min_cooltime:
                         min_cooltime = enemy_node.cooltime
                         target_nodes = [enemy_node]
                     elif enemy_node.cooltime == min_cooltime:
                         target_nodes.append(enemy_node)
-                for trap_node in map.grids[i][j].traps:
+                for trap_node in self.grids[i][j].traps:
                     if trap_node.cooltime < min_cooltime:
                         min_cooltime = trap_node.cooltime
                         target_nodes = [trap_node]
@@ -117,9 +117,9 @@ class Map:
 
         # subset of 'target_nodes'
         nodes_done = []
-        for i in range(map.lanes):
-            for j in range(map.rows):
-                grid = map.grids[i][j]
+        for i in range(self.lanes):
+            for j in range(self.rows):
+                grid = self.grids[i][j]
                 grid_enemies = grid.enemies
                 for grid_enemy in grid_enemies:
                     if grid_enemy in nodes_done:
@@ -130,23 +130,23 @@ class Map:
                         grid_enemies.remove(grid_enemy)
                         if isinstance(obj, GreenZombie):
                             if i == 0:
-                                map.grids[1][j - 1].enemies.append(grid_enemy)
-                            elif i == map.lanes - 1:
-                                map.grids[map.lanes - 2][j - 1].enemies.append(
+                                self.grids[1][j - 1].enemies.append(grid_enemy)
+                            elif i == self.lanes - 1:
+                                self.grids[self.lanes - 2][j - 1].enemies.append(
                                     grid_enemy
                                 )
                             else:
                                 if obj.facing == Facing.LEFT:
-                                    map.grids[i - 1][j - 1].enemies.append(grid_enemy)
+                                    self.grids[i - 1][j - 1].enemies.append(grid_enemy)
                                     obj.facing = Facing.RIGHT
                                 else:
-                                    map.grids[i + 1][j - 1].enemies.append(grid_enemy)
+                                    self.grids[i + 1][j - 1].enemies.append(grid_enemy)
                                     obj.facing = Facing.LEFT
                         # TODO
                         elif False:
                             pass
                         else:
-                            map.grids[i][j - 1].enemies.append(grid_enemy)
+                            self.grids[i][j - 1].enemies.append(grid_enemy)
                         nodes_done.append(grid_enemy)
                     else:
                         grid_enemy.cooltime -= min_cooltime
