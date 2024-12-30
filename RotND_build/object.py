@@ -208,5 +208,15 @@ class Apple(Food):
         return "Ap"
 
 
+class Cheese(Food):
+    def __init__(self, appear_lane, chained=False):
+        super(Cheese, self).__init__(appear_lane, chained)
+        self.health = getattr(Cheese, "max_health")
+        self.shield = getattr(Cheese, "max_shield")
+
+    def __repr__(self):
+        return "Ch"
+
+
 class Trap(Object):
     pass

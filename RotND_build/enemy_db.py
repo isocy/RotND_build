@@ -77,3 +77,7 @@ class EnemyDB:
                 setattr(Apple, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(Apple, "max_health", enemy_def["health"])
                 setattr(Apple, "max_shield", enemy_def["shield"])
+            elif name == CHEESE:
+                setattr(Cheese, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(Cheese, "max_health", enemy_def["health"])
+                setattr(Cheese, "max_shield", enemy_def["shield"])

@@ -262,6 +262,8 @@ class Node[T: Object]:
                 nodes.append(Node(ShieldedBaseSkeleton(lane, chained), appear_beat))
             elif name == APPLE:
                 nodes.append(Node(Apple(lane, chained), appear_beat))
+            elif name == CHEESE:
+                nodes.append(Node(Cheese(lane, chained), appear_beat))
 
         return (nodes, chain_cnts)
 
@@ -355,6 +357,11 @@ while node_idx < enemy_nodes_len or not map.is_clean():
                     # TODO: special case for wyrms
                     vibe_beats.append(cur_beat)
                     chain_idx += 1
+
+
+# Debug: beats
+# for beat in beats:
+#     print(beat)
 
 
 # All elements of 'vibe_beats' is included in 'raw_beats'
