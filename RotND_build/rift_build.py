@@ -73,7 +73,7 @@ class Grid:
 
 
 class Map:
-    def __init__(self, lanes, rows):
+    def __init__(self, lanes: int, rows: int):
         self.lanes = lanes
         self.rows = rows
         self.grids: list[list[Grid]] = [
