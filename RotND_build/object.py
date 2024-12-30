@@ -306,7 +306,12 @@ class Bounce(Trap):
         self.dir = dir
 
     def __repr__(self):
-        if dir == TrapDir.LEFT:
+        # TODO: other directions
+        if dir == TrapDir.UP:
+            return "BU"
+        elif dir == TrapDir.RIGHT:
+            return "BR"
+        elif dir == TrapDir.LEFT:
             return "BL"
         else:
             return "B"

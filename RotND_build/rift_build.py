@@ -95,112 +95,29 @@ class Map:
                     return False
         return True
 
-    def step(self, init_cooltime=float("inf")) -> float:
-        """Update map for one step
-        return: elapsed beat for the update"""
-        min_cooltime = init_cooltime
-        target_nodes = []
-        for i in range(self.lanes):
-            for j in range(self.rows):
-                for enemy_node in self.grids[i][j].enemies:
-                    if enemy_node.cooltime < min_cooltime:
-                        min_cooltime = enemy_node.cooltime
-                        target_nodes = [enemy_node]
-                    elif enemy_node.cooltime == min_cooltime:
-                        target_nodes.append(enemy_node)
-                trap_node = self.grids[i][j].trap
-                if trap_node != None:
-                    if trap_node.cooltime < min_cooltime:
-                        min_cooltime = trap_node.cooltime
-                        target_nodes = [trap_node]
-                    elif trap_node.cooltime == min_cooltime:
-                        target_nodes.append(trap_node)
-
-        for i in range(self.lanes):
-            for j in range(self.rows):
-                grid = self.grids[i][j]
-
-                trap_node = grid.trap
-                if trap_node in target_nodes:
-                    grid.trap = None
-                    target_nodes.remove(trap_node)
-                elif trap_node != None:
-                    trap_node.cooltime -= min_cooltime
-
-        # subset of 'target_nodes'
-        nodes_done = []
-        for i in range(self.lanes):
-            for j in range(self.rows):
-                grid = self.grids[i][j]
-
-                grid_enemies = grid.enemies
-                for grid_enemy in grid_enemies:
-                    if grid_enemy in nodes_done:
-                        continue
-
-                    # Update 'target_nodes'
-                    # For enemies previously shielded, do not move
-                    if grid_enemy in target_nodes and j != 0:
-                        obj = grid_enemy.obj
-                        grid_enemy.cooltime = (
-                            obj.get_cooltime() if j != obj.dist_per_move else 0
-                        )
-                        grid_enemies.remove(grid_enemy)
-                        # TODO: Zombie collision
-                        # TODO: Zombie & Bounce
-                        if isinstance(obj, GreenZombie):
-                            if i == 0:
-                                self.grids[1][j - 1].enemies.append(grid_enemy)
-                                obj.facing = Facing.LEFT
-                            elif i == self.lanes - 1:
-                                self.grids[self.lanes - 2][j - 1].enemies.append(
-                                    grid_enemy
-                                )
-                                obj.facing = Facing.RIGHT
-                            else:
-                                if obj.facing == Facing.LEFT:
-                                    self.grids[i - 1][j - 1].enemies.append(grid_enemy)
-                                    obj.facing = Facing.RIGHT
-                                else:
-                                    self.grids[i + 1][j - 1].enemies.append(grid_enemy)
-                                    obj.facing = Facing.LEFT
-                        elif isinstance(obj, RedZombie):
-                            if obj.facing == Facing.LEFT:
-                                self.grids[i - 1][j - 1].enemies.append(grid_enemy)
-                            else:
-                                self.grids[(i + 1) % self.lanes][j - 1].enemies.append(
-                                    grid_enemy
-                                )
-                        elif isinstance(obj, Harpy):
-                            self.grids[i][j - 2].enemies.append(grid_enemy)
-                        # TODO
-                        elif False:
-                            pass
-                        else:
-                            (target_i, target_j) = (i, j - 1)
-                            trap_node = self.grids[target_i][target_j].trap
-                            if trap_node != None:
-                                trap = trap_node.obj
-                                if isinstance(trap, Bounce):
-                                    dir = trap.dir
-                                    if dir == TrapDir.RIGHT:
-                                        target_i = target_i + 1
-                                    elif dir == TrapDir.LEFT:
-                                        target_i = target_i - 1
-                                    # TODO: other directions
-                                    else:
-                                        pass
-                                # TODO: other traps
-                                else:
-                                    pass
-                            self.grids[target_i % self.lanes][target_j].enemies.append(
-                                grid_enemy
-                            )
-                        nodes_done.append(grid_enemy)
-                    else:
-                        grid_enemy.cooltime -= min_cooltime
-
-        return min_cooltime
+    def step_trap(self, init_i: int, init_j: int, enemy_node):
+        """Move 'enemy_node' to the appropriate position
+        if there is a trap at (init_i, init_j)."""
+        trap_node = self.grids[init_i][init_j].trap
+        if trap_node != None:
+            trap = trap_node.obj
+            if isinstance(trap, Bounce):
+                dir = trap.dir
+                if dir == TrapDir.UP:
+                    init_j += 1
+                elif dir == TrapDir.RIGHT:
+                    init_i += 1
+                elif dir == TrapDir.LEFT:
+                    init_i -= 1
+                # TODO: other directions
+                else:
+                    pass
+            # TODO: other traps
+            else:
+                pass
+            self.grids[init_i % self.lanes][init_j].enemies.append(enemy_node)
+        else:
+            self.grids[init_i][init_j].enemies.append(enemy_node)
 
 
 class RawBeatmap:
@@ -287,7 +204,7 @@ class Node[T: Object]:
                     nodes.append(Node(GreenSlime(lane, chained), appear_beat))
                 elif name == BLUE_SLIME:
                     nodes.append(Node(BlueSlime(lane, chained), appear_beat))
-                # TODO
+                # TODO: enemies
                 elif name == BLUE_BAT:
                     nodes.append(
                         Node(BlueBat(lane, obj_event.facing, chained), appear_beat)
@@ -357,8 +274,53 @@ next_node = nodes[node_idx]
 # so the cooltime corrections occur for each node when the node is 'next_node'.
 next_node.cooltime -= cur_beat
 while node_idx < nodes_len or not map.is_clean():
-    min_cooltime = map.step(next_node.cooltime)
+    # derive 'min_cooltime'
+    min_cooltime = next_node.cooltime
+    target_nodes = []
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            for enemy_node in map.grids[i][j].enemies:
+                if enemy_node.cooltime < min_cooltime:
+                    min_cooltime = enemy_node.cooltime
+                    target_nodes = [enemy_node]
+                elif enemy_node.cooltime == min_cooltime:
+                    target_nodes.append(enemy_node)
+            trap_node = map.grids[i][j].trap
+            if trap_node != None:
+                if trap_node.cooltime < min_cooltime:
+                    min_cooltime = trap_node.cooltime
+                    target_nodes = [trap_node]
+                elif trap_node.cooltime == min_cooltime:
+                    target_nodes.append(trap_node)
 
+    # decrement lifetime of traps
+    #
+    # Let a trap despawn at t=0.
+    # If an enemy reaches the grid where the trap was at the same time t=0,
+    # Then enemy should NOT be affected by the trap
+    # That's why this code block is ahead of all below
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            grid = map.grids[i][j]
+            trap_node = grid.trap
+
+            if trap_node in target_nodes:
+                grid.trap = None
+                target_nodes.remove(trap_node)
+            elif trap_node != None:
+                trap_node.cooltime -= min_cooltime
+
+    # now 'target_nodes' only contains enemy nodes
+
+    # exclusion of 'target_nodes'
+    nodes_done = []
+
+    # introduce new nodes
+    #
+    # Let a trap spawn at t=0 and at some grid.
+    # If an enemy reaches that grid at the same time t=0,
+    # Then enemy should be affected by the trap
+    # That's why this code block is ahead of below
     if node_idx < nodes_len:
         next_node.cooltime -= min_cooltime
 
@@ -366,14 +328,13 @@ while node_idx < nodes_len or not map.is_clean():
             obj: Object = next_node.obj
             next_node.cooltime = obj.get_cooltime()
             if isinstance(obj, Enemy):
-                map.grids[obj.appear_lane - 1][Enemy.appear_row].enemies.append(
-                    next_node
-                )
+                map.step_trap(obj.appear_lane - 1, Enemy.appear_row, next_node)
             elif isinstance(obj, Bounce):
                 map.grids[obj.appear_lane - 1][obj.appear_row].trap = next_node
             # TODO: other traps
             else:
                 pass
+            nodes_done.append(next_node)
 
             node_idx += 1
             if node_idx >= nodes_len:
@@ -381,10 +342,65 @@ while node_idx < nodes_len or not map.is_clean():
             next_node = nodes[node_idx]
             next_node.cooltime -= cur_beat + min_cooltime
 
+    # let the time pass by for enemies
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            grid = map.grids[i][j]
+            grid_enemies = grid.enemies
+            enemies_removed = []
+            for grid_enemy in grid_enemies:
+                if grid_enemy in nodes_done:
+                    continue
+
+                # Update 'target_nodes'
+                # For enemies previously shielded, do not move
+                if grid_enemy in target_nodes and j != 0:
+                    obj = grid_enemy.obj
+                    grid_enemy.cooltime = (
+                        obj.get_cooltime() if j != obj.dist_per_move else 0
+                    )
+                    enemies_removed.append(grid_enemy)
+                    # TODO: Zombie collision
+                    # TODO: Zombie & Bounce
+                    if isinstance(obj, GreenZombie):
+                        if i == 0:
+                            map.grids[1][j - 1].enemies.append(grid_enemy)
+                            obj.facing = Facing.LEFT
+                        elif i == map.lanes - 1:
+                            map.grids[map.lanes - 2][j - 1].enemies.append(grid_enemy)
+                            obj.facing = Facing.RIGHT
+                        else:
+                            if obj.facing == Facing.LEFT:
+                                map.grids[i - 1][j - 1].enemies.append(grid_enemy)
+                                obj.facing = Facing.RIGHT
+                            else:
+                                map.grids[i + 1][j - 1].enemies.append(grid_enemy)
+                                obj.facing = Facing.LEFT
+                    elif isinstance(obj, RedZombie):
+                        if obj.facing == Facing.LEFT:
+                            map.grids[i - 1][j - 1].enemies.append(grid_enemy)
+                        else:
+                            map.grids[(i + 1) % map.lanes][j - 1].enemies.append(
+                                grid_enemy
+                            )
+                    elif isinstance(obj, Harpy):
+                        map.grids[i][j - 2].enemies.append(grid_enemy)
+                    # TODO: blademaster
+                    elif False:
+                        pass
+                    else:
+                        map.step_trap(i, j - 1, grid_enemy)
+                    nodes_done.append(grid_enemy)
+                else:
+                    grid_enemy.cooltime -= min_cooltime
+
+            for enemy_removed in enemies_removed:
+                grid_enemies.remove(enemy_removed)
+
     cur_beat += min_cooltime
 
     # Debug: map
-    # if cur_beat < 50:
+    # if 250 < cur_beat < 263:
     #     print(cur_beat)
     #     print(map)
 
@@ -420,24 +436,7 @@ while node_idx < nodes_len or not map.is_clean():
                 elif isinstance(enemy, BlueHarpy):
                     map.grids[i][2].enemies.append(enemy_node)
                 else:
-                    # TODO: duplicates into one function
-                    (target_i, target_j) = (i, 1)
-                    trap_node = map.grids[target_i][target_j].trap
-                    if trap_node != None:
-                        trap = trap_node.obj
-                        if isinstance(trap, Bounce):
-                            dir = trap.dir
-                            if dir == TrapDir.RIGHT:
-                                target_i = target_i + 1
-                            elif dir == TrapDir.LEFT:
-                                target_i = target_i - 1
-                            # TODO: other directions
-                            else:
-                                pass
-                        # TODO: other traps
-                        else:
-                            pass
-                    map.grids[i % map.lanes][target_j].enemies.append(enemy_node)
+                    map.step_trap(i, 1, enemy_node)
             elif enemy.chained:
                 chain_cnts[chain_idx] -= 1
 

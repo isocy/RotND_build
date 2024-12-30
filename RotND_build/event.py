@@ -69,11 +69,13 @@ class TrapEvent(ObjectEvent):
             for pair in iter(event["dataPairs"])
             if pair["_eventDataKey"] == "TrapDirection"
         )
-        if dir_num == 1:
+        # TODO: other directions
+        if dir_num == 0:
+            dir = TrapDir.UP
+        elif dir_num == 1:
             dir = TrapDir.RIGHT
         elif dir_num == 2:
             dir = TrapDir.LEFT
-        # TODO: other directions
         else:
             dir = TrapDir.RIGHT
 

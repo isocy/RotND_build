@@ -42,7 +42,7 @@ class EnemyDB:
     def init_objs(cls, enemy_db: dict):
         for enemy_def in enemy_db.values():
             name = enemy_def["name"]
-            # TODO
+            # TODO: enemies
             if name == GREEN_SLIME:
                 setattr(GreenSlime, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(GreenSlime, "max_health", enemy_def["health"])
