@@ -167,7 +167,7 @@ class BaseSkeleton(Skeleton):
         self.shield = getattr(BaseSkeleton, "max_shield")
 
     def __repr__(self):
-        return "BSk"
+        return "Sk"
 
     def get_cooltime(self):
         return getattr(BaseSkeleton, "beat_for_move")
@@ -180,7 +180,7 @@ class ShieldedBaseSkeleton(Skeleton):
         self.shield = getattr(ShieldedBaseSkeleton, "max_shield")
 
     def __repr__(self):
-        return "SBSk"
+        return "SSk"
 
     def get_cooltime(self):
         return getattr(ShieldedBaseSkeleton, "beat_for_move")
