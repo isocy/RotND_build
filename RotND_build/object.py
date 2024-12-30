@@ -22,6 +22,7 @@ class Enemy(Object):
     def __init__(self, appear_lane, chained=False):
         super(Enemy, self).__init__(appear_lane)
         self.health = 0
+        self.shield = 0
         self.facing = Facing.LEFT
         self.chained = chained
 
@@ -154,8 +155,9 @@ class Skeleton(Enemy):
     def __repr__(self):
         pass
 
+    @abstractmethod
     def get_cooltime(self):
-        return getattr(BaseSkeleton, "beat_for_move")
+        pass
 
 
 class BaseSkeleton(Skeleton):
@@ -166,6 +168,22 @@ class BaseSkeleton(Skeleton):
 
     def __repr__(self):
         return "BSk"
+
+    def get_cooltime(self):
+        return getattr(BaseSkeleton, "beat_for_move")
+
+
+class ShieldedBaseSkeleton(Skeleton):
+    def __init__(self, appear_lane, chained=False):
+        super(ShieldedBaseSkeleton, self).__init__(appear_lane, chained)
+        self.health = getattr(ShieldedBaseSkeleton, "max_health")
+        self.shield = getattr(ShieldedBaseSkeleton, "max_shield")
+
+    def __repr__(self):
+        return "SBSk"
+
+    def get_cooltime(self):
+        return getattr(ShieldedBaseSkeleton, "beat_for_move")
 
 
 class Food(Enemy):

@@ -96,8 +96,8 @@ class Map:
         return True
 
     def step(self, init_cooltime=float("inf")) -> float:
-        # Update map for one step
-        # return: elapsed beat for the update
+        """Update map for one step
+        return: elapsed beat for the update"""
         min_cooltime = init_cooltime
         target_nodes = []
         for i in range(self.lanes):
@@ -124,9 +124,12 @@ class Map:
                 for grid_enemy in grid_enemies:
                     if grid_enemy in nodes_done:
                         continue
-                    if grid_enemy in target_nodes:
+
+                    # Update 'target_nodes'
+                    # For enemies previously shielded, do not move
+                    if grid_enemy in target_nodes and j != 0:
                         obj = grid_enemy.obj
-                        grid_enemy.cooltime = obj.get_cooltime()
+                        grid_enemy.cooltime = obj.get_cooltime() if j != 1 else 0
                         grid_enemies.remove(grid_enemy)
                         if isinstance(obj, GreenZombie):
                             if i == 0:
@@ -191,10 +194,10 @@ class RawBeatmap:
 
 
 class Node[T: Object]:
-    def __init__(self, obj: T, appear_beat):
+    def __init__(self, obj: T, cooltime):
         """Initialize a node which will be present at some grids for a period of time"""
         self.obj = obj
-        self.cooltime = appear_beat
+        self.cooltime = cooltime
 
     def __eq__(self, other: Self):
         return self.obj == other.obj
@@ -255,6 +258,8 @@ class Node[T: Object]:
                 )
             elif name == BASE_SKELETON:
                 nodes.append(Node(BaseSkeleton(lane, chained), appear_beat))
+            elif name == SHIELDED_BASE_SKELETON:
+                nodes.append(Node(ShieldedBaseSkeleton(lane, chained), appear_beat))
             elif name == APPLE:
                 nodes.append(Node(Apple(lane, chained), appear_beat))
 
@@ -315,12 +320,26 @@ while node_idx < enemy_nodes_len or not map.is_clean():
     # hit_notes()
     for i in range(map.lanes):
         for enemy_node in map.grids[i][0].enemies:
+            if enemy_node.cooltime != 0:
+                continue
+
             beats.append(Beat(i, cur_beat))
+            map.grids[i][0].enemies.remove(enemy_node)
+
             enemy = enemy_node.obj
-            if enemy.health > 1:
+            if enemy.shield > 0:
+                # no decrement of shield required due to the node exchange
+                if isinstance(enemy, ShieldedBaseSkeleton):
+                    new_node = Node(
+                        BaseSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
+                    )
+                    map.grids[i][0].enemies.append(new_node)
+                # TODO: other shielded enemies
+                else:
+                    pass
+            elif enemy.health > 1:
                 enemy.health -= 1
                 enemy_node.cooltime = enemy.get_cooltime()
-                map.grids[i][0].enemies.remove(enemy_node)
                 # TODO: different 'dist_for_move' for different enemies
                 if isinstance(enemy, BlueBat) or isinstance(enemy, YellowBat):
                     if enemy.facing == Facing.LEFT:
@@ -336,8 +355,6 @@ while node_idx < enemy_nodes_len or not map.is_clean():
                     # TODO: special case for wyrms
                     vibe_beats.append(cur_beat)
                     chain_idx += 1
-
-        map.grids[i][0].enemies.clear()
 
 
 # All elements of 'vibe_beats' is included in 'raw_beats'

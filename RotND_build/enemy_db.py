@@ -67,6 +67,12 @@ class EnemyDB:
                 setattr(BaseSkeleton, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(BaseSkeleton, "max_health", enemy_def["health"])
                 setattr(BaseSkeleton, "max_shield", enemy_def["shield"])
+            elif name == SHIELDED_BASE_SKELETON:
+                setattr(
+                    ShieldedBaseSkeleton, "beat_for_move", enemy_def["beat_for_move"]
+                )
+                setattr(ShieldedBaseSkeleton, "max_health", enemy_def["health"])
+                setattr(ShieldedBaseSkeleton, "max_shield", enemy_def["shield"])
             elif name == APPLE:
                 setattr(Apple, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(Apple, "max_health", enemy_def["health"])
