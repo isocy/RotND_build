@@ -100,24 +100,24 @@ class Map:
         # return: elapsed beat for the update
         min_cooltime = init_cooltime
         target_nodes = []
-        for i in range(map.lanes):
-            for j in range(map.rows):
-                for enemy_node in map.grids[i][j].enemies:
+        for i in range(self.lanes):
+            for j in range(1, self.rows):
+                for enemy_node in self.grids[i][j].enemies:
                     if enemy_node.cooltime < min_cooltime:
                         min_cooltime = enemy_node.cooltime
                         target_nodes = [enemy_node]
                     elif enemy_node.cooltime == min_cooltime:
                         target_nodes.append(enemy_node)
-                for trap_node in map.grids[i][j].traps:
+                for trap_node in self.grids[i][j].traps:
                     if trap_node.cooltime < min_cooltime:
                         min_cooltime = trap_node.cooltime
                         target_nodes = [trap_node]
                     elif trap_node.cooltime == min_cooltime:
                         target_nodes.append(trap_node)
 
-        for i in range(map.lanes):
-            for j in range(map.rows):
-                grid = map.grids[i][j]
+        for i in range(self.lanes):
+            for j in range(1, self.rows):
+                grid = self.grids[i][j]
                 grid_enemies = grid.enemies
                 for grid_enemy in grid_enemies:
                     if grid_enemy in target_nodes:
@@ -130,7 +130,7 @@ class Map:
                             or isinstance(obj, Skeleton)
                             or isinstance(obj, Food)
                         ):
-                            map.grids[i][j - 1].enemies.append(grid_enemy)
+                            self.grids[i][j - 1].enemies.append(grid_enemy)
                         # TODO
                         else:
                             pass
