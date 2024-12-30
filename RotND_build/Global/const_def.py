@@ -50,6 +50,9 @@ DISCO_DISASTER_EASY_PATH = (
 OVERTHINKER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Easy"
 )
+GLASS_CAGES_EASY_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Easy"
+)
 
 
 class Facing(Enum):
