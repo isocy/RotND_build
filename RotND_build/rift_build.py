@@ -101,7 +101,7 @@ class Map:
         min_cooltime = init_cooltime
         target_nodes = []
         for i in range(self.lanes):
-            for j in range(1, self.rows):
+            for j in range(self.rows):
                 for enemy_node in self.grids[i][j].enemies:
                     if enemy_node.cooltime < min_cooltime:
                         min_cooltime = enemy_node.cooltime
@@ -118,7 +118,7 @@ class Map:
         # subset of 'target_nodes'
         nodes_done = []
         for i in range(self.lanes):
-            for j in range(1, self.rows):
+            for j in range(self.rows):
                 grid = self.grids[i][j]
                 grid_enemies = grid.enemies
                 for grid_enemy in grid_enemies:
