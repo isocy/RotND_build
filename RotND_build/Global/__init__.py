@@ -1,6 +1,6 @@
 from Global.const_def import *
 
-RAW_BEATMAP_PATH = GLASS_CAGES_EASY_PATH
+RAW_BEATMAP_PATH = RAVEVENGE_EASY_PATH
 
 # constants which would be frequently modified
 # default: float("inf")
