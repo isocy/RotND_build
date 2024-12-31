@@ -211,9 +211,9 @@ class ShieldedBaseSkeleton(Skeleton):
 class HeadlessSkeleton(Enemy):
     beat_for_move = 1
 
-    def __init__(self, appear_lane, chained):
+    def __init__(self, appear_lane, chained, dist_per_move):
         super().__init__(appear_lane, chained)
-        self.dist_per_move = -1
+        self.dist_per_move = dist_per_move
         self.health = 1
 
     @abstractmethod
@@ -239,8 +239,8 @@ class YellowSkeleton(Skeleton):
 
 
 class HeadlessYellowSkeleton(HeadlessSkeleton):
-    def __init__(self, appear_lane, chained):
-        super().__init__(appear_lane, chained)
+    def __init__(self, appear_lane, chained, dist_per_move):
+        super().__init__(appear_lane, chained, dist_per_move)
 
     def __repr__(self):
         return "HlYSk"
@@ -328,8 +328,10 @@ class Cheese(Food):
 
 
 class Trap(Object):
-    def __init__(self):
-        pass
+    def __init__(self, appear_lane: int, appear_row: int, duration: float):
+        self.appear_lane = appear_lane
+        self.appear_row = appear_row
+        self.duration = duration
 
     @abstractmethod
     def __repr__(self):
@@ -344,10 +346,7 @@ class Bounce(Trap):
     def __init__(
         self, appear_lane: int, appear_row: int, duration: float, dir: TrapDir
     ):
-        super().__init__()
-        self.appear_lane = appear_lane
-        self.appear_row = appear_row
-        self.duration = duration
+        super().__init__(appear_lane, appear_row, duration)
         self.dir = dir
 
     def __repr__(self):
@@ -361,5 +360,26 @@ class Bounce(Trap):
         else:
             return "B"
 
+    def get_cooltime(self):
+        return self.duration
+
+
+class Portal(Trap):
+    def __init__(
+        self,
+        appear_lane: int,
+        appear_row: int,
+        child_lane: int,
+        child_row: int,
+        duration: float,
+    ):
+        super().__init__(appear_lane, appear_row, duration)
+        self.child_lane = child_lane
+        self.child_row = child_row
+
+    def __repr__(self):
+        return "P" + str((self.child_lane - 1) * (ROWS - 1) + self.child_row)
+
+    @abstractmethod
     def get_cooltime(self):
         return self.duration

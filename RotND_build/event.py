@@ -1,10 +1,10 @@
-from Global.const_def import BEAT_OFFSET, Facing, TrapDir
+from Global.const_def import BEAT_OFFSET, Facing, TrapDir, BOUNCE, PORTAL
+
+from abc import abstractmethod
 
 
 class Event:
-    @classmethod
-    def load_dict(cls, event: dict):
-        pass
+    pass
 
 
 class ObjectEvent(Event):
@@ -53,13 +53,37 @@ class TrapEvent(ObjectEvent):
         appear_beat: float,
         duration: float,
         trap_type: str,
-        dir: TrapDir,
     ):
         self.lane = lane
         self.row = row
         self.appear_beat = appear_beat
         self.duration = duration
         self.trap_type = trap_type
+
+    @classmethod
+    def load_dict(cls, event):
+        trap_type = next(
+            pair["_eventDataValue"]
+            for pair in iter(event["dataPairs"])
+            if pair["_eventDataKey"] == "TrapTypeToSpawn"
+        )
+        if trap_type == BOUNCE:
+            return BounceEvent.load_dict(event)
+        elif trap_type == PORTAL:
+            return PortalEvent.load_dict(event)
+
+
+class BounceEvent(TrapEvent):
+    def __init__(
+        self,
+        lane: int,
+        row: int,
+        appear_beat: float,
+        duration: float,
+        trap_type: str,
+        dir: TrapDir,
+    ):
+        super().__init__(lane, row, appear_beat, duration, trap_type)
         self.dir = dir
 
     @classmethod
@@ -79,7 +103,7 @@ class TrapEvent(ObjectEvent):
         else:
             dir = TrapDir.RIGHT
 
-        return TrapEvent(
+        return BounceEvent(
             event["track"],
             next(
                 int(pair["_eventDataValue"])
@@ -92,12 +116,52 @@ class TrapEvent(ObjectEvent):
                 for pair in iter(event["dataPairs"])
                 if pair["_eventDataKey"] == "TrapHealthInBeats"
             ),
-            next(
-                pair["_eventDataValue"]
-                for pair in iter(event["dataPairs"])
-                if pair["_eventDataKey"] == "TrapTypeToSpawn"
-            ),
+            BOUNCE,
             dir,
+        )
+
+
+class PortalEvent(TrapEvent):
+    def __init__(
+        self,
+        lane: int,
+        row: int,
+        appear_beat: float,
+        duration: float,
+        trap_type: str,
+        child_lane: int,
+        child_row: int,
+    ):
+        super().__init__(lane, row, appear_beat, duration, trap_type)
+        self.child_lane = child_lane
+        self.child_row = child_row
+
+    @classmethod
+    def load_dict(cls, event):
+        return PortalEvent(
+            event["track"],
+            next(
+                int(pair["_eventDataValue"])
+                for pair in iter(event["dataPairs"])
+                if pair["_eventDataKey"] == "TrapDropRow"
+            ),
+            BEAT_OFFSET + event["startBeatNumber"],
+            next(
+                float(pair["_eventDataValue"])
+                for pair in iter(event["dataPairs"])
+                if pair["_eventDataKey"] == "TrapHealthInBeats"
+            ),
+            PORTAL,
+            next(
+                int(pair["_eventDataValue"])
+                for pair in iter(event["dataPairs"])
+                if pair["_eventDataKey"] == "TrapChildSpawnLane"
+            ),
+            next(
+                int(pair["_eventDataValue"])
+                for pair in iter(event["dataPairs"])
+                if pair["_eventDataKey"] == "TrapChildSpawnRow"
+            ),
         )
 
 

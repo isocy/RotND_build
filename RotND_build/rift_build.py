@@ -112,10 +112,16 @@ class Map:
                 # TODO: other directions
                 else:
                     pass
+
+                self.grids[init_i % self.lanes][init_j].enemies.append(enemy_node)
+            elif isinstance(trap, Portal):
+                init_i = trap.child_lane - 1
+                init_j = trap.child_row
+
+                self.grids[init_i][init_j].enemies.append(enemy_node)
             # TODO: other traps
-            else:
+            elif False:
                 pass
-            self.grids[init_i % self.lanes][init_j].enemies.append(enemy_node)
         else:
             self.grids[init_i][init_j].enemies.append(enemy_node)
 
@@ -124,7 +130,7 @@ class RawBeatmap:
     def __init__(self, bpm, beat_divs, obj_events, vibe_events):
         self.bpm = bpm
         self.beat_divs = beat_divs
-        self.enemy_events: list[ObjectEvent] = obj_events
+        self.obj_events: list[ObjectEvent] = obj_events
         self.vibe_events: list[VibeEvent] = vibe_events
 
     @classmethod
@@ -235,16 +241,30 @@ class Node[T: Object]:
                     nodes.append(Node(Apple(lane, chained), appear_beat))
                 elif name == CHEESE:
                     nodes.append(Node(Cheese(lane, chained), appear_beat))
-            elif isinstance(obj_event, TrapEvent):
+            elif isinstance(obj_event, BounceEvent):
                 lane = obj_event.lane
                 row = obj_event.row
                 appear_beat = obj_event.appear_beat
                 duration = obj_event.duration
                 dir = obj_event.dir
-                trap_type = obj_event.trap_type
 
-                if trap_type == BOUNCE:
-                    nodes.append(Node(Bounce(lane, row, duration, dir), appear_beat))
+                nodes.append(Node(Bounce(lane, row, duration, dir), appear_beat))
+            elif isinstance(obj_event, PortalEvent):
+                lane = obj_event.lane
+                row = obj_event.row
+                appear_beat = obj_event.appear_beat
+                duration = obj_event.duration
+                child_lane = obj_event.child_lane
+                child_row = obj_event.child_row
+
+                nodes.append(
+                    Node(
+                        Portal(lane, row, child_lane, child_row, duration), appear_beat
+                    )
+                )
+            # TODO: traps
+            elif False:
+                pass
 
         return (nodes, chain_cnts)
 
@@ -260,7 +280,7 @@ great_range = input_ratings_def.great_range - 5
 
 raw_beatmap = RawBeatmap.load_json(RAW_BEATMAP_PATH)
 (nodes, chain_cnts) = Node.obj_events_to_nodes(
-    raw_beatmap.enemy_events, raw_beatmap.vibe_events, enemy_db
+    raw_beatmap.obj_events, raw_beatmap.vibe_events, enemy_db
 )
 nodes_len = len(nodes)
 
@@ -331,11 +351,8 @@ while node_idx < nodes_len or not map.is_clean():
             next_node.cooltime = obj.get_cooltime()
             if isinstance(obj, Enemy):
                 map.step_trap(obj.appear_lane - 1, Enemy.appear_row, next_node)
-            elif isinstance(obj, Bounce):
+            elif isinstance(obj, Trap):
                 map.grids[obj.appear_lane - 1][obj.appear_row].trap = next_node
-            # TODO: other traps
-            else:
-                pass
             nodes_done.append(next_node)
 
             node_idx += 1
@@ -364,7 +381,7 @@ while node_idx < nodes_len or not map.is_clean():
                     )
                     enemies_removed.append(grid_enemy)
                     # TODO: Zombie collision
-                    # TODO: Zombie & Bounce
+                    # TODO: Zombie & traps
                     if isinstance(obj, GreenZombie):
                         if i == 0:
                             map.grids[1][j - dist].enemies.append(grid_enemy)
@@ -386,7 +403,7 @@ while node_idx < nodes_len or not map.is_clean():
                             map.step_trap(i - 1, j - dist, grid_enemy)
                         else:
                             map.step_trap((i + 1) % map.lanes, j - dist, grid_enemy)
-                    elif isinstance(obj, HeadlessYellowSkeleton):
+                    elif isinstance(obj, HeadlessYellowSkeleton) and dist == -1:
                         is_blocked = False
                         for enemy in map.grids[i][j - dist].enemies:
                             if not enemy.obj.flying:
@@ -401,8 +418,10 @@ while node_idx < nodes_len or not map.is_clean():
                             obj.dist_per_move = 1
                             dist = 1
 
-                        if not will_be_blocked:
+                        if is_blocked or not will_be_blocked:
                             map.step_trap(i, j - dist, grid_enemy)
+                        else:
+                            map.grids[i][j].enemies.append(grid_enemy)
                     elif isinstance(obj, Harpy):
                         map.grids[i][j - dist].enemies.append(grid_enemy)
                     # TODO: blademaster
@@ -420,9 +439,9 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat += min_cooltime
 
     # Debug: map
-    # if 250 < cur_beat < 263:
-    #     print(cur_beat)
-    #     print(map)
+    if 10 < cur_beat < 100:
+        print(cur_beat)
+        print(map)
 
     # hit_notes()
     for i in range(map.lanes):
@@ -456,8 +475,25 @@ while node_idx < nodes_len or not map.is_clean():
                 elif isinstance(enemy, BlueHarpy):
                     map.grids[i][2].enemies.append(enemy_node)
                 elif isinstance(enemy, YellowSkeleton):
+                    dist_per_move = -1
+                    is_blocked = False
+                    for upper_enemy in map.grids[i][1].enemies:
+                        if not upper_enemy.obj.flying:
+                            is_blocked = True
+                            break
+                    will_be_blocked = False
+                    for upper_enemy in map.grids[i][2].enemies:
+                        if (
+                            not upper_enemy.obj.flying
+                            and upper_enemy.cooltime == enemy_node.cooltime
+                        ):
+                            will_be_blocked = True
+                            break
+                    if is_blocked or will_be_blocked:
+                        dist_per_move = 1
+
                     new_node = Node(
-                        HeadlessYellowSkeleton(i + 1, enemy.chained),
+                        HeadlessYellowSkeleton(i + 1, enemy.chained, dist_per_move),
                         enemy.get_cooltime(),
                     )
                     map.step_trap(i, 1, new_node)
