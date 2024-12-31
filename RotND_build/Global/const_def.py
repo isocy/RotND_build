@@ -50,6 +50,9 @@ INPUT_RATINGS_DEF_PATH = "exports/bundles/Assets/Shared/Prefabs/ScoreResults/Rhy
 DISCO_DISASTER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Easy"
 )
+DISCO_DISASTER_HARD_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Hard"
+)
 OVERTHINKER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Easy"
 )
