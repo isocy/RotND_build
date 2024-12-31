@@ -59,6 +59,9 @@ DISCO_DISASTER_HARD_PATH = (
 OVERTHINKER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Easy"
 )
+OVERTHINKER_HARD_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Hard"
+)
 GLASS_CAGES_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Easy"
 )
