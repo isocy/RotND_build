@@ -40,6 +40,8 @@ BASE_SKULL = "Base Skull"
 BLUE_SKULL = "Blue Skull"
 RED_SKULL = "Red Skull"
 
+BOUNCE = "Bounce"
+
 ENEMY_DB_PATH = "exports/bundles/RREnemyDatabase.json"
 
 INPUT_RATINGS_DEF_PATH = "exports/bundles/Assets/Shared/Prefabs/ScoreResults/RhythmRift_InputRatingsDefinition.json"
@@ -50,8 +52,18 @@ DISCO_DISASTER_EASY_PATH = (
 OVERTHINKER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Easy"
 )
+GLASS_CAGES_EASY_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Easy"
+)
 
 
 class Facing(Enum):
     LEFT = 0
     RIGHT = 1
+
+
+class TrapDir(Enum):
+    # TODO: other directions
+    UP = 0
+    RIGHT = 1
+    LEFT = 2

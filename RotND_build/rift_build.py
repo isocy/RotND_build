@@ -63,13 +63,13 @@ class BeatCnt:
 class Grid:
     def __init__(self):
         self.enemies: list[Node[Enemy]] = []
-        self.traps: list[Node[Trap]] = []
+        self.trap: Node[Trap] = None
 
     def __repr__(self):
-        return (self.enemies + self.traps).__repr__()
+        return (self.enemies + [self.trap]).__repr__()
 
     def is_empty(self):
-        return not self.enemies and not self.traps
+        return not self.enemies and self.trap == None
 
 
 class Map:
@@ -95,89 +95,36 @@ class Map:
                     return False
         return True
 
-    def step(self, init_cooltime=float("inf")) -> float:
-        """Update map for one step
-        return: elapsed beat for the update"""
-        min_cooltime = init_cooltime
-        target_nodes = []
-        for i in range(self.lanes):
-            for j in range(self.rows):
-                for enemy_node in self.grids[i][j].enemies:
-                    if enemy_node.cooltime < min_cooltime:
-                        min_cooltime = enemy_node.cooltime
-                        target_nodes = [enemy_node]
-                    elif enemy_node.cooltime == min_cooltime:
-                        target_nodes.append(enemy_node)
-                for trap_node in self.grids[i][j].traps:
-                    if trap_node.cooltime < min_cooltime:
-                        min_cooltime = trap_node.cooltime
-                        target_nodes = [trap_node]
-                    elif trap_node.cooltime == min_cooltime:
-                        target_nodes.append(trap_node)
-
-        # subset of 'target_nodes'
-        nodes_done = []
-        for i in range(self.lanes):
-            for j in range(self.rows):
-                grid = self.grids[i][j]
-                grid_enemies = grid.enemies
-                for grid_enemy in grid_enemies:
-                    if grid_enemy in nodes_done:
-                        continue
-
-                    # Update 'target_nodes'
-                    # For enemies previously shielded, do not move
-                    if grid_enemy in target_nodes and j != 0:
-                        obj = grid_enemy.obj
-                        grid_enemy.cooltime = obj.get_cooltime() if j != 1 else 0
-                        grid_enemies.remove(grid_enemy)
-                        if isinstance(obj, GreenZombie):
-                            if i == 0:
-                                self.grids[1][j - 1].enemies.append(grid_enemy)
-                                obj.facing = Facing.LEFT
-                            elif i == self.lanes - 1:
-                                self.grids[self.lanes - 2][j - 1].enemies.append(
-                                    grid_enemy
-                                )
-                                obj.facing = Facing.RIGHT
-                            else:
-                                if obj.facing == Facing.LEFT:
-                                    self.grids[i - 1][j - 1].enemies.append(grid_enemy)
-                                    obj.facing = Facing.RIGHT
-                                else:
-                                    self.grids[i + 1][j - 1].enemies.append(grid_enemy)
-                                    obj.facing = Facing.LEFT
-                        elif isinstance(obj, RedZombie):
-                            if obj.facing == Facing.LEFT:
-                                self.grids[i - 1][j - 1].enemies.append(grid_enemy)
-                            else:
-                                self.grids[(i + 1) % self.lanes][j - 1].enemies.append(
-                                    grid_enemy
-                                )
-                        # TODO
-                        elif False:
-                            pass
-                        else:
-                            self.grids[i][j - 1].enemies.append(grid_enemy)
-                        nodes_done.append(grid_enemy)
-                    else:
-                        grid_enemy.cooltime -= min_cooltime
-                trap_nodes = grid.traps
-                for trap_node in trap_nodes:
-                    if trap_node in target_nodes:
-                        trap_nodes.remove(trap_node)
-                        target_nodes.remove(trap_node)
-                    else:
-                        trap_node.cooltime -= min_cooltime
-
-        return min_cooltime
+    def step_trap(self, init_i: int, init_j: int, enemy_node):
+        """Move 'enemy_node' to the appropriate position
+        if there is a trap at (init_i, init_j)."""
+        trap_node = self.grids[init_i][init_j].trap
+        if trap_node != None:
+            trap = trap_node.obj
+            if isinstance(trap, Bounce):
+                dir = trap.dir
+                if dir == TrapDir.UP:
+                    init_j += 1
+                elif dir == TrapDir.RIGHT:
+                    init_i += 1
+                elif dir == TrapDir.LEFT:
+                    init_i -= 1
+                # TODO: other directions
+                else:
+                    pass
+            # TODO: other traps
+            else:
+                pass
+            self.grids[init_i % self.lanes][init_j].enemies.append(enemy_node)
+        else:
+            self.grids[init_i][init_j].enemies.append(enemy_node)
 
 
 class RawBeatmap:
-    def __init__(self, bpm, beat_divs, enemy_events, vibe_events):
+    def __init__(self, bpm, beat_divs, obj_events, vibe_events):
         self.bpm = bpm
         self.beat_divs = beat_divs
-        self.enemy_events: list[EnemyEvent] = enemy_events
+        self.enemy_events: list[ObjectEvent] = obj_events
         self.vibe_events: list[VibeEvent] = vibe_events
 
     @classmethod
@@ -185,19 +132,18 @@ class RawBeatmap:
         with open(path) as f:
             raw_beatmap = json.load(f)
 
-        # TODO
-        enemy_events = []
+        obj_events = []
         vibe_events = []
         for event in raw_beatmap["events"]:
-            if event["type"] == "SpawnEnemy":
-                enemy_events.append(event)
+            if event["type"] == "SpawnEnemy" or event["type"] == "SpawnTrap":
+                obj_events.append(event)
             elif event["type"] == "StartVibeChain":
                 vibe_events.append(event)
 
         return RawBeatmap(
             raw_beatmap["bpm"],
             raw_beatmap["beatDivisions"],
-            [EnemyEvent.load_dict(event) for event in enemy_events],
+            [ObjectEvent.load_dict(event) for event in obj_events],
             [VibeEvent.load_dict(vibe_event) for vibe_event in vibe_events],
         )
 
@@ -209,74 +155,94 @@ class Node[T: Object]:
         self.cooltime = cooltime
 
     def __eq__(self, other: Self):
+        if self is None or other is None:
+            return False
         return self.obj == other.obj
 
     def __repr__(self):
         return f"{self.obj} {self.cooltime}"
 
     @classmethod
-    def enemy_events_to_nodes(
+    def obj_events_to_nodes(
         cls,
-        enemy_events: list[EnemyEvent],
+        obj_events: list[ObjectEvent],
+        # Used to determine whether a node of enemy is vibe-chained
         vibe_events: list[VibeEvent],
         enemy_db: EnemyDB,
     ) -> tuple[list[Self], list[int]]:
+        """Convert events into nodes
+        Returns the list of nodes and the list of vibe chain counts"""
         nodes: list[Node] = []
 
         vibe_events_len = len(vibe_events)
         chain_cnts = []
         chain_cnt = 0
 
-        for enemy_event in enemy_events:
-            lane = enemy_event.lane
-            appear_beat = enemy_event.appear_beat
+        for obj_event in obj_events:
+            if isinstance(obj_event, EnemyEvent):
+                lane = obj_event.lane
+                appear_beat = obj_event.appear_beat
 
-            enemy_id = enemy_event.enemy_id
-            enemy_def: dict = enemy_db[enemy_id]
-            name = enemy_def["name"]
+                enemy_id = obj_event.enemy_id
+                enemy_def: dict = enemy_db[enemy_id]
+                name = enemy_def["name"]
 
-            chained = False
-            while len(chain_cnts) < vibe_events_len:
-                cur_vibe_event = vibe_events[len(chain_cnts)]
-                if appear_beat < cur_vibe_event.start_beat:
-                    break
-                elif appear_beat < cur_vibe_event.end_beat:
-                    chain_cnt += 1
-                    chained = True
-                    break
-                else:
-                    chain_cnts.append(chain_cnt)
-                    chain_cnt = 0
+                chained = False
+                while len(chain_cnts) < vibe_events_len:
+                    cur_vibe_event = vibe_events[len(chain_cnts)]
+                    if appear_beat < cur_vibe_event.start_beat:
+                        break
+                    elif appear_beat < cur_vibe_event.end_beat:
+                        chain_cnt += 1
+                        chained = True
+                        break
+                    else:
+                        chain_cnts.append(chain_cnt)
+                        chain_cnt = 0
 
-            if name == GREEN_SLIME:
-                nodes.append(Node(GreenSlime(lane, chained), appear_beat))
-            elif name == BLUE_SLIME:
-                nodes.append(Node(BlueSlime(lane, chained), appear_beat))
-            # TODO
-            elif name == BLUE_BAT:
-                nodes.append(
-                    Node(BlueBat(lane, enemy_event.facing, chained), appear_beat)
-                )
-            elif name == YELLOW_BAT:
-                nodes.append(
-                    Node(YellowBat(lane, enemy_event.facing, chained), appear_beat)
-                )
-            elif name == GREEN_ZOMBIE:
-                nodes.append(
-                    Node(GreenZombie(lane, enemy_event.facing, chained), appear_beat)
-                )
-            elif name == RED_ZOMBIE:
-                nodes.append(
-                    Node(RedZombie(lane, enemy_event.facing, chained), appear_beat)
-                )
-            elif name == BASE_SKELETON:
-                nodes.append(Node(BaseSkeleton(lane, chained), appear_beat))
-            elif name == SHIELDED_BASE_SKELETON:
-                nodes.append(Node(ShieldedBaseSkeleton(lane, chained), appear_beat))
-            elif name == APPLE:
-                nodes.append(Node(Apple(lane, chained), appear_beat))
-            elif name == CHEESE:
-                nodes.append(Node(Cheese(lane, chained), appear_beat))
+                if name == GREEN_SLIME:
+                    nodes.append(Node(GreenSlime(lane, chained), appear_beat))
+                elif name == BLUE_SLIME:
+                    nodes.append(Node(BlueSlime(lane, chained), appear_beat))
+                # TODO: enemies
+                elif name == BLUE_BAT:
+                    nodes.append(
+                        Node(BlueBat(lane, obj_event.facing, chained), appear_beat)
+                    )
+                elif name == YELLOW_BAT:
+                    nodes.append(
+                        Node(YellowBat(lane, obj_event.facing, chained), appear_beat)
+                    )
+                elif name == GREEN_ZOMBIE:
+                    nodes.append(
+                        Node(GreenZombie(lane, obj_event.facing, chained), appear_beat)
+                    )
+                elif name == RED_ZOMBIE:
+                    nodes.append(
+                        Node(RedZombie(lane, obj_event.facing, chained), appear_beat)
+                    )
+                elif name == BASE_SKELETON:
+                    nodes.append(Node(BaseSkeleton(lane, chained), appear_beat))
+                elif name == SHIELDED_BASE_SKELETON:
+                    nodes.append(Node(ShieldedBaseSkeleton(lane, chained), appear_beat))
+                elif name == BASE_HARPY:
+                    nodes.append(Node(BaseHarpy(lane, chained), appear_beat))
+                elif name == BLUE_HARPY:
+                    nodes.append(Node(BlueHarpy(lane, chained), appear_beat))
+                elif name == APPLE:
+                    nodes.append(Node(Apple(lane, chained), appear_beat))
+                elif name == CHEESE:
+                    nodes.append(Node(Cheese(lane, chained), appear_beat))
+            elif isinstance(obj_event, TrapEvent):
+                lane = obj_event.lane
+                row = obj_event.row
+                appear_beat = obj_event.appear_beat
+                duration = obj_event.duration
+                dir = obj_event.dir
+                trap_type = obj_event.trap_type
+
+                if trap_type == BOUNCE:
+                    nodes.append(Node(Bounce(lane, row, duration, dir), appear_beat))
 
         return (nodes, chain_cnts)
 
@@ -291,10 +257,10 @@ perf_range = input_ratings_def.perf_range - 5
 great_range = input_ratings_def.great_range - 5
 
 raw_beatmap = RawBeatmap.load_json(RAW_BEATMAP_PATH)
-(enemy_nodes, chain_cnts) = Node.enemy_events_to_nodes(
+(nodes, chain_cnts) = Node.obj_events_to_nodes(
     raw_beatmap.enemy_events, raw_beatmap.vibe_events, enemy_db
 )
-enemy_nodes_len = len(enemy_nodes)
+nodes_len = len(nodes)
 
 # These beats indicate the moment a vibe power is charged
 vibe_beats: list[float] = []
@@ -303,38 +269,140 @@ chain_idx = 0
 beats: list[Beat] = []
 node_idx = 0
 cur_beat = 0
-next_node = enemy_nodes[node_idx]
-# cooltime changes of nodes in 'enemy_nodes' for each iteration of the outmost loop cost a lot,
+next_node = nodes[node_idx]
+# cooltime changes of nodes for each iteration of the outmost loop cost a lot,
 # so the cooltime corrections occur for each node when the node is 'next_node'.
 next_node.cooltime -= cur_beat
-while node_idx < enemy_nodes_len or not map.is_clean():
-    min_cooltime = map.step(next_node.cooltime)
+while node_idx < nodes_len or not map.is_clean():
+    # derive 'min_cooltime'
+    min_cooltime = next_node.cooltime
+    target_nodes = []
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            for enemy_node in map.grids[i][j].enemies:
+                if enemy_node.cooltime < min_cooltime:
+                    min_cooltime = enemy_node.cooltime
+                    target_nodes = [enemy_node]
+                elif enemy_node.cooltime == min_cooltime:
+                    target_nodes.append(enemy_node)
+            trap_node = map.grids[i][j].trap
+            if trap_node != None:
+                if trap_node.cooltime < min_cooltime:
+                    min_cooltime = trap_node.cooltime
+                    target_nodes = [trap_node]
+                elif trap_node.cooltime == min_cooltime:
+                    target_nodes.append(trap_node)
 
-    if node_idx < enemy_nodes_len:
+    # decrement lifetime of traps
+    #
+    # Let a trap despawn at t=0.
+    # If an enemy reaches the grid where the trap was at the same time t=0,
+    # Then enemy should NOT be affected by the trap
+    # That's why this code block is ahead of all below
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            grid = map.grids[i][j]
+            trap_node = grid.trap
+
+            if trap_node in target_nodes:
+                grid.trap = None
+                target_nodes.remove(trap_node)
+            elif trap_node != None:
+                trap_node.cooltime -= min_cooltime
+
+    # now 'target_nodes' only contains enemy nodes
+
+    # exclusion of 'target_nodes'
+    nodes_done = []
+
+    # introduce new nodes
+    #
+    # Let a trap spawn at t=0 and at some grid.
+    # If an enemy reaches that grid at the same time t=0,
+    # Then enemy should be affected by the trap
+    # That's why this code block is ahead of below
+    if node_idx < nodes_len:
         next_node.cooltime -= min_cooltime
 
         while next_node.cooltime == 0:
             obj: Object = next_node.obj
             next_node.cooltime = obj.get_cooltime()
-            # TODO: traps
             if isinstance(obj, Enemy):
-                map.grids[obj.appear_lane - 1][Enemy.appear_row].enemies.append(
-                    next_node
-                )
+                map.step_trap(obj.appear_lane - 1, Enemy.appear_row, next_node)
+            elif isinstance(obj, Bounce):
+                map.grids[obj.appear_lane - 1][obj.appear_row].trap = next_node
+            # TODO: other traps
+            else:
+                pass
+            nodes_done.append(next_node)
 
             node_idx += 1
-            if node_idx >= enemy_nodes_len:
+            if node_idx >= nodes_len:
                 break
-            next_node = enemy_nodes[node_idx]
+            next_node = nodes[node_idx]
             next_node.cooltime -= cur_beat + min_cooltime
+
+    # let the time pass by for enemies
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            grid = map.grids[i][j]
+            grid_enemies = grid.enemies
+            enemies_removed = []
+            for grid_enemy in grid_enemies:
+                if grid_enemy in nodes_done:
+                    continue
+
+                # Update 'target_nodes'
+                # For enemies previously shielded, do not move
+                if grid_enemy in target_nodes and j != 0:
+                    obj = grid_enemy.obj
+                    grid_enemy.cooltime = (
+                        obj.get_cooltime() if j != obj.dist_per_move else 0
+                    )
+                    enemies_removed.append(grid_enemy)
+                    # TODO: Zombie collision
+                    # TODO: Zombie & Bounce
+                    if isinstance(obj, GreenZombie):
+                        if i == 0:
+                            map.grids[1][j - 1].enemies.append(grid_enemy)
+                            obj.facing = Facing.LEFT
+                        elif i == map.lanes - 1:
+                            map.grids[map.lanes - 2][j - 1].enemies.append(grid_enemy)
+                            obj.facing = Facing.RIGHT
+                        else:
+                            if obj.facing == Facing.LEFT:
+                                map.grids[i - 1][j - 1].enemies.append(grid_enemy)
+                                obj.facing = Facing.RIGHT
+                            else:
+                                map.grids[i + 1][j - 1].enemies.append(grid_enemy)
+                                obj.facing = Facing.LEFT
+                    elif isinstance(obj, RedZombie):
+                        if obj.facing == Facing.LEFT:
+                            map.grids[i - 1][j - 1].enemies.append(grid_enemy)
+                        else:
+                            map.grids[(i + 1) % map.lanes][j - 1].enemies.append(
+                                grid_enemy
+                            )
+                    elif isinstance(obj, Harpy):
+                        map.grids[i][j - 2].enemies.append(grid_enemy)
+                    # TODO: blademaster
+                    elif False:
+                        pass
+                    else:
+                        map.step_trap(i, j - 1, grid_enemy)
+                    nodes_done.append(grid_enemy)
+                else:
+                    grid_enemy.cooltime -= min_cooltime
+
+            for enemy_removed in enemies_removed:
+                grid_enemies.remove(enemy_removed)
 
     cur_beat += min_cooltime
 
     # Debug: map
-    # print(cur_beat)
-    # print(map)
-
-    # TODO: trap
+    # if 250 < cur_beat < 263:
+    #     print(cur_beat)
+    #     print(map)
 
     # hit_notes()
     for i in range(map.lanes):
@@ -365,8 +433,10 @@ while node_idx < enemy_nodes_len or not map.is_clean():
                         map.grids[i - 1][1].enemies.append(enemy_node)
                     else:
                         map.grids[(i + 1) % 3][1].enemies.append(enemy_node)
+                elif isinstance(enemy, BlueHarpy):
+                    map.grids[i][2].enemies.append(enemy_node)
                 else:
-                    map.grids[i][1].enemies.append(enemy_node)
+                    map.step_trap(i, 1, enemy_node)
             elif enemy.chained:
                 chain_cnts[chain_idx] -= 1
 

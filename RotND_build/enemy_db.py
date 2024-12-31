@@ -42,7 +42,7 @@ class EnemyDB:
     def init_objs(cls, enemy_db: dict):
         for enemy_def in enemy_db.values():
             name = enemy_def["name"]
-            # TODO
+            # TODO: enemies
             if name == GREEN_SLIME:
                 setattr(GreenSlime, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(GreenSlime, "max_health", enemy_def["health"])
@@ -77,6 +77,14 @@ class EnemyDB:
                 )
                 setattr(ShieldedBaseSkeleton, "max_health", enemy_def["health"])
                 setattr(ShieldedBaseSkeleton, "max_shield", enemy_def["shield"])
+            elif name == BASE_HARPY:
+                setattr(BaseHarpy, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(BaseHarpy, "max_health", enemy_def["health"])
+                setattr(BaseHarpy, "max_shield", enemy_def["shield"])
+            elif name == BLUE_HARPY:
+                setattr(BlueHarpy, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(BlueHarpy, "max_health", enemy_def["health"])
+                setattr(BlueHarpy, "max_shield", enemy_def["shield"])
             elif name == APPLE:
                 setattr(Apple, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(Apple, "max_health", enemy_def["health"])

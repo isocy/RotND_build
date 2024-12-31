@@ -1,4 +1,4 @@
-from Global.const_def import ROWS, Facing
+from Global.const_def import ROWS, Facing, TrapDir
 
 from abc import abstractmethod
 
@@ -23,7 +23,10 @@ class Enemy(Object):
         super(Enemy, self).__init__(appear_lane)
         self.health = 0
         self.shield = 0
+        # with respect to the lane axis
+        self.dist_per_move = 0
         self.facing = Facing.LEFT
+        self.flying = False
         self.chained = chained
 
     @abstractmethod
@@ -38,6 +41,7 @@ class Enemy(Object):
 class Slime(Enemy):
     def __init__(self, appear_lane, chained=False):
         super(Slime, self).__init__(appear_lane, chained)
+        self.dist_per_move = 1
 
     @abstractmethod
     def __repr__(self):
@@ -80,7 +84,9 @@ class BlueSlime(Slime):
 class Bat(Enemy):
     def __init__(self, appear_lane, facing, chained=False):
         super(Bat, self).__init__(appear_lane, chained)
+        self.dist_per_move = 1
         self.facing = facing
+        self.flying = True
 
     @abstractmethod
     def __repr__(self):
@@ -122,6 +128,7 @@ class YellowBat(Bat):
 class Zombie(Enemy):
     def __init__(self, appear_lane, facing, chained=False):
         super(Zombie, self).__init__(appear_lane, chained)
+        self.dist_per_move = 1
         self.facing = facing
 
     @abstractmethod
@@ -164,6 +171,7 @@ class RedZombie(Zombie):
 class Skeleton(Enemy):
     def __init__(self, appear_lane, chained=False):
         super(Skeleton, self).__init__(appear_lane, chained)
+        self.dist_per_move = 1
 
     @abstractmethod
     def __repr__(self):
@@ -200,9 +208,51 @@ class ShieldedBaseSkeleton(Skeleton):
         return getattr(ShieldedBaseSkeleton, "beat_for_move")
 
 
+class Harpy(Enemy):
+    def __init__(self, appear_lane, chained=False):
+        super(Harpy, self).__init__(appear_lane, chained)
+        self.dist_per_move = 2
+        self.flying = True
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    @abstractmethod
+    def get_cooltime(self):
+        pass
+
+
+class BaseHarpy(Harpy):
+    def __init__(self, appear_lane, chained=False):
+        super(BaseHarpy, self).__init__(appear_lane, chained)
+        self.health = getattr(BaseHarpy, "max_health")
+        self.shield = getattr(BaseHarpy, "max_shield")
+
+    def __repr__(self):
+        return "H"
+
+    def get_cooltime(self):
+        return getattr(BaseHarpy, "beat_for_move")
+
+
+class BlueHarpy(Harpy):
+    def __init__(self, appear_lane, chained=False):
+        super(BlueHarpy, self).__init__(appear_lane, chained)
+        self.health = getattr(BlueHarpy, "max_health")
+        self.shield = getattr(BlueHarpy, "max_shield")
+
+    def __repr__(self):
+        return "BH"
+
+    def get_cooltime(self):
+        return getattr(BlueHarpy, "beat_for_move")
+
+
 class Food(Enemy):
     def __init__(self, appear_lane, chained=False):
         super(Food, self).__init__(appear_lane, chained)
+        self.dist_per_move = 1
 
     @abstractmethod
     def __repr__(self):
@@ -233,4 +283,38 @@ class Cheese(Food):
 
 
 class Trap(Object):
-    pass
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    @abstractmethod
+    def get_cooltime(self):
+        pass
+
+
+class Bounce(Trap):
+    def __init__(
+        self, appear_lane: int, appear_row: int, duration: float, dir: TrapDir
+    ):
+        super(Bounce, self).__init__()
+        self.appear_lane = appear_lane
+        self.appear_row = appear_row
+        self.duration = duration
+        self.dir = dir
+
+    def __repr__(self):
+        # TODO: other directions
+        if dir == TrapDir.UP:
+            return "BU"
+        elif dir == TrapDir.RIGHT:
+            return "BR"
+        elif dir == TrapDir.LEFT:
+            return "BL"
+        else:
+            return "B"
+
+    def get_cooltime(self):
+        return self.duration
