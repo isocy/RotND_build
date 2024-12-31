@@ -208,6 +208,44 @@ class ShieldedBaseSkeleton(Skeleton):
         return getattr(ShieldedBaseSkeleton, "beat_for_move")
 
 
+class HeadlessSkeleton(Enemy):
+    beat_for_move = 1
+
+    def __init__(self, appear_lane, chained):
+        super(HeadlessSkeleton, self).__init__(appear_lane, chained)
+        self.dist_per_move = -1
+        self.health = 1
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    @abstractmethod
+    def get_cooltime(self):
+        return HeadlessSkeleton.beat_for_move
+
+
+class YellowSkeleton(Skeleton):
+    def __init__(self, appear_lane, chained=False):
+        super(YellowSkeleton, self).__init__(appear_lane, chained)
+        self.health = getattr(YellowSkeleton, "max_health")
+        self.shield = getattr(YellowSkeleton, "max_shield")
+
+    def __repr__(self):
+        return "YSk"
+
+    def get_cooltime(self):
+        return getattr(YellowSkeleton, "beat_for_move")
+
+
+class HeadlessYellowSkeleton(HeadlessSkeleton):
+    def __init__(self, appear_lane, chained):
+        super(HeadlessYellowSkeleton, self).__init__(appear_lane, chained)
+
+    def __repr__(self):
+        return "HlYSk"
+
+
 class Harpy(Enemy):
     def __init__(self, appear_lane, chained):
         super(Harpy, self).__init__(appear_lane, chained)
