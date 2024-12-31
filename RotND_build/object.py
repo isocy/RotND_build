@@ -20,7 +20,7 @@ class Enemy(Object):
     appear_row = ROWS - 1
 
     def __init__(self, appear_lane, chained):
-        super(Enemy, self).__init__(appear_lane)
+        super().__init__(appear_lane)
         self.health = 0
         self.shield = 0
         # with respect to the lane axis
@@ -40,7 +40,7 @@ class Enemy(Object):
 
 class Slime(Enemy):
     def __init__(self, appear_lane, chained):
-        super(Slime, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.dist_per_move = 1
 
     @abstractmethod
@@ -54,7 +54,7 @@ class Slime(Enemy):
 
 class GreenSlime(Slime):
     def __init__(self, appear_lane, chained):
-        super(GreenSlime, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.health = getattr(GreenSlime, "max_health")
         self.shield = getattr(GreenSlime, "max_shield")
 
@@ -67,7 +67,7 @@ class GreenSlime(Slime):
 
 class BlueSlime(Slime):
     def __init__(self, appear_lane, chained):
-        super(BlueSlime, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.health = getattr(BlueSlime, "max_health")
         self.shield = getattr(BlueSlime, "max_shield")
 
@@ -83,7 +83,7 @@ class BlueSlime(Slime):
 
 class Bat(Enemy):
     def __init__(self, appear_lane, facing, chained):
-        super(Bat, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.dist_per_move = 1
         self.facing = facing
         self.flying = True
@@ -99,7 +99,7 @@ class Bat(Enemy):
 
 class BlueBat(Bat):
     def __init__(self, appear_lane, facing, chained):
-        super(BlueBat, self).__init__(appear_lane, facing, chained)
+        super().__init__(appear_lane, facing, chained)
         self.health = getattr(BlueBat, "max_health")
         self.shield = getattr(BlueBat, "max_shield")
 
@@ -113,7 +113,7 @@ class BlueBat(Bat):
 
 class YellowBat(Bat):
     def __init__(self, appear_lane, facing, chained):
-        super(YellowBat, self).__init__(appear_lane, facing, chained)
+        super().__init__(appear_lane, facing, chained)
         self.health = getattr(YellowBat, "max_health")
         self.shield = getattr(YellowBat, "max_shield")
 
@@ -127,7 +127,7 @@ class YellowBat(Bat):
 
 class Zombie(Enemy):
     def __init__(self, appear_lane, facing, chained):
-        super(Zombie, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.dist_per_move = 1
         self.facing = facing
 
@@ -142,7 +142,7 @@ class Zombie(Enemy):
 
 class GreenZombie(Zombie):
     def __init__(self, appear_lane, facing, chained):
-        super(GreenZombie, self).__init__(appear_lane, facing, chained)
+        super().__init__(appear_lane, facing, chained)
         self.health = getattr(GreenZombie, "max_health")
         self.shield = getattr(GreenZombie, "max_shield")
 
@@ -156,7 +156,7 @@ class GreenZombie(Zombie):
 
 class RedZombie(Zombie):
     def __init__(self, appear_lane, facing, chained):
-        super(RedZombie, self).__init__(appear_lane, facing, chained)
+        super().__init__(appear_lane, facing, chained)
         self.health = getattr(RedZombie, "max_health")
         self.shield = getattr(RedZombie, "max_shield")
 
@@ -170,7 +170,7 @@ class RedZombie(Zombie):
 
 class Skeleton(Enemy):
     def __init__(self, appear_lane, chained):
-        super(Skeleton, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.dist_per_move = 1
 
     @abstractmethod
@@ -184,7 +184,7 @@ class Skeleton(Enemy):
 
 class BaseSkeleton(Skeleton):
     def __init__(self, appear_lane, chained):
-        super(BaseSkeleton, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.health = getattr(BaseSkeleton, "max_health")
         self.shield = getattr(BaseSkeleton, "max_shield")
 
@@ -197,7 +197,7 @@ class BaseSkeleton(Skeleton):
 
 class ShieldedBaseSkeleton(Skeleton):
     def __init__(self, appear_lane, chained):
-        super(ShieldedBaseSkeleton, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.health = getattr(ShieldedBaseSkeleton, "max_health")
         self.shield = getattr(ShieldedBaseSkeleton, "max_shield")
 
@@ -212,7 +212,7 @@ class HeadlessSkeleton(Enemy):
     beat_for_move = 1
 
     def __init__(self, appear_lane, chained):
-        super(HeadlessSkeleton, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.dist_per_move = -1
         self.health = 1
 
@@ -227,7 +227,7 @@ class HeadlessSkeleton(Enemy):
 
 class YellowSkeleton(Skeleton):
     def __init__(self, appear_lane, chained=False):
-        super(YellowSkeleton, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.health = getattr(YellowSkeleton, "max_health")
         self.shield = getattr(YellowSkeleton, "max_shield")
 
@@ -240,7 +240,7 @@ class YellowSkeleton(Skeleton):
 
 class HeadlessYellowSkeleton(HeadlessSkeleton):
     def __init__(self, appear_lane, chained):
-        super(HeadlessYellowSkeleton, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
 
     def __repr__(self):
         return "HlYSk"
@@ -248,7 +248,7 @@ class HeadlessYellowSkeleton(HeadlessSkeleton):
 
 class Harpy(Enemy):
     def __init__(self, appear_lane, chained):
-        super(Harpy, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.dist_per_move = 2
         self.flying = True
 
@@ -263,7 +263,7 @@ class Harpy(Enemy):
 
 class BaseHarpy(Harpy):
     def __init__(self, appear_lane, chained):
-        super(BaseHarpy, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.health = getattr(BaseHarpy, "max_health")
         self.shield = getattr(BaseHarpy, "max_shield")
 
@@ -276,7 +276,7 @@ class BaseHarpy(Harpy):
 
 class BlueHarpy(Harpy):
     def __init__(self, appear_lane, chained):
-        super(BlueHarpy, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.health = getattr(BlueHarpy, "max_health")
         self.shield = getattr(BlueHarpy, "max_shield")
 
@@ -289,35 +289,42 @@ class BlueHarpy(Harpy):
 
 class Food(Enemy):
     def __init__(self, appear_lane, chained):
-        super(Food, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.dist_per_move = 1
 
     @abstractmethod
     def __repr__(self):
         pass
 
+    @abstractmethod
     def get_cooltime(self):
-        return getattr(Apple, "beat_for_move")
+        pass
 
 
 class Apple(Food):
     def __init__(self, appear_lane, chained):
-        super(Apple, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.health = getattr(Apple, "max_health")
         self.shield = getattr(Apple, "max_shield")
 
     def __repr__(self):
         return "Ap"
 
+    def get_cooltime(self):
+        return getattr(Apple, "beat_for_move")
+
 
 class Cheese(Food):
     def __init__(self, appear_lane, chained):
-        super(Cheese, self).__init__(appear_lane, chained)
+        super().__init__(appear_lane, chained)
         self.health = getattr(Cheese, "max_health")
         self.shield = getattr(Cheese, "max_shield")
 
     def __repr__(self):
         return "Ch"
+
+    def get_cooltime(self):
+        return getattr(Cheese, "beat_for_move")
 
 
 class Trap(Object):
@@ -337,7 +344,7 @@ class Bounce(Trap):
     def __init__(
         self, appear_lane: int, appear_row: int, duration: float, dir: TrapDir
     ):
-        super(Bounce, self).__init__()
+        super().__init__()
         self.appear_lane = appear_lane
         self.appear_row = appear_row
         self.duration = duration
