@@ -1,5 +1,3 @@
-from Global.const_def import *
-
 RAW_BEATMAP_PATH = RAVEVENGE_EASY_PATH
 
 # constants which would be frequently modified
@@ -11,3 +9,10 @@ THREE_VIBES_MAX_BEAT_DIFF = float("inf")
 ONE_VIBE_START_BEATS_EXCEPT = [326.5]
 TWO_VIBES_START_BEATS_EXCEPT = []
 THREE_VIBES_START_BEATS_EXCEPT = []
+
+
+Practice Start Numbers:
+[85.5, 197.0, 296.5, 345.5]
+
+(1, 1, 1, 1), 61
+[156.5 18 11.0, 269.5 17 11.0, 323.5 12 10.0, 389.5 14 10.0]
