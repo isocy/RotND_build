@@ -447,8 +447,8 @@ while node_idx < nodes_len or not map.is_clean():
 
 
 # Debug: beats
-for beat in beats:
-    print(beat)
+# for beat in beats:
+#     print(beat)
 
 
 # All elements of 'vibe_beats' is included in 'raw_beats'
