@@ -3,16 +3,27 @@ from object import *
 from enemy_db import EnemyDB
 from event import *
 
-from bisect import bisect_right
+from bisect import bisect_right, bisect_left
 import itertools
 import json
+from math import floor
 from typing import Self
 
 
 class InputRatingsDef:
-    def __init__(self, perf_range: float, great_range: float):
+    def __init__(
+        self,
+        perf_range: float,
+        great_range: float,
+        perf_score: int,
+        perf_bonus: int,
+        true_perf_bonus: int,
+    ):
         self.perf_range = perf_range
         self.great_range = great_range
+        self.perf_score = perf_score
+        self.perf_bonus = perf_bonus
+        self.true_perf_bonus = true_perf_bonus
 
     @classmethod
     def load_json(cls, path):
@@ -25,7 +36,13 @@ class InputRatingsDef:
         perf_range = (100 - ratings[-1]["minimumValue"]) * hit_window / 100
         great_range = (100 - ratings[-2]["minimumValue"]) * hit_window / 100
 
-        return InputRatingsDef(perf_range, great_range)
+        perf_score = ratings[-1]["score"]
+        perf_bonus = input_ratings_def["_perfectBonusScore"]
+        true_perf_bonus = input_ratings_def["_truePerfectBonusScore"]
+
+        return InputRatingsDef(
+            perf_range, great_range, perf_score, perf_bonus, true_perf_bonus
+        )
 
 
 class Beat:
@@ -58,6 +75,37 @@ class BeatCnt:
 
     def __repr__(self):
         return f"{self.start_beat} {self.cnt} {self.beat_diff}"
+
+
+class Build:
+    def __init__(
+        self,
+        partition: tuple[int, ...],
+        cnt_sum: int,
+        beatcnts: list[BeatCnt],
+        expected_score: int,
+    ):
+        self.partition = partition
+        self.cnt_sum = cnt_sum
+        self.beatcnts = beatcnts
+        self.expected_score = expected_score
+
+    def __lt__(self, other: Self):
+        if self.cnt_sum == other.cnt_sum:
+            self_len = len(self.partition)
+            other_len = len(other.partition)
+            if self_len == other_len:
+                return self.partition > self.partition
+            return self_len > other_len
+        return self.cnt_sum < other.cnt_sum
+
+    def __repr__(self):
+        return "{}, {}\n{}, {}".format(
+            str(self.partition),
+            str(self.cnt_sum),
+            self.beatcnts,
+            str(self.expected_score),
+        )
 
 
 class Node[T: Object]:
@@ -328,6 +376,9 @@ EnemyDB.init_objs(enemy_db)
 input_ratings_def = InputRatingsDef.load_json(INPUT_RATINGS_DEF_PATH)
 perf_range = input_ratings_def.perf_range - 5
 great_range = input_ratings_def.great_range - 5
+perf_score = input_ratings_def.perf_score
+perf_bonus = input_ratings_def.perf_bonus
+true_perf_bonus = input_ratings_def.true_perf_bonus
 
 raw_beatmap = RawBeatmap.load_json(RAW_BEATMAP_PATH)
 (nodes, chain_cnts) = Node.obj_events_to_nodes(
@@ -589,10 +640,9 @@ while vibe_idx < vibe_beats_len - 3:
         (vibe_in_row - 1) * 300 + 2
     )
     # TODO: consider bpm change
-    max_time_until_vibe_ends = (
-        max_time_until_vibe_ends
-        + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-    )
+    max_time_until_vibe_ends = max_time_until_vibe_ends + 1000 * (
+        1 / raw_beatmap.beat_divs
+    ) * (60 / raw_beatmap.bpm)
     max_beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
     target_end_beat = vibe_beats[vibe_idx + 2] + max_beat_until_vibe_ends
 
@@ -627,10 +677,9 @@ for vibe_idx in range(vibe_beats_len):
             break
         max_time_until_vibe_ends = 2 * perf_range + FRAME_IN_MSEC * 302
         # TODO: consider bpm change
-        max_time_until_vibe_ends = (
-            max_time_until_vibe_ends
-            + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-        )
+        max_time_until_vibe_ends = max_time_until_vibe_ends + 1000 * (
+            1 / raw_beatmap.beat_divs
+        ) * (60 / raw_beatmap.bpm)
         max_beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
         target_end_beat = target_beat + max_beat_until_vibe_ends
 
@@ -709,10 +758,9 @@ for vibe_idx in range(vibe_beats_len - 1):
         target_beat = raw_beats[beat_idx]
         max_time_until_vibe_ends = 2 * perf_range + FRAME_IN_MSEC * 602
         # TODO: consider bpm change
-        max_time_until_vibe_ends = (
-            max_time_until_vibe_ends
-            + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-        )
+        max_time_until_vibe_ends = max_time_until_vibe_ends + 1000 * (
+            1 / raw_beatmap.beat_divs
+        ) * (60 / raw_beatmap.bpm)
         max_beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
         target_end_beat = target_beat + max_beat_until_vibe_ends
 
@@ -802,10 +850,9 @@ for vibe_idx in range(vibe_beats_len - 2):
 
         max_time_until_vibe_ends = 2 * perf_range + FRAME_IN_MSEC * 302
         # TODO: consider bpm change
-        max_time_until_vibe_ends = (
-            max_time_until_vibe_ends
-            + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-        )
+        max_time_until_vibe_ends = max_time_until_vibe_ends + 1000 * (
+            1 / raw_beatmap.beat_divs
+        ) * (60 / raw_beatmap.bpm)
         max_beat_until_vibe_ends = max_time_until_vibe_ends * raw_beatmap.bpm / 60000
         target_end_beat = target_beat + max_beat_until_vibe_ends
 
@@ -813,10 +860,9 @@ for vibe_idx in range(vibe_beats_len - 2):
         if target_end_beat < vibe_beats[vibe_idx + 2]:
             max_time_until_vibe_ends = 2 * perf_range + FRAME_IN_MSEC * 902
             # TODO: consider bpm change
-            max_time_until_vibe_ends = (
-                max_time_until_vibe_ends
-                + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-            )
+            max_time_until_vibe_ends = max_time_until_vibe_ends + 1000 * (
+                1 / raw_beatmap.beat_divs
+            ) * (60 / raw_beatmap.bpm)
             max_beat_until_vibe_ends = (
                 max_time_until_vibe_ends * raw_beatmap.bpm / 60000
             )
@@ -912,7 +958,7 @@ for vibe_idx in range(vibe_beats_len - 2):
         # else branch: vibe power loss
         else:
             loss_beat = target_end_beat - vibe_beats[vibe_idx + 2]
-            loss_time = loss_beat * (60 / raw_beatmap.bpm) * 1000
+            loss_time = 1000 * loss_beat * (60 / raw_beatmap.bpm)
             time_discount = 0
             if loss_time < 2 * perf_range:
                 time_discount = 2 * perf_range - loss_time
@@ -945,10 +991,9 @@ for vibe_idx in range(vibe_beats_len - 2):
                     2 * perf_range + FRAME_IN_MSEC * 602 - time_discount
                 )
                 # TODO: consider bpm change
-                max_time_until_vibe_ends = (
-                    max_time_until_vibe_ends
-                    + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-                )
+                max_time_until_vibe_ends = max_time_until_vibe_ends + 1000 * (
+                    1 / raw_beatmap.beat_divs
+                ) * (60 / raw_beatmap.bpm)
                 max_beat_until_vibe_ends = (
                     max_time_until_vibe_ends * raw_beatmap.bpm / 60000
                 )
@@ -969,10 +1014,9 @@ for vibe_idx in range(vibe_beats_len - 2):
                     2 * perf_range + FRAME_IN_MSEC * 603 - time_discount
                 )
                 # TODO: consider bpm change
-                max_time_until_vibe_ends = (
-                    max_time_until_vibe_ends
-                    + (1 / raw_beatmap.beat_divs) * (60 / raw_beatmap.bpm) * 1000
-                )
+                max_time_until_vibe_ends = max_time_until_vibe_ends + 1000 * (
+                    1 / raw_beatmap.beat_divs
+                ) * (60 / raw_beatmap.bpm)
                 max_beat_until_vibe_ends = (
                     max_time_until_vibe_ends * raw_beatmap.bpm / 60000
                 )
@@ -1097,12 +1141,28 @@ for beatcnts in three_vibes_beatcnts:
         )
     )
 
+print("\nBeatmap Path:")
+print(RAW_BEATMAP_PATH)
+
 practice_start_nums = [
     vibe_event.start_beat + ROWS - 1 for vibe_event in raw_beatmap.vibe_events
 ]
 print("\nPractice Start Numbers:")
 print(practice_start_nums, end="\n\n")
 
+note_score_avg = (
+    perf_score
+    + perf_bonus * PERF_BONUS_SCORE_MULT
+    + true_perf_bonus * TRUE_PERF_BONUS_SCORE_MULT
+)
+score_base = (
+    min(9, raw_beats_len) * note_score_avg
+    + max(0, min(10, raw_beats_len - 9)) * note_score_avg * 2
+    + max(0, min(10, raw_beats_len - 19)) * note_score_avg * 3
+    + max(0, raw_beats_len - 29) * note_score_avg * 4
+)
+
+builds = []
 for partition in partitions:
     max_beatcnts: list[BeatCnt] = []
     vibe_idx = 0
@@ -1116,9 +1176,32 @@ for partition in partitions:
         else:
             max_beatcnts.append(max_three_vibes_beatcnts[vibe_idx])
             vibe_idx += 3
-    print(
-        str(partition)
-        + ", "
-        + str(sum(max_beatcnt.cnt for max_beatcnt in max_beatcnts))
+
+    score_add = 0
+    for max_beatcnt in max_beatcnts:
+        beat_idx = bisect_left(raw_beats, max_beatcnt.start_beat)
+        end_idx = beat_idx + max_beatcnt.cnt
+
+        while beat_idx < end_idx:
+            if beat_idx >= 29:
+                score_add += (end_idx - beat_idx) * note_score_avg * 4
+                break
+            elif beat_idx >= 19:
+                score_add += note_score_avg * 3
+            elif beat_idx >= 9:
+                score_add += note_score_avg * 2
+            else:
+                score_add += note_score_avg
+            beat_idx += 1
+
+    build = Build(
+        partition,
+        sum(max_beatcnt.cnt for max_beatcnt in max_beatcnts),
+        max_beatcnts,
+        floor(score_base + score_add),
     )
-    print(max_beatcnts)
+    builds.append(build)
+
+builds.sort(reverse=True)
+for build in builds:
+    print(build)
