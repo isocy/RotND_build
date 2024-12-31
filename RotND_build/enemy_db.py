@@ -77,6 +77,10 @@ class EnemyDB:
                 )
                 setattr(ShieldedBaseSkeleton, "max_health", enemy_def["health"])
                 setattr(ShieldedBaseSkeleton, "max_shield", enemy_def["shield"])
+            elif name == YELLOW_SKELETON:
+                setattr(YellowSkeleton, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(YellowSkeleton, "max_health", enemy_def["health"])
+                setattr(YellowSkeleton, "max_shield", enemy_def["shield"])
             elif name == BASE_HARPY:
                 setattr(BaseHarpy, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(BaseHarpy, "max_health", enemy_def["health"])

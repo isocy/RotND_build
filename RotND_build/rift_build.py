@@ -225,6 +225,8 @@ class Node[T: Object]:
                     nodes.append(Node(BaseSkeleton(lane, chained), appear_beat))
                 elif name == SHIELDED_BASE_SKELETON:
                     nodes.append(Node(ShieldedBaseSkeleton(lane, chained), appear_beat))
+                elif name == YELLOW_SKELETON:
+                    nodes.append(Node(YellowSkeleton(lane, chained), appear_beat))
                 elif name == BASE_HARPY:
                     nodes.append(Node(BaseHarpy(lane, chained), appear_beat))
                 elif name == BLUE_HARPY:
@@ -356,6 +358,7 @@ while node_idx < nodes_len or not map.is_clean():
                 # For enemies previously shielded, do not move
                 if grid_enemy in target_nodes and j != 0:
                     obj = grid_enemy.obj
+                    dist = obj.dist_per_move
                     grid_enemy.cooltime = (
                         obj.get_cooltime() if j != obj.dist_per_move else 0
                     )
@@ -364,32 +367,49 @@ while node_idx < nodes_len or not map.is_clean():
                     # TODO: Zombie & Bounce
                     if isinstance(obj, GreenZombie):
                         if i == 0:
-                            map.grids[1][j - 1].enemies.append(grid_enemy)
+                            map.grids[1][j - dist].enemies.append(grid_enemy)
                             obj.facing = Facing.LEFT
                         elif i == map.lanes - 1:
-                            map.grids[map.lanes - 2][j - 1].enemies.append(grid_enemy)
+                            map.grids[map.lanes - 2][j - dist].enemies.append(
+                                grid_enemy
+                            )
                             obj.facing = Facing.RIGHT
                         else:
                             if obj.facing == Facing.LEFT:
-                                map.grids[i - 1][j - 1].enemies.append(grid_enemy)
+                                map.grids[i - 1][j - dist].enemies.append(grid_enemy)
                                 obj.facing = Facing.RIGHT
                             else:
-                                map.grids[i + 1][j - 1].enemies.append(grid_enemy)
+                                map.grids[i + 1][j - dist].enemies.append(grid_enemy)
                                 obj.facing = Facing.LEFT
                     elif isinstance(obj, RedZombie):
                         if obj.facing == Facing.LEFT:
-                            map.grids[i - 1][j - 1].enemies.append(grid_enemy)
+                            map.step_trap(i - 1, j - dist, grid_enemy)
                         else:
-                            map.grids[(i + 1) % map.lanes][j - 1].enemies.append(
-                                grid_enemy
-                            )
+                            map.step_trap((i + 1) % map.lanes, j - dist, grid_enemy)
+                    elif isinstance(obj, HeadlessYellowSkeleton):
+                        is_blocked = False
+                        for enemy in map.grids[i][j - dist].enemies:
+                            if not enemy.obj.flying:
+                                is_blocked = True
+                                break
+                        will_be_blocked = False
+                        for enemy in map.grids[i][j - dist + 1].enemies:
+                            if not enemy.obj.flying and enemy in target_nodes:
+                                will_be_blocked = True
+                                break
+                        if is_blocked or will_be_blocked:
+                            obj.dist_per_move = 1
+                            dist = 1
+
+                        if not will_be_blocked:
+                            map.step_trap(i, j - dist, grid_enemy)
                     elif isinstance(obj, Harpy):
-                        map.grids[i][j - 2].enemies.append(grid_enemy)
+                        map.grids[i][j - dist].enemies.append(grid_enemy)
                     # TODO: blademaster
                     elif False:
                         pass
                     else:
-                        map.step_trap(i, j - 1, grid_enemy)
+                        map.step_trap(i, j - dist, grid_enemy)
                     nodes_done.append(grid_enemy)
                 else:
                     grid_enemy.cooltime -= min_cooltime
@@ -435,6 +455,12 @@ while node_idx < nodes_len or not map.is_clean():
                         map.grids[(i + 1) % 3][1].enemies.append(enemy_node)
                 elif isinstance(enemy, BlueHarpy):
                     map.grids[i][2].enemies.append(enemy_node)
+                elif isinstance(enemy, YellowSkeleton):
+                    new_node = Node(
+                        HeadlessYellowSkeleton(i + 1, enemy.chained),
+                        enemy.get_cooltime(),
+                    )
+                    map.step_trap(i, 1, new_node)
                 else:
                     map.step_trap(i, 1, enemy_node)
             elif enemy.chained:
