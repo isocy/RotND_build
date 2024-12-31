@@ -246,6 +246,27 @@ class HeadlessYellowSkeleton(HeadlessSkeleton):
         return "HlYSk"
 
 
+class BlackSkeleton(Skeleton):
+    def __init__(self, appear_lane, chained=False):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(BlackSkeleton, "max_health")
+        self.shield = getattr(BlackSkeleton, "max_shield")
+
+    def __repr__(self):
+        return "BSk"
+
+    def get_cooltime(self):
+        return getattr(BlackSkeleton, "beat_for_move")
+
+
+class HeadlessBlackSkeleton(HeadlessSkeleton):
+    def __init__(self, appear_lane, chained, dist_per_move):
+        super().__init__(appear_lane, chained, dist_per_move)
+
+    def __repr__(self):
+        return "HlBSk"
+
+
 class Harpy(Enemy):
     def __init__(self, appear_lane, chained):
         super().__init__(appear_lane, chained)
