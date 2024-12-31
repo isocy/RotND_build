@@ -125,6 +125,10 @@ class Node[T: Object]:
                     nodes.append(
                         Node(YellowBat(lane, obj_event.facing, chained), appear_beat)
                     )
+                elif name == RED_BAT:
+                    nodes.append(
+                        Node(RedBat(lane, obj_event.facing, chained), appear_beat)
+                    )
                 elif name == GREEN_ZOMBIE:
                     nodes.append(
                         Node(GreenZombie(lane, obj_event.facing, chained), appear_beat)
@@ -213,7 +217,7 @@ class Map:
         str = ""
         for j in reversed(range(self.rows)):
             for i in range(self.lanes):
-                str += "{:<15}".format(map.grids[i][j].__repr__())
+                str += "{:<20}".format(map.grids[i][j].__repr__())
             str += "\n"
         return str
 
@@ -486,9 +490,9 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat += min_cooltime
 
     # Debug: map
-    if 95 < cur_beat < 200:
-        print(cur_beat)
-        print(map)
+    # if cur_beat > 380:
+    #     print(cur_beat)
+    #     print(map)
 
     # hit_notes()
     for i in range(map.lanes):
@@ -519,6 +523,13 @@ while node_idx < nodes_len or not map.is_clean():
                         map.grids[i - 1][1].enemies.append(enemy_node)
                     else:
                         map.grids[(i + 1) % 3][1].enemies.append(enemy_node)
+                elif isinstance(enemy, RedBat):
+                    if enemy.facing == Facing.LEFT:
+                        map.grids[i - 1][1].enemies.append(enemy_node)
+                        enemy.facing = Facing.RIGHT
+                    else:
+                        map.grids[(i + 1) % 3][1].enemies.append(enemy_node)
+                        enemy.facing = Facing.LEFT
                 elif isinstance(enemy, BlueHarpy):
                     map.grids[i][2].enemies.append(enemy_node)
                 elif isinstance(enemy, YellowSkeleton):

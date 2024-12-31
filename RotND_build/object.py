@@ -72,7 +72,7 @@ class BlueSlime(Slime):
         self.shield = getattr(BlueSlime, "max_shield")
 
     def __repr__(self):
-        return "BS"
+        return "BS" + str(self.health)
 
     def get_cooltime(self):
         return getattr(BlueSlime, "beat_for_move")
@@ -105,7 +105,7 @@ class BlueBat(Bat):
 
     def __repr__(self):
         facing = "L" if self.facing == Facing.LEFT else "R"
-        return "BB" + facing
+        return "BB" + facing + str(self.health)
 
     def get_cooltime(self):
         return getattr(BlueBat, "beat_for_move")
@@ -119,10 +119,24 @@ class YellowBat(Bat):
 
     def __repr__(self):
         facing = "L" if self.facing == Facing.LEFT else "R"
-        return "YB" + facing
+        return "YB" + facing + str(self.health)
 
     def get_cooltime(self):
         return getattr(YellowBat, "beat_for_move")
+
+
+class RedBat(Bat):
+    def __init__(self, appear_lane, facing, chained):
+        super().__init__(appear_lane, facing, chained)
+        self.health = getattr(RedBat, "max_health")
+        self.shield = getattr(RedBat, "max_shield")
+
+    def __repr__(self):
+        facing = "L" if self.facing == Facing.LEFT else "R"
+        return "RB" + facing + str(self.health)
+
+    def get_cooltime(self):
+        return getattr(RedBat, "beat_for_move")
 
 
 class Zombie(Enemy):
@@ -253,7 +267,7 @@ class BlackSkeleton(Skeleton):
         self.shield = getattr(BlackSkeleton, "max_shield")
 
     def __repr__(self):
-        return "BSk"
+        return "BSk" + str(self.health)
 
     def get_cooltime(self):
         return getattr(BlackSkeleton, "beat_for_move")
@@ -302,7 +316,7 @@ class BlueHarpy(Harpy):
         self.shield = getattr(BlueHarpy, "max_shield")
 
     def __repr__(self):
-        return "BH"
+        return "BH" + str(self.health)
 
     def get_cooltime(self):
         return getattr(BlueHarpy, "beat_for_move")
@@ -342,7 +356,7 @@ class Cheese(Food):
         self.shield = getattr(Cheese, "max_shield")
 
     def __repr__(self):
-        return "Ch"
+        return "Ch" + str(self.health)
 
     def get_cooltime(self):
         return getattr(Cheese, "beat_for_move")
@@ -355,7 +369,7 @@ class Drumstick(Food):
         self.shield = getattr(Drumstick, "max_shield")
 
     def __repr__(self):
-        return "Dr"
+        return "Dr" + str(self.health)
 
     def get_cooltime(self):
         return getattr(Drumstick, "beat_for_move")
@@ -368,7 +382,7 @@ class Ham(Food):
         self.shield = getattr(Ham, "max_shield")
 
     def __repr__(self):
-        return "Ha"
+        return "Ha" + str(self.health)
 
     def get_cooltime(self):
         return getattr(Ham, "beat_for_move")
