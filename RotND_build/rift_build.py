@@ -241,6 +241,14 @@ class Node[T: Object]:
                     nodes.append(Node(Apple(lane, chained), appear_beat))
                 elif name == CHEESE:
                     nodes.append(Node(Cheese(lane, chained), appear_beat))
+                elif name == BASE_BLADEMASTER:
+                    assert isinstance(obj_event, BlademasterEvent)
+                    nodes.append(
+                        Node(
+                            Blademaster(lane, chained, obj_event.attack_row),
+                            appear_beat,
+                        )
+                    )
             elif isinstance(obj_event, BounceEvent):
                 lane = obj_event.lane
                 row = obj_event.row
@@ -424,9 +432,15 @@ while node_idx < nodes_len or not map.is_clean():
                             map.grids[i][j].enemies.append(grid_enemy)
                     elif isinstance(obj, Harpy):
                         map.grids[i][j - dist].enemies.append(grid_enemy)
-                    # TODO: blademaster
-                    elif False:
-                        pass
+                    elif isinstance(obj, Blademaster):
+                        if obj.is_ready:
+                            grid_enemy.cooltime = 0
+                            map.grids[i][0].enemies.append(grid_enemy)
+                        elif obj.attack_row == j:
+                            obj.is_ready = True
+                            map.grids[i][j].enemies.append(grid_enemy)
+                        else:
+                            map.step_trap(i, j - dist, grid_enemy)
                     else:
                         map.step_trap(i, j - dist, grid_enemy)
                     nodes_done.append(grid_enemy)
@@ -439,7 +453,7 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat += min_cooltime
 
     # Debug: map
-    if 10 < cur_beat < 100:
+    if 95 < cur_beat < 200:
         print(cur_beat)
         print(map)
 

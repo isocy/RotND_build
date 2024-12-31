@@ -26,23 +26,42 @@ class EnemyEvent(ObjectEvent):
 
     @classmethod
     def load_dict(cls, event):
-        return EnemyEvent(
-            event["track"],
-            BEAT_OFFSET + event["startBeatNumber"],
-            next(
+        lane = event["track"]
+        appear_beat = BEAT_OFFSET + event["startBeatNumber"]
+        enemy_id = next(
+            int(pair["_eventDataValue"])
+            for pair in iter(event["dataPairs"])
+            if pair["_eventDataKey"] == "EnemyId"
+        )
+
+        attack_row = next(
+            (
                 int(pair["_eventDataValue"])
                 for pair in iter(event["dataPairs"])
-                if pair["_eventDataKey"] == "EnemyId"
+                if pair["_eventDataKey"] == "BlademasterAttackRow"
             ),
-            next(
-                (
-                    Facing.RIGHT if pair["_eventDataValue"] == "true" else Facing.LEFT
-                    for pair in iter(event["dataPairs"])
-                    if pair["_eventDataKey"] == "ShouldStartFacingRight"
-                ),
-                Facing.LEFT,
-            ),
+            -1,
         )
+        if attack_row != -1:
+            return BlademasterEvent(lane, appear_beat, enemy_id, attack_row)
+
+        facing = next(
+            (
+                Facing.RIGHT if pair["_eventDataValue"] == "true" else Facing.LEFT
+                for pair in iter(event["dataPairs"])
+                if pair["_eventDataKey"] == "ShouldStartFacingRight"
+            ),
+            Facing.LEFT,
+        )
+        return EnemyEvent(lane, appear_beat, enemy_id, facing)
+
+
+class BlademasterEvent(EnemyEvent):
+    def __init__(self, lane, appear_beat, enemy_id, attack_row):
+        self.lane = lane
+        self.appear_beat = appear_beat
+        self.enemy_id = enemy_id
+        self.attack_row = attack_row
 
 
 class TrapEvent(ObjectEvent):

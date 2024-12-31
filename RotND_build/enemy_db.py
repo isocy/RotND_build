@@ -97,3 +97,7 @@ class EnemyDB:
                 setattr(Cheese, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(Cheese, "max_health", enemy_def["health"])
                 setattr(Cheese, "max_shield", enemy_def["shield"])
+            elif name == BASE_BLADEMASTER:
+                setattr(Blademaster, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(Blademaster, "max_health", enemy_def["health"])
+                setattr(Blademaster, "max_shield", enemy_def["shield"])

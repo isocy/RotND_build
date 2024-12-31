@@ -327,6 +327,22 @@ class Cheese(Food):
         return getattr(Cheese, "beat_for_move")
 
 
+class Blademaster(Enemy):
+    def __init__(self, appear_lane, chained, attack_row):
+        super().__init__(appear_lane, chained)
+        self.dist_per_move = 1
+        self.health = getattr(Blademaster, "max_health")
+        self.shield = getattr(Blademaster, "max_shield")
+        self.attack_row = attack_row
+        self.is_ready = False
+
+    def __repr__(self):
+        return "Bm" + ("R" if self.is_ready else "")
+
+    def get_cooltime(self):
+        return getattr(Blademaster, "beat_for_move")
+
+
 class Trap(Object):
     def __init__(self, appear_lane: int, appear_row: int, duration: float):
         self.appear_lane = appear_lane
