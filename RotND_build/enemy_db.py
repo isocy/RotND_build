@@ -97,6 +97,14 @@ class EnemyDB:
                 setattr(Cheese, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(Cheese, "max_health", enemy_def["health"])
                 setattr(Cheese, "max_shield", enemy_def["shield"])
+            elif name == DRUMSTICK:
+                setattr(Drumstick, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(Drumstick, "max_health", enemy_def["health"])
+                setattr(Drumstick, "max_shield", enemy_def["shield"])
+            elif name == HAM:
+                setattr(Ham, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(Ham, "max_health", enemy_def["health"])
+                setattr(Ham, "max_shield", enemy_def["shield"])
             elif name == BASE_BLADEMASTER:
                 setattr(Blademaster, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(Blademaster, "max_health", enemy_def["health"])

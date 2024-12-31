@@ -241,6 +241,10 @@ class Node[T: Object]:
                     nodes.append(Node(Apple(lane, chained), appear_beat))
                 elif name == CHEESE:
                     nodes.append(Node(Cheese(lane, chained), appear_beat))
+                elif name == DRUMSTICK:
+                    nodes.append(Node(Drumstick(lane, chained), appear_beat))
+                elif name == HAM:
+                    nodes.append(Node(Ham(lane, chained), appear_beat))
                 elif name == BASE_BLADEMASTER:
                     assert isinstance(obj_event, BlademasterEvent)
                     nodes.append(

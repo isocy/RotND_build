@@ -327,6 +327,32 @@ class Cheese(Food):
         return getattr(Cheese, "beat_for_move")
 
 
+class Drumstick(Food):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(Drumstick, "max_health")
+        self.shield = getattr(Drumstick, "max_shield")
+
+    def __repr__(self):
+        return "Dr"
+
+    def get_cooltime(self):
+        return getattr(Drumstick, "beat_for_move")
+
+
+class Ham(Food):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(Ham, "max_health")
+        self.shield = getattr(Ham, "max_shield")
+
+    def __repr__(self):
+        return "Ha"
+
+    def get_cooltime(self):
+        return getattr(Ham, "beat_for_move")
+
+
 class Blademaster(Enemy):
     def __init__(self, appear_lane, chained, attack_row):
         super().__init__(appear_lane, chained)
