@@ -216,7 +216,7 @@ class ShieldedBaseSkeleton(Skeleton):
         self.shield = getattr(ShieldedBaseSkeleton, "max_shield")
 
     def __repr__(self):
-        return "SSk"
+        return "ShSk"
 
     def get_cooltime(self):
         return getattr(ShieldedBaseSkeleton, "beat_for_move")
@@ -252,6 +252,19 @@ class YellowSkeleton(Skeleton):
         return getattr(YellowSkeleton, "beat_for_move")
 
 
+class ShieldedYellowSkeleton(Skeleton):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(ShieldedYellowSkeleton, "max_health")
+        self.shield = getattr(ShieldedYellowSkeleton, "max_shield")
+
+    def __repr__(self):
+        return "ShYSk"
+
+    def get_cooltime(self):
+        return getattr(ShieldedYellowSkeleton, "beat_for_move")
+
+
 class HeadlessYellowSkeleton(HeadlessSkeleton):
     def __init__(self, appear_lane, chained, dist_per_move):
         super().__init__(appear_lane, chained, dist_per_move)
@@ -271,6 +284,19 @@ class BlackSkeleton(Skeleton):
 
     def get_cooltime(self):
         return getattr(BlackSkeleton, "beat_for_move")
+
+
+class ShieldedBlackSkeleton(Skeleton):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(ShieldedBlackSkeleton, "max_health")
+        self.shield = getattr(ShieldedBlackSkeleton, "max_shield")
+
+    def __repr__(self):
+        return "ShBSk"
+
+    def get_cooltime(self):
+        return getattr(ShieldedBlackSkeleton, "beat_for_move")
 
 
 class HeadlessBlackSkeleton(HeadlessSkeleton):

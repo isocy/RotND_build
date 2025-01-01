@@ -191,8 +191,16 @@ class Node[T: Object]:
                     nodes.append(Node(ShieldedBaseSkeleton(lane, chained), appear_beat))
                 elif name == YELLOW_SKELETON:
                     nodes.append(Node(YellowSkeleton(lane, chained), appear_beat))
+                elif name == SHIELDED_YELLOW_SKELETON:
+                    nodes.append(
+                        Node(ShieldedYellowSkeleton(lane, chained), appear_beat)
+                    )
                 elif name == BLACK_SKELETON:
                     nodes.append(Node(BlackSkeleton(lane, chained), appear_beat))
+                elif name == SHIELDED_BLACK_SKELETON:
+                    nodes.append(
+                        Node(ShieldedBlackSkeleton(lane, chained), appear_beat)
+                    )
                 elif name == BASE_HARPY:
                     nodes.append(Node(BaseHarpy(lane, chained), appear_beat))
                 elif name == BLUE_HARPY:
@@ -541,9 +549,9 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat += min_cooltime
 
     # Debug: map
-    # if cur_beat > 380:
-    #     print(cur_beat)
-    #     print(map)
+    if 30 < cur_beat < 70:
+        print(cur_beat)
+        print(map)
 
     # hit_notes()
     for i in range(map.lanes):
@@ -562,8 +570,18 @@ while node_idx < nodes_len or not map.is_clean():
                         BaseSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
                     )
                     map.grids[i][0].enemies.append(new_node)
+                elif isinstance(enemy, ShieldedYellowSkeleton):
+                    new_node = Node(
+                        YellowSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
+                    )
+                    map.grids[i][0].enemies.append(new_node)
+                elif isinstance(enemy, ShieldedBlackSkeleton):
+                    new_node = Node(
+                        BlackSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
+                    )
+                    map.grids[i][0].enemies.append(new_node)
                 # TODO: other shielded enemies
-                else:
+                elif False:
                     pass
             elif enemy.health > 1:
                 enemy.health -= 1

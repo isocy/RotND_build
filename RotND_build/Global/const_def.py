@@ -66,6 +66,7 @@ GLASS_CAGES_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Easy"
 )
 RAVEVENGE_EASY_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Easy"
+RAVEVENGE_HARD_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Hard"
 
 
 class Facing(Enum):
