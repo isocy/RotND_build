@@ -290,7 +290,10 @@ class Map:
         will_be_blocked = False
         for upper_enemy in self.grids[i][j].enemies:
             if not upper_enemy.obj.flying:
-                if upper_enemy in target_nodes or upper_enemy.cooltime < 0.97:
+                if (
+                    upper_enemy in target_nodes
+                    or upper_enemy.cooltime < ONBEAT_THRESHOLD
+                ):
                     is_blocked = True
                     break
                 else:
