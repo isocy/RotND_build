@@ -1105,38 +1105,105 @@ partitions = [
 ]
 
 max_one_vibe_beatcnts = []
-max_two_vibes_beatcnts = []
-max_three_vibes_beatcnts = []
+target_start_beats = [start_beat for (start_beat, _) in ONE_VIBE_START_BEATS_LOOSE]
 for beatcnts in one_vibe_beatcnts:
-    max_one_vibe_beatcnts.append(
-        max(
-            [
-                beatcnt
-                for beatcnt in beatcnts
-                if beatcnt.start_beat not in ONE_VIBE_START_BEATS_EXCEPT
-            ]
-        )
+    max_beatcnt = max(
+        [
+            beatcnt
+            for beatcnt in beatcnts
+            if beatcnt.start_beat not in ONE_VIBE_START_BEATS_EXCEPT
+        ]
     )
+    start_beat = max_beatcnt.start_beat
+
+    if start_beat in target_start_beats:
+        loose_idx = target_start_beats.index(start_beat)
+        loose_cnt = ONE_VIBE_START_BEATS_LOOSE[loose_idx][1]
+
+        if loose_cnt > 0:
+            # floating point error should be considered
+            end_beat = start_beat + max_beatcnt.beat_diff
+
+            beat_idx = bisect_left(raw_beats, start_beat)
+            target_end_beat_idx = bisect_left(raw_beats, end_beat)
+
+            while loose_cnt > 0 and target_end_beat_idx > beat_idx:
+                if raw_beats[target_end_beat_idx - 1] != raw_beats[target_end_beat_idx]:
+                    loose_cnt -= 1
+                target_end_beat_idx -= 1
+
+            max_beatcnt.beat_diff = raw_beats[target_end_beat_idx] - start_beat
+            max_beatcnt.cnt = target_end_beat_idx + 1 - beat_idx
+
+    max_one_vibe_beatcnts.append(max_beatcnt)
+max_two_vibes_beatcnts = []
+target_start_beats = [start_beat for (start_beat, _) in TWO_VIBES_START_BEATS_LOOSE]
 for beatcnts in two_vibes_beatcnts:
-    max_two_vibes_beatcnts.append(
-        max(
-            [
-                beatcnt
-                for beatcnt in beatcnts
-                if beatcnt.start_beat not in TWO_VIBES_START_BEATS_EXCEPT
-            ]
-        )
+    max_beatcnt = max(
+        [
+            beatcnt
+            for beatcnt in beatcnts
+            if beatcnt.start_beat not in TWO_VIBES_START_BEATS_EXCEPT
+        ]
     )
+    start_beat = max_beatcnt.start_beat
+
+    if start_beat in target_start_beats:
+        loose_idx = target_start_beats.index(start_beat)
+        loose_cnt = TWO_VIBES_START_BEATS_LOOSE[loose_idx][1]
+
+        if loose_cnt > 0:
+            # floating point error should be considered
+            end_beat = start_beat + max_beatcnt.beat_diff
+
+            beat_idx = bisect_left(raw_beats, start_beat)
+            target_end_beat_idx = bisect_left(raw_beats, end_beat)
+
+            while (
+                loose_cnt > 0
+                and raw_beats[target_end_beat_idx] not in vibe_beats
+                and target_end_beat_idx > beat_idx
+            ):
+                if raw_beats[target_end_beat_idx - 1] != raw_beats[target_end_beat_idx]:
+                    loose_cnt -= 1
+                target_end_beat_idx -= 1
+
+            max_beatcnt.beat_diff = raw_beats[target_end_beat_idx] - start_beat
+            max_beatcnt.cnt = target_end_beat_idx + 1 - beat_idx
+
+    max_two_vibes_beatcnts.append(max_beatcnt)
+max_three_vibes_beatcnts = []
+target_start_beats = [start_beat for (start_beat, _) in THREE_VIBES_START_BEATS_LOOSE]
 for beatcnts in three_vibes_beatcnts:
-    max_three_vibes_beatcnts.append(
-        max(
-            [
-                beatcnt
-                for beatcnt in beatcnts
-                if beatcnt.start_beat not in THREE_VIBES_START_BEATS_EXCEPT
-            ]
-        )
+    max_beatcnt = max(
+        [
+            beatcnt
+            for beatcnt in beatcnts
+            if beatcnt.start_beat not in THREE_VIBES_START_BEATS_EXCEPT
+        ]
     )
+    start_beat = max_beatcnt.start_beat
+
+    if start_beat in target_start_beats:
+        loose_idx = target_start_beats.index(start_beat)
+        loose_cnt = THREE_VIBES_START_BEATS_LOOSE[loose_idx][1]
+
+        if loose_cnt > 0:
+            # floating point error should be considered
+            end_beat = start_beat + max_beatcnt.beat_diff
+
+            beat_idx = bisect_left(raw_beats, start_beat)
+            target_end_beat_idx = bisect_left(raw_beats, end_beat)
+
+            while loose_cnt > 0 and raw_beats[target_end_beat_idx] not in vibe_beats:
+                if raw_beats[target_end_beat_idx - 1] != raw_beats[target_end_beat_idx]:
+                    loose_cnt -= 1
+                target_end_beat_idx -= 1
+
+            max_beatcnt.beat_diff = raw_beats[target_end_beat_idx] - start_beat
+            max_beatcnt.cnt = target_end_beat_idx + 1 - beat_idx
+
+    max_three_vibes_beatcnts.append(max_beatcnt)
 
 print("\nBeatmap Path:")
 print(RAW_BEATMAP_PATH)
