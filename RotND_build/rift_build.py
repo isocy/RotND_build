@@ -273,7 +273,7 @@ class Map:
         str = ""
         for j in reversed(range(self.rows)):
             for i in range(self.lanes):
-                str += "{:<20}".format(map.grids[i][j].__repr__())
+                str += "{:<30}".format(map.grids[i][j].__repr__())
             str += "\n"
         return str
 
@@ -287,35 +287,30 @@ class Map:
     def is_node_blocked(self, i: int, j: int, target_nodes: list[Node[Enemy]]):
         """Determine if the headless skeleton node is blocked at the current timestep."""
         is_blocked = False
+        will_be_blocked = False
         for upper_enemy in self.grids[i][j].enemies:
             if not upper_enemy.obj.flying:
-                is_blocked = True
-                break
-        will_be_blocked = False
+                if upper_enemy in target_nodes or upper_enemy.cooltime < 0.97:
+                    is_blocked = True
+                    break
+                else:
+                    will_be_blocked = True
         for upper_enemy in self.grids[i][j + 1].enemies:
-            if not upper_enemy.obj.flying and upper_enemy in target_nodes:
+            if not upper_enemy.obj.flying:
                 will_be_blocked = True
                 break
 
         return (is_blocked, will_be_blocked)
 
-    def is_node_blocked_imm(self, i: int, j: int, enemy_node: Node[Enemy]):
+    def is_node_blocked_imm(self, i: int):
         """Determine if the newly created headless skeleton node is blocked immediately."""
         is_blocked = False
-        for upper_enemy in self.grids[i][j].enemies:
+        for upper_enemy in self.grids[i][1].enemies + self.grids[i][2].enemies:
             if not upper_enemy.obj.flying:
                 is_blocked = True
                 break
-        will_be_blocked = False
-        for upper_enemy in self.grids[i][j + 1].enemies:
-            if (
-                not upper_enemy.obj.flying
-                and upper_enemy.cooltime == enemy_node.cooltime
-            ):
-                will_be_blocked = True
-                break
 
-        return (is_blocked, will_be_blocked)
+        return is_blocked
 
     def step_trap(self, init_i: int, init_j: int, enemy_node: Node[Enemy]):
         """Move 'enemy_node' to the appropriate position
@@ -549,9 +544,9 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat += min_cooltime
 
     # Debug: map
-    if 30 < cur_beat < 70:
-        print(cur_beat)
-        print(map)
+    # if 340 < cur_beat < 380:
+    #     print(cur_beat)
+    #     print(map)
 
     # hit_notes()
     for i in range(map.lanes):
@@ -603,10 +598,8 @@ while node_idx < nodes_len or not map.is_clean():
                     map.grids[i][2].enemies.append(enemy_node)
                 elif isinstance(enemy, YellowSkeleton):
                     dist_per_move = -1
-                    (is_blocked, will_be_blocked) = map.is_node_blocked_imm(
-                        i, 0, enemy_node
-                    )
-                    if is_blocked or will_be_blocked:
+                    is_blocked = map.is_node_blocked_imm(i)
+                    if is_blocked:
                         dist_per_move = 1
 
                     new_node = Node(
@@ -616,10 +609,8 @@ while node_idx < nodes_len or not map.is_clean():
                     map.step_trap(i, 1, new_node)
                 elif isinstance(enemy, BlackSkeleton) and enemy.health == 1:
                     dist_per_move = -1
-                    (is_blocked, will_be_blocked) = map.is_node_blocked_imm(
-                        i, 0, enemy_node
-                    )
-                    if is_blocked or will_be_blocked:
+                    is_blocked = map.is_node_blocked_imm(i)
+                    if is_blocked:
                         dist_per_move = 1
 
                     new_node = Node(
