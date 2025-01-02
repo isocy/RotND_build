@@ -315,7 +315,9 @@ class Map:
 
         return is_blocked
 
-    def step_trap(self, init_i: int, init_j: int, enemy_node: Node[Enemy]):
+    def step_trap(
+        self, init_i: int, init_j: int, enemy_node: Node[Enemy]
+    ) -> tuple[int, int]:
         """Move 'enemy_node' to the appropriate position
         if there is a trap at (init_i, init_j)."""
         trap_node = self.grids[init_i][init_j].trap
@@ -344,6 +346,8 @@ class Map:
                 pass
         else:
             self.grids[init_i][init_j].enemies.append(enemy_node)
+
+        return init_i, init_j
 
 
 class RawBeatmap:
@@ -484,9 +488,7 @@ while node_idx < nodes_len or not map.is_clean():
                 if grid_enemy in target_nodes and j != 0:
                     obj = grid_enemy.obj
                     dist = obj.dist_per_move
-                    grid_enemy.cooltime = (
-                        obj.get_cooltime() if j != obj.dist_per_move else 0
-                    )
+                    grid_enemy.cooltime = obj.get_cooltime() if j != dist else 0
                     enemies_removed.append(grid_enemy)
                     # TODO: Zombie collision
                     # TODO: Zombie & traps
