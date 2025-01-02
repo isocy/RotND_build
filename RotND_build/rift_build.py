@@ -109,7 +109,7 @@ class Build:
 
 
 class Node[T: Object]:
-    def __init__(self, obj: T, cooltime):
+    def __init__(self, obj: T, cooltime: float):
         """Initialize a node which will be present at some grids for a period of time"""
         self.obj = obj
         self.cooltime = cooltime
@@ -298,6 +298,11 @@ class Map:
                     break
                 else:
                     will_be_blocked = True
+
+        upper_trap = self.grids[i][j].trap
+        if not is_blocked and upper_trap != None and isinstance(upper_trap.obj, Bounce):
+            return (False, False)
+
         for upper_enemy in self.grids[i][j + 1].enemies:
             if not upper_enemy.obj.flying:
                 will_be_blocked = True
@@ -314,6 +319,36 @@ class Map:
                 break
 
         return is_blocked
+
+    def is_left_open(self, i: int, j: int):
+        """Determine if the zombie at position (i, j) can go to left"""
+        is_left_open = True
+        for enemy in self.grids[i - 1][j - 1].enemies:
+            if not enemy.obj.flying and enemy.cooltime > 1 - ONBEAT_THRESHOLD:
+                is_left_open = False
+                break
+        if is_left_open:
+            for enemy in self.grids[i - 1][j].enemies:
+                if not enemy.obj.flying and enemy.cooltime < ONBEAT_THRESHOLD:
+                    is_left_open = False
+                    break
+
+        return is_left_open
+
+    def is_right_open(self, i: int, j: int):
+        """Determine if the zombie at position (i, j) can go to right"""
+        is_right_open = True
+        for enemy in self.grids[(i + 1) % self.lanes][j - 1].enemies:
+            if not enemy.obj.flying and enemy.cooltime > 1 - ONBEAT_THRESHOLD:
+                is_right_open = False
+                break
+        if is_right_open:
+            for enemy in self.grids[(i + 1) % self.lanes][j].enemies:
+                if not enemy.obj.flying and enemy.cooltime < ONBEAT_THRESHOLD:
+                    is_right_open = False
+                    break
+
+        return is_right_open
 
     def step_trap(
         self, init_i: int, init_j: int, enemy_node: Node[Enemy]
@@ -462,7 +497,12 @@ while node_idx < nodes_len or not map.is_clean():
             obj: Object = next_node.obj
             next_node.cooltime = obj.get_cooltime()
             if isinstance(obj, Enemy):
-                map.step_trap(obj.appear_lane - 1, Enemy.appear_row, next_node)
+                if obj.flying:
+                    map.grids[obj.appear_lane - 1][Enemy.appear_row].enemies.append(
+                        next_node
+                    )
+                else:
+                    map.step_trap(obj.appear_lane - 1, Enemy.appear_row, next_node)
             elif isinstance(obj, Trap):
                 map.grids[obj.appear_lane - 1][obj.appear_row].trap = next_node
             nodes_done.append(next_node)
@@ -489,30 +529,11 @@ while node_idx < nodes_len or not map.is_clean():
                     obj = grid_enemy.obj
                     dist = obj.dist_per_move
                     grid_enemy.cooltime = obj.get_cooltime() if j != dist else 0
-                    enemies_removed.append(grid_enemy)
-                    # TODO: Zombie collision
-                    # TODO: Zombie & traps
-                    if isinstance(obj, GreenZombie):
-                        if i == 0:
-                            map.grids[1][j - dist].enemies.append(grid_enemy)
-                            obj.facing = Facing.LEFT
-                        elif i == map.lanes - 1:
-                            map.grids[map.lanes - 2][j - dist].enemies.append(
-                                grid_enemy
-                            )
-                            obj.facing = Facing.RIGHT
-                        else:
-                            if obj.facing == Facing.LEFT:
-                                map.grids[i - 1][j - dist].enemies.append(grid_enemy)
-                                obj.facing = Facing.RIGHT
-                            else:
-                                map.grids[i + 1][j - dist].enemies.append(grid_enemy)
-                                obj.facing = Facing.LEFT
-                    elif isinstance(obj, RedZombie):
-                        if obj.facing == Facing.LEFT:
-                            map.step_trap(i - 1, j - dist, grid_enemy)
-                        else:
-                            map.step_trap((i + 1) % map.lanes, j - dist, grid_enemy)
+                    if obj.flying:
+                        map.grids[i][j - dist].enemies.append(grid_enemy)
+                    # zombies later
+                    elif isinstance(obj, Zombie):
+                        continue
                     elif isinstance(obj, HeadlessSkeleton) and dist == -1:
                         (is_blocked, will_be_blocked) = map.is_node_blocked(
                             i, j - dist, target_nodes
@@ -525,8 +546,6 @@ while node_idx < nodes_len or not map.is_clean():
                             map.step_trap(i, j - dist, grid_enemy)
                         else:
                             map.grids[i][j].enemies.append(grid_enemy)
-                    elif isinstance(obj, Harpy):
-                        map.grids[i][j - dist].enemies.append(grid_enemy)
                     elif isinstance(obj, Blademaster):
                         if obj.is_ready:
                             grid_enemy.cooltime = 0
@@ -539,9 +558,96 @@ while node_idx < nodes_len or not map.is_clean():
                             map.step_trap(i, j - dist, grid_enemy)
                     else:
                         map.step_trap(i, j - dist, grid_enemy)
+                    enemies_removed.append(grid_enemy)
                     nodes_done.append(grid_enemy)
                 else:
                     grid_enemy.cooltime -= min_cooltime
+
+            for enemy_removed in enemies_removed:
+                grid_enemies.remove(enemy_removed)
+
+    # resolve collisions for zombies
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            grid = map.grids[i][j]
+            grid_enemies = grid.enemies
+            enemies_removed = []
+
+            for grid_enemy in grid_enemies:
+                if grid_enemy in nodes_done:
+                    continue
+
+                if grid_enemy in target_nodes:
+                    obj = grid_enemy.obj
+                    assert isinstance(obj, Zombie)
+                    dist = obj.dist_per_move
+                    grid_enemy.cooltime = obj.get_cooltime() if j != dist else 0
+                    if isinstance(obj, GreenZombie):
+                        if obj.facing == Facing.LEFT:
+                            is_left_open = map.is_left_open(i, j) if i != 0 else False
+
+                            if is_left_open:
+                                map.step_trap(i - 1, j - dist, grid_enemy)
+                            else:
+                                obj.facing = Facing.RIGHT
+                                is_right_open = (
+                                    map.is_right_open(i, j)
+                                    if i != map.lanes - 1
+                                    else False
+                                )
+
+                                if is_right_open:
+                                    map.step_trap(i + 1, j - dist, grid_enemy)
+                                else:
+                                    map.step_trap(i, j - dist, grid_enemy)
+                        else:
+                            is_right_open = (
+                                map.is_right_open(i, j) if i != map.lanes - 1 else False
+                            )
+
+                            if is_right_open:
+                                map.step_trap(i + 1, j - dist, grid_enemy)
+                            else:
+                                obj.facing = Facing.LEFT
+                                is_left_open = (
+                                    map.is_left_open(i, j) if i != 0 else False
+                                )
+
+                                if is_left_open:
+                                    map.step_trap(i - 1, j - dist, grid_enemy)
+                                else:
+                                    map.step_trap(i, j - dist, grid_enemy)
+                    elif isinstance(obj, RedZombie):
+                        if obj.facing == Facing.LEFT:
+                            is_left_open = map.is_left_open(i, j)
+
+                            if is_left_open:
+                                map.step_trap(i - 1, j - dist, grid_enemy)
+                            else:
+                                obj.facing = Facing.RIGHT
+                                is_right_open = map.is_right_open(i, j)
+
+                                if is_right_open:
+                                    map.step_trap(
+                                        (i + 1) % map.lanes, j - dist, grid_enemy
+                                    )
+                                else:
+                                    map.step_trap(i, j - dist, grid_enemy)
+                        else:
+                            is_right_open = map.is_right_open(i, j)
+
+                            if is_right_open:
+                                map.step_trap((i + 1) % map.lanes, j - dist, grid_enemy)
+                            else:
+                                obj.facing = Facing.LEFT
+                                is_left_open = map.is_left_open(i, j)
+
+                                if is_left_open:
+                                    map.step_trap(i - 1, j - dist, grid_enemy)
+                                else:
+                                    map.step_trap(i, j - dist, grid_enemy)
+                    enemies_removed.append(grid_enemy)
+                    nodes_done.append(grid_enemy)
 
             for enemy_removed in enemies_removed:
                 grid_enemies.remove(enemy_removed)
