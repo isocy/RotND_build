@@ -7,6 +7,7 @@ from bisect import bisect_right, bisect_left
 import itertools
 import json
 from math import floor
+import numpy as np
 from typing import Self
 
 
@@ -16,12 +17,14 @@ class InputRatingsDef:
         perf_range: float,
         great_range: float,
         perf_score: int,
+        great_score: int,
         perf_bonus: int,
         true_perf_bonus: int,
     ):
         self.perf_range = perf_range
         self.great_range = great_range
         self.perf_score = perf_score
+        self.great_score = great_score
         self.perf_bonus = perf_bonus
         self.true_perf_bonus = true_perf_bonus
 
@@ -37,11 +40,17 @@ class InputRatingsDef:
         great_range = (100 - ratings[-2]["minimumValue"]) * hit_window / 100
 
         perf_score = ratings[-1]["score"]
+        great_score = ratings[-2]["score"]
         perf_bonus = input_ratings_def["_perfectBonusScore"]
         true_perf_bonus = input_ratings_def["_truePerfectBonusScore"]
 
         return InputRatingsDef(
-            perf_range, great_range, perf_score, perf_bonus, true_perf_bonus
+            perf_range,
+            great_range,
+            perf_score,
+            great_score,
+            perf_bonus,
+            true_perf_bonus,
         )
 
 
@@ -109,7 +118,7 @@ class Build:
 
 
 class Node[T: Object]:
-    def __init__(self, obj: T, cooltime):
+    def __init__(self, obj: T, cooltime: float):
         """Initialize a node which will be present at some grids for a period of time"""
         self.obj = obj
         self.cooltime = cooltime
@@ -128,8 +137,8 @@ class Node[T: Object]:
         obj_events: list[ObjectEvent],
         # Used to determine whether a node of enemy is vibe-chained
         vibe_events: list[VibeEvent],
-        enemy_db: EnemyDB,
-    ) -> tuple[list[Self], list[int]]:
+        enemy_db: dict,
+    ) -> tuple[list["Node"], list[int]]:
         """Convert events into nodes
         Returns the list of nodes and the list of vibe chain counts"""
         nodes: list[Node] = []
@@ -191,8 +200,16 @@ class Node[T: Object]:
                     nodes.append(Node(ShieldedBaseSkeleton(lane, chained), appear_beat))
                 elif name == YELLOW_SKELETON:
                     nodes.append(Node(YellowSkeleton(lane, chained), appear_beat))
+                elif name == SHIELDED_YELLOW_SKELETON:
+                    nodes.append(
+                        Node(ShieldedYellowSkeleton(lane, chained), appear_beat)
+                    )
                 elif name == BLACK_SKELETON:
                     nodes.append(Node(BlackSkeleton(lane, chained), appear_beat))
+                elif name == SHIELDED_BLACK_SKELETON:
+                    nodes.append(
+                        Node(ShieldedBlackSkeleton(lane, chained), appear_beat)
+                    )
                 elif name == BASE_HARPY:
                     nodes.append(Node(BaseHarpy(lane, chained), appear_beat))
                 elif name == BLUE_HARPY:
@@ -244,7 +261,7 @@ class Node[T: Object]:
 class Grid:
     def __init__(self):
         self.enemies: list[Node[Enemy]] = []
-        self.trap: Node[Trap] = None
+        self.trap: Node[Trap] | None = None
 
     def __repr__(self):
         return (self.enemies + [self.trap]).__repr__()
@@ -265,7 +282,7 @@ class Map:
         str = ""
         for j in reversed(range(self.rows)):
             for i in range(self.lanes):
-                str += "{:<20}".format(map.grids[i][j].__repr__())
+                str += "{:<30}".format(map.grids[i][j].__repr__())
             str += "\n"
         return str
 
@@ -279,37 +296,94 @@ class Map:
     def is_node_blocked(self, i: int, j: int, target_nodes: list[Node[Enemy]]):
         """Determine if the headless skeleton node is blocked at the current timestep."""
         is_blocked = False
+        will_be_blocked = False
         for upper_enemy in self.grids[i][j].enemies:
             if not upper_enemy.obj.flying:
-                is_blocked = True
-                break
-        will_be_blocked = False
+                if (
+                    upper_enemy in target_nodes
+                    or upper_enemy.cooltime < ONBEAT_THRESHOLD
+                ):
+                    is_blocked = True
+                    break
+                else:
+                    will_be_blocked = True
+
+        upper_trap = self.grids[i][j].trap
+        if not is_blocked and upper_trap != None and isinstance(upper_trap.obj, Bounce):
+            return (False, False)
+
         for upper_enemy in self.grids[i][j + 1].enemies:
-            if not upper_enemy.obj.flying and upper_enemy in target_nodes:
+            if not upper_enemy.obj.flying:
                 will_be_blocked = True
                 break
 
         return (is_blocked, will_be_blocked)
 
-    def is_node_blocked_imm(self, i: int, j: int, enemy_node: Node[Enemy]):
+    def is_node_blocked_imm(self, i: int):
         """Determine if the newly created headless skeleton node is blocked immediately."""
         is_blocked = False
-        for upper_enemy in self.grids[i][j].enemies:
+        for upper_enemy in self.grids[i][1].enemies + self.grids[i][2].enemies:
             if not upper_enemy.obj.flying:
                 is_blocked = True
                 break
-        will_be_blocked = False
-        for upper_enemy in self.grids[i][j + 1].enemies:
-            if (
-                not upper_enemy.obj.flying
-                and upper_enemy.cooltime == enemy_node.cooltime
-            ):
-                will_be_blocked = True
-                break
 
-        return (is_blocked, will_be_blocked)
+        return is_blocked
 
-    def step_trap(self, init_i: int, init_j: int, enemy_node: Node[Enemy]):
+    def is_left_open(self, i: int, j: int, target_enemy: Node[Enemy]):
+        """Determine if the zombie at position (i, j) can go to left"""
+        is_left_open = True
+        for enemy in self.grids[i - 1][j - 1].enemies:
+            if not enemy.obj.flying:
+                is_zombie = isinstance(enemy.obj, Zombie)
+                if (
+                    is_zombie
+                    and enemy.cooltime - target_enemy.cooltime > 1 - ONBEAT_THRESHOLD
+                    or not is_zombie
+                    and enemy.cooltime > 1 - ONBEAT_THRESHOLD
+                ):
+                    is_left_open = False
+                    break
+        if is_left_open:
+            for enemy in self.grids[i - 1][j].enemies:
+                if (
+                    not enemy.obj.flying
+                    and not isinstance(enemy.obj, Zombie)
+                    and enemy.cooltime < ONBEAT_THRESHOLD
+                ):
+                    is_left_open = False
+                    break
+
+        return is_left_open
+
+    def is_right_open(self, i: int, j: int, target_enemy: Node[Enemy]):
+        """Determine if the zombie at position (i, j) can go to right"""
+        is_right_open = True
+        for enemy in self.grids[(i + 1) % self.lanes][j - 1].enemies:
+            if not enemy.obj.flying:
+                is_zombie = isinstance(enemy.obj, Zombie)
+                if (
+                    is_zombie
+                    and enemy.cooltime - target_enemy.cooltime > 1 - ONBEAT_THRESHOLD
+                    or not is_zombie
+                    and enemy.cooltime > 1 - ONBEAT_THRESHOLD
+                ):
+                    is_right_open = False
+                    break
+        if is_right_open:
+            for enemy in self.grids[(i + 1) % self.lanes][j].enemies:
+                if (
+                    not enemy.obj.flying
+                    and not isinstance(enemy.obj, Zombie)
+                    and enemy.cooltime < ONBEAT_THRESHOLD
+                ):
+                    is_right_open = False
+                    break
+
+        return is_right_open
+
+    def step_trap(
+        self, init_i: int, init_j: int, enemy_node: Node[Enemy]
+    ) -> tuple[int, int]:
         """Move 'enemy_node' to the appropriate position
         if there is a trap at (init_i, init_j)."""
         trap_node = self.grids[init_i][init_j].trap
@@ -317,13 +391,19 @@ class Map:
             trap = trap_node.obj
             if isinstance(trap, Bounce):
                 dir = trap.dir
+                # TODO: other directions
                 if dir == TrapDir.UP:
                     init_j += 1
                 elif dir == TrapDir.RIGHT:
                     init_i += 1
                 elif dir == TrapDir.LEFT:
                     init_i -= 1
-                # TODO: other directions
+                elif dir == TrapDir.DOWNLEFT:
+                    init_i -= 1
+                    init_j -= 1
+                elif dir == TrapDir.DOWNRIGHT:
+                    init_i += 1
+                    init_j -= 1
                 else:
                     pass
 
@@ -338,6 +418,8 @@ class Map:
                 pass
         else:
             self.grids[init_i][init_j].enemies.append(enemy_node)
+
+        return init_i, init_j
 
 
 class RawBeatmap:
@@ -377,6 +459,7 @@ input_ratings_def = InputRatingsDef.load_json(INPUT_RATINGS_DEF_PATH)
 perf_range = input_ratings_def.perf_range - 5
 great_range = input_ratings_def.great_range - 5
 perf_score = input_ratings_def.perf_score
+great_score = input_ratings_def.great_score
 perf_bonus = input_ratings_def.perf_bonus
 true_perf_bonus = input_ratings_def.true_perf_bonus
 
@@ -396,11 +479,10 @@ cur_beat = 0
 next_node = nodes[node_idx]
 # cooltime changes of nodes for each iteration of the outmost loop cost a lot,
 # so the cooltime corrections occur for each node when the node is 'next_node'.
-next_node.cooltime -= cur_beat
 while node_idx < nodes_len or not map.is_clean():
     # derive 'min_cooltime'
     min_cooltime = next_node.cooltime
-    target_nodes = []
+    target_nodes: list = []
     for i in range(map.lanes):
         for j in range(map.rows):
             for enemy_node in map.grids[i][j].enemies:
@@ -432,7 +514,7 @@ while node_idx < nodes_len or not map.is_clean():
                 grid.trap = None
                 target_nodes.remove(trap_node)
             elif trap_node != None:
-                trap_node.cooltime -= min_cooltime
+                trap_node.cooltime = round(trap_node.cooltime - min_cooltime, NDIGITS)
 
     # now 'target_nodes' only contains enemy nodes
 
@@ -446,13 +528,18 @@ while node_idx < nodes_len or not map.is_clean():
     # Then enemy should be affected by the trap
     # That's why this code block is ahead of below
     if node_idx < nodes_len:
-        next_node.cooltime -= min_cooltime
+        next_node.cooltime = round(next_node.cooltime - min_cooltime, NDIGITS)
 
         while next_node.cooltime == 0:
             obj: Object = next_node.obj
             next_node.cooltime = obj.get_cooltime()
             if isinstance(obj, Enemy):
-                map.step_trap(obj.appear_lane - 1, Enemy.appear_row, next_node)
+                if obj.flying:
+                    map.grids[obj.appear_lane - 1][Enemy.appear_row].enemies.append(
+                        next_node
+                    )
+                else:
+                    map.step_trap(obj.appear_lane - 1, Enemy.appear_row, next_node)
             elif isinstance(obj, Trap):
                 map.grids[obj.appear_lane - 1][obj.appear_row].trap = next_node
             nodes_done.append(next_node)
@@ -461,7 +548,9 @@ while node_idx < nodes_len or not map.is_clean():
             if node_idx >= nodes_len:
                 break
             next_node = nodes[node_idx]
-            next_node.cooltime -= cur_beat + min_cooltime
+            next_node.cooltime = round(
+                next_node.cooltime - (cur_beat + min_cooltime), NDIGITS
+            )
 
     # let the time pass by for enemies
     for i in range(map.lanes):
@@ -478,33 +567,12 @@ while node_idx < nodes_len or not map.is_clean():
                 if grid_enemy in target_nodes and j != 0:
                     obj = grid_enemy.obj
                     dist = obj.dist_per_move
-                    grid_enemy.cooltime = (
-                        obj.get_cooltime() if j != obj.dist_per_move else 0
-                    )
-                    enemies_removed.append(grid_enemy)
-                    # TODO: Zombie collision
-                    # TODO: Zombie & traps
-                    if isinstance(obj, GreenZombie):
-                        if i == 0:
-                            map.grids[1][j - dist].enemies.append(grid_enemy)
-                            obj.facing = Facing.LEFT
-                        elif i == map.lanes - 1:
-                            map.grids[map.lanes - 2][j - dist].enemies.append(
-                                grid_enemy
-                            )
-                            obj.facing = Facing.RIGHT
-                        else:
-                            if obj.facing == Facing.LEFT:
-                                map.grids[i - 1][j - dist].enemies.append(grid_enemy)
-                                obj.facing = Facing.RIGHT
-                            else:
-                                map.grids[i + 1][j - dist].enemies.append(grid_enemy)
-                                obj.facing = Facing.LEFT
-                    elif isinstance(obj, RedZombie):
-                        if obj.facing == Facing.LEFT:
-                            map.step_trap(i - 1, j - dist, grid_enemy)
-                        else:
-                            map.step_trap((i + 1) % map.lanes, j - dist, grid_enemy)
+                    grid_enemy.cooltime = obj.get_cooltime() if j != dist else 0
+                    if obj.flying:
+                        map.grids[i][j - dist].enemies.append(grid_enemy)
+                    # zombies later
+                    elif isinstance(obj, Zombie):
+                        continue
                     elif isinstance(obj, HeadlessSkeleton) and dist == -1:
                         (is_blocked, will_be_blocked) = map.is_node_blocked(
                             i, j - dist, target_nodes
@@ -517,8 +585,6 @@ while node_idx < nodes_len or not map.is_clean():
                             map.step_trap(i, j - dist, grid_enemy)
                         else:
                             map.grids[i][j].enemies.append(grid_enemy)
-                    elif isinstance(obj, Harpy):
-                        map.grids[i][j - dist].enemies.append(grid_enemy)
                     elif isinstance(obj, Blademaster):
                         if obj.is_ready:
                             grid_enemy.cooltime = 0
@@ -531,17 +597,248 @@ while node_idx < nodes_len or not map.is_clean():
                             map.step_trap(i, j - dist, grid_enemy)
                     else:
                         map.step_trap(i, j - dist, grid_enemy)
+                    enemies_removed.append(grid_enemy)
                     nodes_done.append(grid_enemy)
                 else:
-                    grid_enemy.cooltime -= min_cooltime
+                    grid_enemy.cooltime = round(
+                        grid_enemy.cooltime - min_cooltime, NDIGITS
+                    )
 
             for enemy_removed in enemies_removed:
                 grid_enemies.remove(enemy_removed)
 
-    cur_beat += min_cooltime
+    # resolve collisions for zombies
+    for i in range(map.lanes):
+        for j in range(map.rows):
+            grid = map.grids[i][j]
+            grid_enemies = grid.enemies
+            enemies_removed = []
+
+            for grid_enemy in grid_enemies:
+                if grid_enemy in nodes_done:
+                    continue
+
+                if grid_enemy in target_nodes:
+                    obj = grid_enemy.obj
+                    assert isinstance(obj, Zombie)
+                    dist = obj.dist_per_move
+                    grid_enemy.cooltime = obj.get_cooltime() if j != dist else 0
+                    if isinstance(obj, GreenZombie):
+                        if obj.facing == Facing.LEFT:
+                            is_left_open = (
+                                map.is_left_open(i, j, grid_enemy) if i != 0 else False
+                            )
+
+                            if is_left_open:
+                                (new_i, new_j) = map.step_trap(
+                                    i - 1, j - dist, grid_enemy
+                                )
+                            else:
+                                obj.facing = Facing.RIGHT
+                                is_right_open = (
+                                    map.is_right_open(i, j, grid_enemy)
+                                    if i != map.lanes - 1
+                                    else False
+                                )
+
+                                if is_right_open:
+                                    (new_i, new_j) = map.step_trap(
+                                        i + 1, j - dist, grid_enemy
+                                    )
+                                else:
+                                    (new_i, new_j) = map.step_trap(
+                                        i, j - dist, grid_enemy
+                                    )
+                        else:
+                            is_right_open = (
+                                map.is_right_open(i, j, grid_enemy)
+                                if i != map.lanes - 1
+                                else False
+                            )
+
+                            if is_right_open:
+                                (new_i, new_j) = map.step_trap(
+                                    i + 1, j - dist, grid_enemy
+                                )
+                            else:
+                                obj.facing = Facing.LEFT
+                                is_left_open = (
+                                    map.is_left_open(i, j, grid_enemy)
+                                    if i != 0
+                                    else False
+                                )
+
+                                if is_left_open:
+                                    (new_i, new_j) = map.step_trap(
+                                        i - 1, j - dist, grid_enemy
+                                    )
+                                else:
+                                    (new_i, new_j) = map.step_trap(
+                                        i, j - dist, grid_enemy
+                                    )
+
+                        if new_j == 1:
+                            if obj.facing == Facing.LEFT:
+                                is_left_open = True if new_i != 0 else False
+                                if is_left_open:
+                                    for enemy in map.grids[new_i - 1][new_j].enemies:
+                                        if (
+                                            not enemy.obj.flying
+                                            and not isinstance(enemy.obj, Zombie)
+                                            and enemy.cooltime > 1 - ONBEAT_THRESHOLD
+                                        ):
+                                            is_left_open = False
+                                            break
+                                if is_left_open:
+                                    for enemy in map.grids[new_i - 2][new_j].enemies:
+                                        if (
+                                            enemy.obj.facing == Facing.RIGHT
+                                            and enemy.cooltime > ONBEAT_THRESHOLD
+                                            and (
+                                                isinstance(enemy.obj, GreenZombie)
+                                                and new_i != 1
+                                                or isinstance(enemy.obj, RedZombie)
+                                            )
+                                        ):
+                                            is_left_open = False
+                                            break
+                                if not is_left_open:
+                                    obj.facing = Facing.RIGHT
+                            else:
+                                is_right_open = (
+                                    True if new_i != map.lanes - 1 else False
+                                )
+                                if is_right_open:
+                                    for enemy in map.grids[new_i + 1][new_j].enemies:
+                                        if (
+                                            not enemy.obj.flying
+                                            and not isinstance(enemy.obj, Zombie)
+                                            and enemy.cooltime > 1 - ONBEAT_THRESHOLD
+                                        ):
+                                            is_right_open = False
+                                            break
+                                if is_right_open:
+                                    for enemy in map.grids[(new_i + 2) % map.lanes][
+                                        new_j
+                                    ].enemies:
+                                        if (
+                                            enemy.obj.facing == Facing.LEFT
+                                            and enemy.cooltime > ONBEAT_THRESHOLD
+                                            and (
+                                                isinstance(enemy.obj, GreenZombie)
+                                                and new_i != map.lanes - 2
+                                                or isinstance(enemy.obj, RedZombie)
+                                            )
+                                        ):
+                                            is_right_open = False
+                                            break
+                                if not is_right_open:
+                                    obj.facing = Facing.LEFT
+                    elif isinstance(obj, RedZombie):
+                        if obj.facing == Facing.LEFT:
+                            is_left_open = map.is_left_open(i, j, grid_enemy)
+
+                            if is_left_open:
+                                (new_i, new_j) = map.step_trap(
+                                    i - 1, j - dist, grid_enemy
+                                )
+                            else:
+                                obj.facing = Facing.RIGHT
+                                is_right_open = map.is_right_open(i, j, grid_enemy)
+
+                                if is_right_open:
+                                    (new_i, new_j) = map.step_trap(
+                                        (i + 1) % map.lanes, j - dist, grid_enemy
+                                    )
+                                else:
+                                    (new_i, new_j) = map.step_trap(
+                                        i, j - dist, grid_enemy
+                                    )
+                        else:
+                            is_right_open = map.is_right_open(i, j, grid_enemy)
+
+                            if is_right_open:
+                                (new_i, new_j) = map.step_trap(
+                                    (i + 1) % map.lanes, j - dist, grid_enemy
+                                )
+                            else:
+                                obj.facing = Facing.LEFT
+                                is_left_open = map.is_left_open(i, j, grid_enemy)
+
+                                if is_left_open:
+                                    (new_i, new_j) = map.step_trap(
+                                        i - 1, j - dist, grid_enemy
+                                    )
+                                else:
+                                    (new_i, new_j) = map.step_trap(
+                                        i, j - dist, grid_enemy
+                                    )
+
+                        if new_j == 1:
+                            if obj.facing == Facing.LEFT:
+                                is_left_open = True
+                                for enemy in map.grids[new_i - 1][new_j].enemies:
+                                    if (
+                                        not enemy.obj.flying
+                                        and not isinstance(enemy.obj, Zombie)
+                                        and enemy.cooltime > 1 - ONBEAT_THRESHOLD
+                                    ):
+                                        is_left_open = False
+                                        break
+                                if is_left_open:
+                                    for enemy in map.grids[new_i - 2][new_j].enemies:
+                                        if (
+                                            enemy.obj.facing == Facing.RIGHT
+                                            and enemy.cooltime > ONBEAT_THRESHOLD
+                                            and (
+                                                isinstance(enemy.obj, GreenZombie)
+                                                and new_i != 1
+                                                or isinstance(enemy.obj, RedZombie)
+                                            )
+                                        ):
+                                            is_left_open = False
+                                            break
+                                if not is_left_open:
+                                    obj.facing = Facing.RIGHT
+                            else:
+                                is_right_open = True
+                                for enemy in map.grids[(new_i + 1) % map.lanes][
+                                    new_j
+                                ].enemies:
+                                    if (
+                                        not enemy.obj.flying
+                                        and not isinstance(enemy.obj, Zombie)
+                                        and enemy.cooltime > 1 - ONBEAT_THRESHOLD
+                                    ):
+                                        is_right_open = False
+                                        break
+                                if is_right_open:
+                                    for enemy in map.grids[(new_i + 2) % map.lanes][
+                                        new_j
+                                    ].enemies:
+                                        if (
+                                            enemy.obj.facing == Facing.LEFT
+                                            and enemy.cooltime > ONBEAT_THRESHOLD
+                                            and (
+                                                isinstance(enemy.obj, GreenZombie)
+                                                and new_i != map.lanes - 2
+                                                or isinstance(enemy.obj, RedZombie)
+                                            )
+                                        ):
+                                            is_right_open = False
+                                            break
+                                if not is_right_open:
+                                    obj.facing = Facing.LEFT
+                    enemies_removed.append(grid_enemy)
+                    nodes_done.append(grid_enemy)
+
+            for enemy_removed in enemies_removed:
+                grid_enemies.remove(enemy_removed)
+
+    cur_beat = round(cur_beat + min_cooltime, NDIGITS)
 
     # Debug: map
-    # if cur_beat > 380:
+    # if 0 < cur_beat < 40:
     #     print(cur_beat)
     #     print(map)
 
@@ -558,12 +855,22 @@ while node_idx < nodes_len or not map.is_clean():
             if enemy.shield > 0:
                 # no decrement of shield required due to the node exchange
                 if isinstance(enemy, ShieldedBaseSkeleton):
-                    new_node = Node(
+                    new_node: Node[Enemy] = Node(
                         BaseSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
                     )
                     map.grids[i][0].enemies.append(new_node)
+                elif isinstance(enemy, ShieldedYellowSkeleton):
+                    new_node = Node(
+                        YellowSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
+                    )
+                    map.grids[i][0].enemies.append(new_node)
+                elif isinstance(enemy, ShieldedBlackSkeleton):
+                    new_node = Node(
+                        BlackSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
+                    )
+                    map.grids[i][0].enemies.append(new_node)
                 # TODO: other shielded enemies
-                else:
+                elif False:
                     pass
             elif enemy.health > 1:
                 enemy.health -= 1
@@ -585,10 +892,8 @@ while node_idx < nodes_len or not map.is_clean():
                     map.grids[i][2].enemies.append(enemy_node)
                 elif isinstance(enemy, YellowSkeleton):
                     dist_per_move = -1
-                    (is_blocked, will_be_blocked) = map.is_node_blocked_imm(
-                        i, 0, enemy_node
-                    )
-                    if is_blocked or will_be_blocked:
+                    is_blocked = map.is_node_blocked_imm(i)
+                    if is_blocked:
                         dist_per_move = 1
 
                     new_node = Node(
@@ -598,10 +903,8 @@ while node_idx < nodes_len or not map.is_clean():
                     map.step_trap(i, 1, new_node)
                 elif isinstance(enemy, BlackSkeleton) and enemy.health == 1:
                     dist_per_move = -1
-                    (is_blocked, will_be_blocked) = map.is_node_blocked_imm(
-                        i, 0, enemy_node
-                    )
-                    if is_blocked or will_be_blocked:
+                    is_blocked = map.is_node_blocked_imm(i)
+                    if is_blocked:
                         dist_per_move = 1
 
                     new_node = Node(
@@ -690,7 +993,9 @@ for vibe_idx in range(vibe_beats_len):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 beat_idx += 1
@@ -718,7 +1023,9 @@ for vibe_idx in range(vibe_beats_len):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 break
@@ -729,7 +1036,9 @@ for vibe_idx in range(vibe_beats_len):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 beat_idx += 1
@@ -738,7 +1047,7 @@ for vibe_idx in range(vibe_beats_len):
                     BeatCnt(
                         target_beat,
                         raw_beats_len - beat_idx,
-                        raw_beats[-1] - target_beat,
+                        round(raw_beats[-1] - target_beat, NDIGITS),
                     )
                 )
                 if extra_beatcnts_cnt == 0:
@@ -771,7 +1080,9 @@ for vibe_idx in range(vibe_beats_len - 1):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 beat_idx += 1
@@ -809,7 +1120,9 @@ for vibe_idx in range(vibe_beats_len - 1):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 break
@@ -820,7 +1133,9 @@ for vibe_idx in range(vibe_beats_len - 1):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 beat_idx += 1
@@ -829,7 +1144,7 @@ for vibe_idx in range(vibe_beats_len - 1):
                     BeatCnt(
                         target_beat,
                         raw_beats_len - beat_idx,
-                        raw_beats[-1] - target_beat,
+                        round(raw_beats[-1] - target_beat, NDIGITS),
                     )
                 )
                 if extra_beatcnts_cnt == 0:
@@ -875,7 +1190,10 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             target_end_beat_idx - beat_idx,
-                            raw_beats[target_end_beat_idx - 1] - target_beat,
+                            round(
+                                raw_beats[target_end_beat_idx - 1] - target_beat,
+                                NDIGITS,
+                            ),
                         )
                     )
                     beat_idx += 1
@@ -927,7 +1245,10 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             target_end_beat_idx - beat_idx,
-                            raw_beats[target_end_beat_idx - 1] - target_beat,
+                            round(
+                                raw_beats[target_end_beat_idx - 1] - target_beat,
+                                NDIGITS,
+                            ),
                         )
                     )
                     break
@@ -938,7 +1259,10 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             target_end_beat_idx - beat_idx,
-                            raw_beats[target_end_beat_idx - 1] - target_beat,
+                            round(
+                                raw_beats[target_end_beat_idx - 1] - target_beat,
+                                NDIGITS,
+                            ),
                         )
                     )
                     beat_idx += 1
@@ -947,7 +1271,7 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             raw_beats_len - beat_idx,
-                            raw_beats[-1] - target_beat,
+                            round(raw_beats[-1] - target_beat, NDIGITS),
                         )
                     )
                     if extra_beatcnts_cnt == 0:
@@ -1005,7 +1329,10 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             target_end_beat_idx - beat_idx,
-                            raw_beats[target_end_beat_idx - 1] - target_beat,
+                            round(
+                                raw_beats[target_end_beat_idx - 1] - target_beat,
+                                NDIGITS,
+                            ),
                         )
                     )
                 break
@@ -1028,7 +1355,10 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             target_end_beat_idx - beat_idx,
-                            raw_beats[target_end_beat_idx - 1] - target_beat,
+                            round(
+                                raw_beats[target_end_beat_idx - 1] - target_beat,
+                                NDIGITS,
+                            ),
                         )
                     )
                     break
@@ -1037,7 +1367,7 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             raw_beats_len - beat_idx,
-                            raw_beats[-1] - target_beat,
+                            round(raw_beats[-1] - target_beat, NDIGITS),
                         )
                     )
                     if extra_beatcnts_cnt == 0:
@@ -1104,6 +1434,13 @@ partitions = [
     )
 ]
 
+
+# check if a float value is in the list
+# https://stackoverflow.com/questions/55239065/checking-if-a-specific-float-value-is-in-list-array-in-python-numpy
+def close_to_any(a, floats, **kwargs):
+    return np.any(np.isclose(a, floats, **kwargs))
+
+
 max_one_vibe_beatcnts = []
 target_start_beats = [start_beat for (start_beat, _) in ONE_VIBE_START_BEATS_LOOSE]
 for beatcnts in one_vibe_beatcnts:
@@ -1111,7 +1448,7 @@ for beatcnts in one_vibe_beatcnts:
         [
             beatcnt
             for beatcnt in beatcnts
-            if beatcnt.start_beat not in ONE_VIBE_START_BEATS_EXCEPT
+            if not close_to_any(beatcnt.start_beat, ONE_VIBE_START_BEATS_EXCEPT)
         ]
     )
     start_beat = max_beatcnt.start_beat
@@ -1143,7 +1480,7 @@ for beatcnts in two_vibes_beatcnts:
         [
             beatcnt
             for beatcnt in beatcnts
-            if beatcnt.start_beat not in TWO_VIBES_START_BEATS_EXCEPT
+            if not close_to_any(beatcnt.start_beat, TWO_VIBES_START_BEATS_EXCEPT)
         ]
     )
     start_beat = max_beatcnt.start_beat
@@ -1179,7 +1516,7 @@ for beatcnts in three_vibes_beatcnts:
         [
             beatcnt
             for beatcnt in beatcnts
-            if beatcnt.start_beat not in THREE_VIBES_START_BEATS_EXCEPT
+            if not close_to_any(beatcnt.start_beat, THREE_VIBES_START_BEATS_EXCEPT)
         ]
     )
     start_beat = max_beatcnt.start_beat
@@ -1209,7 +1546,7 @@ print("\nBeatmap Path:")
 print(RAW_BEATMAP_PATH)
 
 practice_start_nums = [
-    vibe_event.start_beat + ROWS - 1 for vibe_event in raw_beatmap.vibe_events
+    floor(vibe_event.start_beat + ROWS - 1) for vibe_event in raw_beatmap.vibe_events
 ]
 print("\nPractice Start Numbers:")
 print(practice_start_nums, end="\n\n")
@@ -1225,7 +1562,9 @@ score_base = (
     + max(0, min(10, raw_beats_len - 19)) * note_score_avg * 3
     + max(0, raw_beats_len - 29) * note_score_avg * 4
 )
+great_add_score = 2 * 333 - perf_score
 
+great_infos = GREAT_START_BEATS
 builds = []
 for partition in partitions:
     max_beatcnts: list[BeatCnt] = []
@@ -1241,10 +1580,36 @@ for partition in partitions:
             max_beatcnts.append(max_three_vibes_beatcnts[vibe_idx])
             vibe_idx += 3
 
+    target_great_info = None
+    for great_info in great_infos:
+        if partition == great_info[0]:
+            target_great_info = great_info
+            break
+
     score_add = 0
     for max_beatcnt in max_beatcnts:
         beat_idx = bisect_left(raw_beats, max_beatcnt.start_beat)
         end_idx = beat_idx + max_beatcnt.cnt
+
+        if (
+            target_great_info != None
+            and raw_beats[beat_idx] == target_great_info[1]
+            and target_great_info[2] > 0
+        ):
+            if beat_idx >= 29:
+                score_add += great_add_score * 4
+            elif beat_idx >= 19:
+                score_add += great_add_score * 3
+            elif beat_idx >= 9:
+                score_add += great_add_score * 2
+            else:
+                score_add += great_add_score
+            beat_idx += 1
+            target_great_info = (
+                target_great_info[0],
+                target_great_info[1],
+                target_great_info[2] - 1,
+            )
 
         while beat_idx < end_idx:
             if beat_idx >= 29:

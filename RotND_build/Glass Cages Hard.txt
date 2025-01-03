@@ -1,5 +1,3 @@
-from Global.const_def import *
-
 RAW_BEATMAP_PATH = GLASS_CAGES_HARD_PATH
 
 ONE_VIBE_START_BEATS_EXCEPT: list[float] = [76.5, 139.5]
@@ -11,3 +9,10 @@ TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
 GREAT_START_BEATS: list[tuple[tuple[int, ...], float, int]] = [((1, 1, 2), 77.5, 1)]
+
+
+Practice Start Numbers:
+[69, 101, 204, 231]
+
+(1, 1, 2), 67
+[77.5 14 9.0, 140.0 16 8.5, 244.5 37 17.5], 1083131
