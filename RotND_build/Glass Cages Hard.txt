@@ -8,7 +8,8 @@ ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = []
 TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
-GREAT_START_BEATS: list[tuple[tuple[int, ...], float, int]] = [((1, 1, 2), 77.5, 1)]
+TARGET_PARTITION: tuple[int, ...] = (1, 1, 2)
+GREAT_START_BEATS: list[tuple[float, int]] = [(77.5, 1)]
 
 
 Practice Start Numbers:
