@@ -7,6 +7,7 @@ from bisect import bisect_right, bisect_left
 import itertools
 import json
 from math import floor
+import numpy as np
 from typing import Self
 
 
@@ -16,12 +17,14 @@ class InputRatingsDef:
         perf_range: float,
         great_range: float,
         perf_score: int,
+        great_score: int,
         perf_bonus: int,
         true_perf_bonus: int,
     ):
         self.perf_range = perf_range
         self.great_range = great_range
         self.perf_score = perf_score
+        self.great_score = great_score
         self.perf_bonus = perf_bonus
         self.true_perf_bonus = true_perf_bonus
 
@@ -37,11 +40,17 @@ class InputRatingsDef:
         great_range = (100 - ratings[-2]["minimumValue"]) * hit_window / 100
 
         perf_score = ratings[-1]["score"]
+        great_score = ratings[-2]["score"]
         perf_bonus = input_ratings_def["_perfectBonusScore"]
         true_perf_bonus = input_ratings_def["_truePerfectBonusScore"]
 
         return InputRatingsDef(
-            perf_range, great_range, perf_score, perf_bonus, true_perf_bonus
+            perf_range,
+            great_range,
+            perf_score,
+            great_score,
+            perf_bonus,
+            true_perf_bonus,
         )
 
 
@@ -444,6 +453,7 @@ input_ratings_def = InputRatingsDef.load_json(INPUT_RATINGS_DEF_PATH)
 perf_range = input_ratings_def.perf_range - 5
 great_range = input_ratings_def.great_range - 5
 perf_score = input_ratings_def.perf_score
+great_score = input_ratings_def.great_score
 perf_bonus = input_ratings_def.perf_bonus
 true_perf_bonus = input_ratings_def.true_perf_bonus
 
@@ -463,7 +473,6 @@ cur_beat = 0
 next_node = nodes[node_idx]
 # cooltime changes of nodes for each iteration of the outmost loop cost a lot,
 # so the cooltime corrections occur for each node when the node is 'next_node'.
-next_node.cooltime -= cur_beat
 while node_idx < nodes_len or not map.is_clean():
     # derive 'min_cooltime'
     min_cooltime = next_node.cooltime
@@ -499,7 +508,7 @@ while node_idx < nodes_len or not map.is_clean():
                 grid.trap = None
                 target_nodes.remove(trap_node)
             elif trap_node != None:
-                trap_node.cooltime -= min_cooltime
+                trap_node.cooltime = round(trap_node.cooltime - min_cooltime, NDIGITS)
 
     # now 'target_nodes' only contains enemy nodes
 
@@ -513,7 +522,7 @@ while node_idx < nodes_len or not map.is_clean():
     # Then enemy should be affected by the trap
     # That's why this code block is ahead of below
     if node_idx < nodes_len:
-        next_node.cooltime -= min_cooltime
+        next_node.cooltime = round(next_node.cooltime - min_cooltime, NDIGITS)
 
         while next_node.cooltime == 0:
             obj: Object = next_node.obj
@@ -533,7 +542,9 @@ while node_idx < nodes_len or not map.is_clean():
             if node_idx >= nodes_len:
                 break
             next_node = nodes[node_idx]
-            next_node.cooltime -= cur_beat + min_cooltime
+            next_node.cooltime = round(
+                next_node.cooltime - (cur_beat + min_cooltime), NDIGITS
+            )
 
     # let the time pass by for enemies
     for i in range(map.lanes):
@@ -583,7 +594,9 @@ while node_idx < nodes_len or not map.is_clean():
                     enemies_removed.append(grid_enemy)
                     nodes_done.append(grid_enemy)
                 else:
-                    grid_enemy.cooltime -= min_cooltime
+                    grid_enemy.cooltime = round(
+                        grid_enemy.cooltime - min_cooltime, NDIGITS
+                    )
 
             for enemy_removed in enemies_removed:
                 grid_enemies.remove(enemy_removed)
@@ -816,10 +829,10 @@ while node_idx < nodes_len or not map.is_clean():
             for enemy_removed in enemies_removed:
                 grid_enemies.remove(enemy_removed)
 
-    cur_beat += min_cooltime
+    cur_beat = round(cur_beat + min_cooltime, NDIGITS)
 
     # Debug: map
-    # if 122 < cur_beat < 140:
+    # if 0 < cur_beat < 40:
     #     print(cur_beat)
     #     print(map)
 
@@ -974,7 +987,9 @@ for vibe_idx in range(vibe_beats_len):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 beat_idx += 1
@@ -1002,7 +1017,9 @@ for vibe_idx in range(vibe_beats_len):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 break
@@ -1013,7 +1030,9 @@ for vibe_idx in range(vibe_beats_len):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 beat_idx += 1
@@ -1022,7 +1041,7 @@ for vibe_idx in range(vibe_beats_len):
                     BeatCnt(
                         target_beat,
                         raw_beats_len - beat_idx,
-                        raw_beats[-1] - target_beat,
+                        round(raw_beats[-1] - target_beat, NDIGITS),
                     )
                 )
                 if extra_beatcnts_cnt == 0:
@@ -1055,7 +1074,9 @@ for vibe_idx in range(vibe_beats_len - 1):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 beat_idx += 1
@@ -1093,7 +1114,9 @@ for vibe_idx in range(vibe_beats_len - 1):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 break
@@ -1104,7 +1127,9 @@ for vibe_idx in range(vibe_beats_len - 1):
                     BeatCnt(
                         target_beat,
                         target_end_beat_idx - beat_idx,
-                        raw_beats[target_end_beat_idx - 1] - target_beat,
+                        round(
+                            raw_beats[target_end_beat_idx - 1] - target_beat, NDIGITS
+                        ),
                     )
                 )
                 beat_idx += 1
@@ -1113,7 +1138,7 @@ for vibe_idx in range(vibe_beats_len - 1):
                     BeatCnt(
                         target_beat,
                         raw_beats_len - beat_idx,
-                        raw_beats[-1] - target_beat,
+                        round(raw_beats[-1] - target_beat, NDIGITS),
                     )
                 )
                 if extra_beatcnts_cnt == 0:
@@ -1159,7 +1184,10 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             target_end_beat_idx - beat_idx,
-                            raw_beats[target_end_beat_idx - 1] - target_beat,
+                            round(
+                                raw_beats[target_end_beat_idx - 1] - target_beat,
+                                NDIGITS,
+                            ),
                         )
                     )
                     beat_idx += 1
@@ -1211,7 +1239,10 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             target_end_beat_idx - beat_idx,
-                            raw_beats[target_end_beat_idx - 1] - target_beat,
+                            round(
+                                raw_beats[target_end_beat_idx - 1] - target_beat,
+                                NDIGITS,
+                            ),
                         )
                     )
                     break
@@ -1222,7 +1253,10 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             target_end_beat_idx - beat_idx,
-                            raw_beats[target_end_beat_idx - 1] - target_beat,
+                            round(
+                                raw_beats[target_end_beat_idx - 1] - target_beat,
+                                NDIGITS,
+                            ),
                         )
                     )
                     beat_idx += 1
@@ -1231,7 +1265,7 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             raw_beats_len - beat_idx,
-                            raw_beats[-1] - target_beat,
+                            round(raw_beats[-1] - target_beat, NDIGITS),
                         )
                     )
                     if extra_beatcnts_cnt == 0:
@@ -1289,7 +1323,10 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             target_end_beat_idx - beat_idx,
-                            raw_beats[target_end_beat_idx - 1] - target_beat,
+                            round(
+                                raw_beats[target_end_beat_idx - 1] - target_beat,
+                                NDIGITS,
+                            ),
                         )
                     )
                 break
@@ -1312,7 +1349,10 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             target_end_beat_idx - beat_idx,
-                            raw_beats[target_end_beat_idx - 1] - target_beat,
+                            round(
+                                raw_beats[target_end_beat_idx - 1] - target_beat,
+                                NDIGITS,
+                            ),
                         )
                     )
                     break
@@ -1321,7 +1361,7 @@ for vibe_idx in range(vibe_beats_len - 2):
                         BeatCnt(
                             target_beat,
                             raw_beats_len - beat_idx,
-                            raw_beats[-1] - target_beat,
+                            round(raw_beats[-1] - target_beat, NDIGITS),
                         )
                     )
                     if extra_beatcnts_cnt == 0:
@@ -1388,6 +1428,13 @@ partitions = [
     )
 ]
 
+
+# check if a float value is in the list
+# https://stackoverflow.com/questions/55239065/checking-if-a-specific-float-value-is-in-list-array-in-python-numpy
+def close_to_any(a, floats, **kwargs):
+    return np.any(np.isclose(a, floats, **kwargs))
+
+
 max_one_vibe_beatcnts = []
 target_start_beats = [start_beat for (start_beat, _) in ONE_VIBE_START_BEATS_LOOSE]
 for beatcnts in one_vibe_beatcnts:
@@ -1395,7 +1442,7 @@ for beatcnts in one_vibe_beatcnts:
         [
             beatcnt
             for beatcnt in beatcnts
-            if beatcnt.start_beat not in ONE_VIBE_START_BEATS_EXCEPT
+            if not close_to_any(beatcnt.start_beat, ONE_VIBE_START_BEATS_EXCEPT)
         ]
     )
     start_beat = max_beatcnt.start_beat
@@ -1427,7 +1474,7 @@ for beatcnts in two_vibes_beatcnts:
         [
             beatcnt
             for beatcnt in beatcnts
-            if beatcnt.start_beat not in TWO_VIBES_START_BEATS_EXCEPT
+            if not close_to_any(beatcnt.start_beat, TWO_VIBES_START_BEATS_EXCEPT)
         ]
     )
     start_beat = max_beatcnt.start_beat
@@ -1463,7 +1510,7 @@ for beatcnts in three_vibes_beatcnts:
         [
             beatcnt
             for beatcnt in beatcnts
-            if beatcnt.start_beat not in THREE_VIBES_START_BEATS_EXCEPT
+            if not close_to_any(beatcnt.start_beat, THREE_VIBES_START_BEATS_EXCEPT)
         ]
     )
     start_beat = max_beatcnt.start_beat
@@ -1493,7 +1540,7 @@ print("\nBeatmap Path:")
 print(RAW_BEATMAP_PATH)
 
 practice_start_nums = [
-    vibe_event.start_beat + ROWS - 1 for vibe_event in raw_beatmap.vibe_events
+    floor(vibe_event.start_beat + ROWS - 1) for vibe_event in raw_beatmap.vibe_events
 ]
 print("\nPractice Start Numbers:")
 print(practice_start_nums, end="\n\n")
@@ -1509,7 +1556,9 @@ score_base = (
     + max(0, min(10, raw_beats_len - 19)) * note_score_avg * 3
     + max(0, raw_beats_len - 29) * note_score_avg * 4
 )
+great_add_score = 2 * 333 - perf_score
 
+great_infos = GREAT_START_BEATS
 builds = []
 for partition in partitions:
     max_beatcnts: list[BeatCnt] = []
@@ -1525,10 +1574,36 @@ for partition in partitions:
             max_beatcnts.append(max_three_vibes_beatcnts[vibe_idx])
             vibe_idx += 3
 
+    target_great_info = None
+    for great_info in great_infos:
+        if partition == great_info[0]:
+            target_great_info = great_info
+            break
+
     score_add = 0
     for max_beatcnt in max_beatcnts:
         beat_idx = bisect_left(raw_beats, max_beatcnt.start_beat)
         end_idx = beat_idx + max_beatcnt.cnt
+
+        if (
+            target_great_info != None
+            and raw_beats[beat_idx] == target_great_info[1]
+            and target_great_info[2] > 0
+        ):
+            if beat_idx >= 29:
+                score_add += great_add_score * 4
+            elif beat_idx >= 19:
+                score_add += great_add_score * 3
+            elif beat_idx >= 9:
+                score_add += great_add_score * 2
+            else:
+                score_add += great_add_score
+            beat_idx += 1
+            target_great_info = (
+                target_great_info[0],
+                target_great_info[1],
+                target_great_info[2] - 1,
+            )
 
         while beat_idx < end_idx:
             if beat_idx >= 29:

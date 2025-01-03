@@ -3,6 +3,7 @@ from enum import Enum
 BEAT_OFFSET = 1.5
 FRAME_IN_MSEC = 16 + 2 / 3
 ONBEAT_THRESHOLD = 0.95
+NDIGITS = 13
 
 ROWS = 9
 LANES = 3
