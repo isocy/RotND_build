@@ -124,8 +124,10 @@ class BounceEvent(TrapEvent):
             dir = TrapDir.RIGHT
         elif dir_num == 2:
             dir = TrapDir.LEFT
-        else:
-            dir = TrapDir.RIGHT
+        elif dir_num == 6:
+            dir = TrapDir.DOWNLEFT
+        elif dir_num == 7:
+            dir = TrapDir.DOWNRIGHT
 
         return BounceEvent(
             event["track"],
