@@ -298,7 +298,7 @@ class Map:
         is_blocked = False
         will_be_blocked = False
         for upper_enemy in self.grids[i][j].enemies:
-            if not upper_enemy.obj.flying:
+            if not isinstance(upper_enemy, Harpy):
                 if (
                     upper_enemy in target_nodes
                     or upper_enemy.cooltime < ONBEAT_THRESHOLD
@@ -313,7 +313,7 @@ class Map:
             return (False, False)
 
         for upper_enemy in self.grids[i][j + 1].enemies:
-            if not upper_enemy.obj.flying:
+            if not isinstance(upper_enemy, Harpy):
                 will_be_blocked = True
                 break
 
@@ -838,7 +838,7 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat = round(cur_beat + min_cooltime, NDIGITS)
 
     # Debug: map
-    # if 0 < cur_beat < 40:
+    # if 398 < cur_beat < 440:
     #     print(cur_beat)
     #     print(map)
 
@@ -924,8 +924,14 @@ while node_idx < nodes_len or not map.is_clean():
 
 
 # Debug: beats
-# for beat in beats:
-#     print(beat)
+# same_beats = [beats[0]]
+# for beat in beats[1:]:
+#     if same_beats[0].beat == beat.beat:
+#         same_beats.append(beat)
+#     else:
+#         print(same_beats)
+#         same_beats = [beat]
+# print(same_beats)
 
 
 # All elements of 'vibe_beats' is included in 'raw_beats'
@@ -1458,19 +1464,19 @@ for beatcnts in one_vibe_beatcnts:
         loose_cnt = ONE_VIBE_START_BEATS_LOOSE[loose_idx][1]
 
         if loose_cnt > 0:
-            # floating point error should be considered
-            end_beat = start_beat + max_beatcnt.beat_diff
+            end_beat = round(start_beat + max_beatcnt.beat_diff, NDIGITS)
 
             beat_idx = bisect_left(raw_beats, start_beat)
-            target_end_beat_idx = bisect_left(raw_beats, end_beat)
+            target_end_beat_idx = bisect_right(raw_beats, end_beat)
 
-            while loose_cnt > 0 and target_end_beat_idx > beat_idx:
-                if raw_beats[target_end_beat_idx - 1] != raw_beats[target_end_beat_idx]:
-                    loose_cnt -= 1
-                target_end_beat_idx -= 1
+            target_end_beat_idx -= loose_cnt
+            if target_end_beat_idx - 1 < beat_idx:
+                target_end_beat_idx = beat_idx + 1
 
-            max_beatcnt.beat_diff = raw_beats[target_end_beat_idx] - start_beat
-            max_beatcnt.cnt = target_end_beat_idx + 1 - beat_idx
+            max_beatcnt.beat_diff = round(
+                raw_beats[target_end_beat_idx - 1] - start_beat, NDIGITS
+            )
+            max_beatcnt.cnt = target_end_beat_idx - beat_idx
 
     max_one_vibe_beatcnts.append(max_beatcnt)
 max_two_vibes_beatcnts = []
@@ -1490,23 +1496,23 @@ for beatcnts in two_vibes_beatcnts:
         loose_cnt = TWO_VIBES_START_BEATS_LOOSE[loose_idx][1]
 
         if loose_cnt > 0:
-            # floating point error should be considered
-            end_beat = start_beat + max_beatcnt.beat_diff
+            end_beat = round(start_beat + max_beatcnt.beat_diff, NDIGITS)
 
             beat_idx = bisect_left(raw_beats, start_beat)
-            target_end_beat_idx = bisect_left(raw_beats, end_beat)
+            target_end_beat_idx = bisect_right(raw_beats, end_beat)
 
             while (
                 loose_cnt > 0
-                and raw_beats[target_end_beat_idx] not in vibe_beats
-                and target_end_beat_idx > beat_idx
+                and raw_beats[target_end_beat_idx - 1] not in vibe_beats
+                and target_end_beat_idx - 1 > beat_idx
             ):
-                if raw_beats[target_end_beat_idx - 1] != raw_beats[target_end_beat_idx]:
-                    loose_cnt -= 1
+                loose_cnt -= 1
                 target_end_beat_idx -= 1
 
-            max_beatcnt.beat_diff = raw_beats[target_end_beat_idx] - start_beat
-            max_beatcnt.cnt = target_end_beat_idx + 1 - beat_idx
+            max_beatcnt.beat_diff = round(
+                raw_beats[target_end_beat_idx - 1] - start_beat, NDIGITS
+            )
+            max_beatcnt.cnt = target_end_beat_idx - beat_idx
 
     max_two_vibes_beatcnts.append(max_beatcnt)
 max_three_vibes_beatcnts = []
@@ -1526,19 +1532,21 @@ for beatcnts in three_vibes_beatcnts:
         loose_cnt = THREE_VIBES_START_BEATS_LOOSE[loose_idx][1]
 
         if loose_cnt > 0:
-            # floating point error should be considered
-            end_beat = start_beat + max_beatcnt.beat_diff
+            end_beat = round(start_beat + max_beatcnt.beat_diff, NDIGITS)
 
             beat_idx = bisect_left(raw_beats, start_beat)
-            target_end_beat_idx = bisect_left(raw_beats, end_beat)
+            target_end_beat_idx = bisect_right(raw_beats, end_beat)
 
-            while loose_cnt > 0 and raw_beats[target_end_beat_idx] not in vibe_beats:
-                if raw_beats[target_end_beat_idx - 1] != raw_beats[target_end_beat_idx]:
-                    loose_cnt -= 1
+            while (
+                loose_cnt > 0 and raw_beats[target_end_beat_idx - 1] not in vibe_beats
+            ):
+                loose_cnt -= 1
                 target_end_beat_idx -= 1
 
-            max_beatcnt.beat_diff = raw_beats[target_end_beat_idx] - start_beat
-            max_beatcnt.cnt = target_end_beat_idx + 1 - beat_idx
+            max_beatcnt.beat_diff = round(
+                raw_beats[target_end_beat_idx - 1] - start_beat, NDIGITS
+            )
+            max_beatcnt.cnt = target_end_beat_idx - beat_idx
 
     max_three_vibes_beatcnts.append(max_beatcnt)
 
@@ -1565,7 +1573,7 @@ score_base = (
 great_add_score = 2 * 333 - perf_score
 
 great_infos = GREAT_START_BEATS
-builds = []
+builds: list[Build] = []
 for partition in partitions:
     max_beatcnts: list[BeatCnt] = []
     vibe_idx = 0
@@ -1620,5 +1628,9 @@ for partition in partitions:
     builds.append(build)
 
 builds.sort(reverse=True)
+for build in builds:
+    if build.partition == TARGET_PARTITION:
+        builds.remove(build)
+        builds.insert(0, build)
 for build in builds:
     print(build)
