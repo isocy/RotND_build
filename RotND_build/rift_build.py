@@ -391,13 +391,19 @@ class Map:
             trap = trap_node.obj
             if isinstance(trap, Bounce):
                 dir = trap.dir
+                # TODO: other directions
                 if dir == TrapDir.UP:
                     init_j += 1
                 elif dir == TrapDir.RIGHT:
                     init_i += 1
                 elif dir == TrapDir.LEFT:
                     init_i -= 1
-                # TODO: other directions
+                elif dir == TrapDir.DOWNLEFT:
+                    init_i -= 1
+                    init_j -= 1
+                elif dir == TrapDir.DOWNRIGHT:
+                    init_i += 1
+                    init_j -= 1
                 else:
                     pass
 

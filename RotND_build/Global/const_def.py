@@ -84,3 +84,5 @@ class TrapDir(Enum):
     UP = 0
     RIGHT = 1
     LEFT = 2
+    DOWNLEFT = 6
+    DOWNRIGHT = 7

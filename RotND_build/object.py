@@ -460,6 +460,10 @@ class Bounce(Trap):
             return "BR"
         elif dir == TrapDir.LEFT:
             return "BL"
+        elif dir == TrapDir.DOWNLEFT:
+            return "BDL"
+        elif dir == TrapDir.DOWNRIGHT:
+            return "BDR"
         else:
             return "B"
 
