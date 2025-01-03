@@ -47,7 +47,12 @@ class EnemyEvent(ObjectEvent):
 
         facing = next(
             (
-                Facing.RIGHT if pair["_eventDataValue"] == "true" else Facing.LEFT
+                (
+                    Facing.RIGHT
+                    if pair["_eventDataValue"] == "True"
+                    or pair["_eventDataValue"] == "true"
+                    else Facing.LEFT
+                )
                 for pair in iter(event["dataPairs"])
                 if pair["_eventDataKey"] == "ShouldStartFacingRight"
             ),

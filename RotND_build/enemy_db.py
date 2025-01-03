@@ -6,7 +6,7 @@ import json
 
 class EnemyDB:
     @classmethod
-    def json_to_dict(self, path) -> dict:
+    def json_to_dict(cls, path) -> dict:
         """Construct dictionary as enemy database with given json file"""
         with open(path) as f:
             enemy_defs: list[dict] = json.load(f)["_enemyDefinitions"]

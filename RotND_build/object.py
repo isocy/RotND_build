@@ -34,7 +34,7 @@ class Enemy(Object):
         pass
 
     @abstractmethod
-    def get_cooltime(self):
+    def get_cooltime(self) -> float:
         pass
 
 
@@ -150,7 +150,7 @@ class Zombie(Enemy):
         pass
 
     @abstractmethod
-    def get_cooltime(self):
+    def get_cooltime(self) -> float:
         pass
 
 
