@@ -618,7 +618,7 @@ while node_idx < nodes_len or not map.is_clean():
                 if grid_enemy in nodes_done:
                     continue
 
-                if grid_enemy in target_nodes:
+                if grid_enemy in target_nodes and j != 0:
                     obj = grid_enemy.obj
                     assert isinstance(obj, Zombie)
                     dist = obj.dist_per_move
@@ -1580,36 +1580,24 @@ for partition in partitions:
             max_beatcnts.append(max_three_vibes_beatcnts[vibe_idx])
             vibe_idx += 3
 
-    target_great_info = None
-    for great_info in great_infos:
-        if partition == great_info[0]:
-            target_great_info = great_info
-            break
-
     score_add = 0
     for max_beatcnt in max_beatcnts:
         beat_idx = bisect_left(raw_beats, max_beatcnt.start_beat)
         end_idx = beat_idx + max_beatcnt.cnt
 
-        if (
-            target_great_info != None
-            and raw_beats[beat_idx] == target_great_info[1]
-            and target_great_info[2] > 0
-        ):
-            if beat_idx >= 29:
-                score_add += great_add_score * 4
-            elif beat_idx >= 19:
-                score_add += great_add_score * 3
-            elif beat_idx >= 9:
-                score_add += great_add_score * 2
-            else:
-                score_add += great_add_score
-            beat_idx += 1
-            target_great_info = (
-                target_great_info[0],
-                target_great_info[1],
-                target_great_info[2] - 1,
-            )
+        if partition == TARGET_PARTITION:
+            for great_info in great_infos:
+                if raw_beats[beat_idx] == great_info[0] and great_info[1] > 0:
+                    if beat_idx >= 29:
+                        score_add += great_add_score * 4
+                    elif beat_idx >= 19:
+                        score_add += great_add_score * 3
+                    elif beat_idx >= 9:
+                        score_add += great_add_score * 2
+                    else:
+                        score_add += great_add_score
+                    beat_idx += 1
+                    great_info = (great_info[0], great_info[1] - 1)
 
         while beat_idx < end_idx:
             if beat_idx >= 29:

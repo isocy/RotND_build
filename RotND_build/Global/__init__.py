@@ -1,13 +1,14 @@
 from Global.const_def import *
 
-RAW_BEATMAP_PATH = GLASS_CAGES_HARD_PATH
+RAW_BEATMAP_PATH = OVERTHINKER_HARD_PATH
 
-ONE_VIBE_START_BEATS_EXCEPT: list[float] = [76.5, 139.5]
-TWO_VIBES_START_BEATS_EXCEPT: list[float] = [241.5, 242.5]
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = [345.5]
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = [282]
 THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
 
-ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = []
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(117.5, 1)]
 TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
-GREAT_START_BEATS: list[tuple[tuple[int, ...], float, int]] = [((1, 1, 2), 77.5, 1)]
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
