@@ -1,0 +1,19 @@
+RAW_BEATMAP_PATH = OVERTHINKER_MEDIUM_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = [138, 298]
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = []
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
+
+
+Practice Start Numbers:
+[104, 171, 246, 331]
+
+(1, 1, 1, 1), 78
+[139.5 20 10.0, 177.5 18 11.0, 299.5 21 10.0, 337.5 19 11.0], 1181663
