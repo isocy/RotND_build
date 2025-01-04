@@ -8,6 +8,7 @@ NDIGITS = 13
 ROWS = 9
 LANES = 3
 
+WYRM_BODY_SCORE = 333
 PERF_BONUS_SCORE_MULT = 0.72
 TRUE_PERF_BONUS_SCORE_MULT = 0.18
 
@@ -60,6 +61,9 @@ DISCO_DISASTER_HARD_PATH = (
 )
 OVERTHINKER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Easy"
+)
+OVERTHINKER_MEDIUM_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Medium"
 )
 OVERTHINKER_HARD_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Hard"

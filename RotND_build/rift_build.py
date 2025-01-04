@@ -210,6 +210,14 @@ class Node[T: Object]:
                     nodes.append(
                         Node(ShieldedBlackSkeleton(lane, chained), appear_beat)
                     )
+                elif name == BASE_WYRM:
+                    assert isinstance(obj_event, WyrmEvent)
+                    nodes.append(
+                        Node(
+                            WyrmHead(lane, chained, obj_event.len_left),
+                            appear_beat,
+                        )
+                    )
                 elif name == BASE_HARPY:
                     nodes.append(Node(BaseHarpy(lane, chained), appear_beat))
                 elif name == BLUE_HARPY:
@@ -298,7 +306,7 @@ class Map:
         is_blocked = False
         will_be_blocked = False
         for upper_enemy in self.grids[i][j].enemies:
-            if not isinstance(upper_enemy, Harpy):
+            if not isinstance(upper_enemy.obj, Harpy):
                 if (
                     upper_enemy in target_nodes
                     or upper_enemy.cooltime < ONBEAT_THRESHOLD
@@ -323,30 +331,29 @@ class Map:
         """Determine if the newly created headless skeleton node is blocked immediately."""
         is_blocked = False
         for upper_enemy in self.grids[i][1].enemies + self.grids[i][2].enemies:
-            if not upper_enemy.obj.flying:
+            if not isinstance(upper_enemy.obj, Harpy):
                 is_blocked = True
                 break
 
         return is_blocked
 
     def is_left_open(self, i: int, j: int, target_enemy: Node[Enemy]):
-        """Determine if the zombie at position (i, j) can go to left"""
+        """Determine if the zombie at position (i, j) can go to the left"""
         is_left_open = True
         for enemy in self.grids[i - 1][j - 1].enemies:
-            if not enemy.obj.flying:
-                is_zombie = isinstance(enemy.obj, Zombie)
-                if (
-                    is_zombie
-                    and enemy.cooltime - target_enemy.cooltime > 1 - ONBEAT_THRESHOLD
-                    or not is_zombie
-                    and enemy.cooltime > 1 - ONBEAT_THRESHOLD
-                ):
-                    is_left_open = False
-                    break
+            is_zombie = isinstance(enemy.obj, Zombie)
+            if (
+                is_zombie
+                and enemy.cooltime - target_enemy.cooltime > 1 - ONBEAT_THRESHOLD
+                or not is_zombie
+                and enemy.cooltime > 1 - ONBEAT_THRESHOLD
+            ):
+                is_left_open = False
+                break
         if is_left_open:
             for enemy in self.grids[i - 1][j].enemies:
                 if (
-                    not enemy.obj.flying
+                    not isinstance(enemy.obj, Harpy)
                     and not isinstance(enemy.obj, Zombie)
                     and enemy.cooltime < ONBEAT_THRESHOLD
                 ):
@@ -356,23 +363,22 @@ class Map:
         return is_left_open
 
     def is_right_open(self, i: int, j: int, target_enemy: Node[Enemy]):
-        """Determine if the zombie at position (i, j) can go to right"""
+        """Determine if the zombie at position (i, j) can go to the right"""
         is_right_open = True
         for enemy in self.grids[(i + 1) % self.lanes][j - 1].enemies:
-            if not enemy.obj.flying:
-                is_zombie = isinstance(enemy.obj, Zombie)
-                if (
-                    is_zombie
-                    and enemy.cooltime - target_enemy.cooltime > 1 - ONBEAT_THRESHOLD
-                    or not is_zombie
-                    and enemy.cooltime > 1 - ONBEAT_THRESHOLD
-                ):
-                    is_right_open = False
-                    break
+            is_zombie = isinstance(enemy.obj, Zombie)
+            if (
+                is_zombie
+                and enemy.cooltime - target_enemy.cooltime > 1 - ONBEAT_THRESHOLD
+                or not is_zombie
+                and enemy.cooltime > 1 - ONBEAT_THRESHOLD
+            ):
+                is_right_open = False
+                break
         if is_right_open:
             for enemy in self.grids[(i + 1) % self.lanes][j].enemies:
                 if (
-                    not enemy.obj.flying
+                    not isinstance(enemy.obj, Harpy)
                     and not isinstance(enemy.obj, Zombie)
                     and enemy.cooltime < ONBEAT_THRESHOLD
                 ):
@@ -430,7 +436,7 @@ class RawBeatmap:
         self.vibe_events: list[VibeEvent] = vibe_events
 
     @classmethod
-    def load_json(cls, path):
+    def load_json(cls, path, enemy_db):
         with open(path) as f:
             raw_beatmap = json.load(f)
 
@@ -445,7 +451,7 @@ class RawBeatmap:
         return RawBeatmap(
             raw_beatmap["bpm"],
             raw_beatmap["beatDivisions"],
-            [ObjectEvent.load_dict(event) for event in obj_events],
+            [ObjectEvent.load_dict(event, enemy_db) for event in obj_events],
             [VibeEvent.load_dict(vibe_event) for vibe_event in vibe_events],
         )
 
@@ -463,7 +469,7 @@ great_score = input_ratings_def.great_score
 perf_bonus = input_ratings_def.perf_bonus
 true_perf_bonus = input_ratings_def.true_perf_bonus
 
-raw_beatmap = RawBeatmap.load_json(RAW_BEATMAP_PATH)
+raw_beatmap = RawBeatmap.load_json(RAW_BEATMAP_PATH, enemy_db)
 (nodes, chain_cnts) = Node.obj_events_to_nodes(
     raw_beatmap.obj_events, raw_beatmap.vibe_events, enemy_db
 )
@@ -474,6 +480,7 @@ vibe_beats: list[float] = []
 chain_idx = 0
 
 beats: list[Beat] = []
+wyrm_body_cnt = 0
 node_idx = 0
 cur_beat = 0
 next_node = nodes[node_idx]
@@ -538,6 +545,24 @@ while node_idx < nodes_len or not map.is_clean():
                     map.grids[obj.appear_lane - 1][Enemy.appear_row].enemies.append(
                         next_node
                     )
+
+                    if isinstance(obj, Wyrm) and obj.len_left >= 1:
+                        new_obj = WyrmBody(
+                            obj.appear_lane, obj.chained, obj.len_left - 1
+                        )
+                        new_node = Node(
+                            new_obj,
+                            round(
+                                cur_beat + min_cooltime + new_obj.get_cooltime(),
+                                NDIGITS,
+                            ),
+                        )
+
+                        insert_idx = node_idx + 1
+                        while new_node.cooltime > nodes[insert_idx].cooltime:
+                            insert_idx += 1
+                        nodes.insert(insert_idx, new_node)
+                        nodes_len += 1
                 else:
                     map.step_trap(obj.appear_lane - 1, Enemy.appear_row, next_node)
             elif isinstance(obj, Trap):
@@ -683,7 +708,7 @@ while node_idx < nodes_len or not map.is_clean():
                                 if is_left_open:
                                     for enemy in map.grids[new_i - 1][new_j].enemies:
                                         if (
-                                            not enemy.obj.flying
+                                            not isinstance(enemy.obj, Harpy)
                                             and not isinstance(enemy.obj, Zombie)
                                             and enemy.cooltime > 1 - ONBEAT_THRESHOLD
                                         ):
@@ -711,7 +736,7 @@ while node_idx < nodes_len or not map.is_clean():
                                 if is_right_open:
                                     for enemy in map.grids[new_i + 1][new_j].enemies:
                                         if (
-                                            not enemy.obj.flying
+                                            not isinstance(enemy.obj, Harpy)
                                             and not isinstance(enemy.obj, Zombie)
                                             and enemy.cooltime > 1 - ONBEAT_THRESHOLD
                                         ):
@@ -779,7 +804,7 @@ while node_idx < nodes_len or not map.is_clean():
                                 is_left_open = True
                                 for enemy in map.grids[new_i - 1][new_j].enemies:
                                     if (
-                                        not enemy.obj.flying
+                                        not isinstance(enemy.obj, Harpy)
                                         and not isinstance(enemy.obj, Zombie)
                                         and enemy.cooltime > 1 - ONBEAT_THRESHOLD
                                     ):
@@ -806,7 +831,7 @@ while node_idx < nodes_len or not map.is_clean():
                                     new_j
                                 ].enemies:
                                     if (
-                                        not enemy.obj.flying
+                                        not isinstance(enemy.obj, Harpy)
                                         and not isinstance(enemy.obj, Zombie)
                                         and enemy.cooltime > 1 - ONBEAT_THRESHOLD
                                     ):
@@ -838,21 +863,71 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat = round(cur_beat + min_cooltime, NDIGITS)
 
     # Debug: map
-    # if 398 < cur_beat < 440:
+    # if 45 < cur_beat < 100:
     #     print(cur_beat)
     #     print(map)
 
     # hit_notes()
     for i in range(map.lanes):
+        wyrm_node = None
+        is_other_enemy = False
+        for enemy_node in map.grids[i][0].enemies:
+            if isinstance(enemy_node.obj, Wyrm):
+                wyrm_node = enemy_node
+            else:
+                is_other_enemy = True
+        # It becomes a problem when a wyrm body and other enemies collide
+        if is_other_enemy:
+            # collision possibly at wyrm tail
+            if wyrm_node != None:
+                assert not wyrm_node.obj.chained
+                map.grids[i][0].enemies.remove(wyrm_node)
+
+            target_j = 1
+            while target_j < map.rows:
+                wyrm_node: Node[WyrmBody] = next(
+                    (
+                        enemy_node
+                        for enemy_node in iter(map.grids[i][target_j].enemies)
+                        if isinstance(enemy_node.obj, WyrmBody)
+                    ),
+                    None,
+                )
+                if wyrm_node != None:
+                    assert not wyrm_node.obj.chained
+                    map.grids[i][target_j].enemies.remove(wyrm_node)
+                    if wyrm_node.obj.len_left < 1:
+                        break
+                    target_j += 1
+                else:
+                    break
+
+            if target_j == map.rows:
+                wyrm_node = next(
+                    node for node in nodes[node_idx:] if isinstance(node.obj, WyrmBody)
+                )
+                nodes.remove(wyrm_node)
+                nodes_len -= 1
+
+        # Now a wyrm cannot be with other enemies
         for enemy_node in map.grids[i][0].enemies:
             if enemy_node.cooltime != 0:
                 continue
 
-            beats.append(Beat(i, cur_beat))
             map.grids[i][0].enemies.remove(enemy_node)
 
             enemy = enemy_node.obj
-            if enemy.shield > 0:
+            if isinstance(enemy, WyrmBody):
+                # There is no enemy in the grid other than a wyrm body
+                wyrm_body_cnt += 1
+                if enemy.len_left < 1 and enemy.chained:
+                    chain_cnts[chain_idx] -= 1
+
+                    if chain_cnts[chain_idx] == 0:
+                        vibe_beats.append(cur_beat)
+                        chain_idx += 1
+                break
+            elif enemy.shield > 0:
                 # no decrement of shield required due to the node exchange
                 if isinstance(enemy, ShieldedBaseSkeleton):
                     new_node: Node[Enemy] = Node(
@@ -912,15 +987,18 @@ while node_idx < nodes_len or not map.is_clean():
                         enemy.get_cooltime(),
                     )
                     map.step_trap(i, 1, new_node)
+                elif isinstance(enemy, WyrmHead):
+                    pass
                 else:
                     map.step_trap(i, 1, enemy_node)
             elif enemy.chained:
                 chain_cnts[chain_idx] -= 1
 
                 if chain_cnts[chain_idx] == 0:
-                    # TODO: special case for wyrms
                     vibe_beats.append(cur_beat)
                     chain_idx += 1
+
+            beats.append(Beat(i, cur_beat))
 
 
 # Debug: beats
@@ -1569,8 +1647,8 @@ score_base = (
     + max(0, min(10, raw_beats_len - 9)) * note_score_avg * 2
     + max(0, min(10, raw_beats_len - 19)) * note_score_avg * 3
     + max(0, raw_beats_len - 29) * note_score_avg * 4
-)
-great_add_score = 2 * 333 - perf_score
+) + wyrm_body_cnt * WYRM_BODY_SCORE
+great_add_score = 2 * great_score - perf_score
 
 great_infos = GREAT_START_BEATS
 builds: list[Build] = []

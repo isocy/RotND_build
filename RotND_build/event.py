@@ -1,4 +1,12 @@
-from Global.const_def import BEAT_OFFSET, Facing, TrapDir, BOUNCE, PORTAL
+from Global.const_def import (
+    BEAT_OFFSET,
+    Facing,
+    TrapDir,
+    BASE_BLADEMASTER,
+    BASE_WYRM,
+    BOUNCE,
+    PORTAL,
+)
 
 from abc import abstractmethod
 
@@ -9,10 +17,10 @@ class Event:
 
 class ObjectEvent(Event):
     @classmethod
-    def load_dict(cls, event):
+    def load_dict(cls, event, enemy_db):
         """Construct Event with given dictionary"""
         if event["type"] == "SpawnEnemy":
-            return EnemyEvent.load_dict(event)
+            return EnemyEvent.load_dict(event, enemy_db)
         elif event["type"] == "SpawnTrap":
             return TrapEvent.load_dict(event)
 
@@ -25,7 +33,7 @@ class EnemyEvent(ObjectEvent):
         self.facing = facing
 
     @classmethod
-    def load_dict(cls, event):
+    def load_dict(cls, event, enemy_db):
         lane = event["track"]
         appear_beat = BEAT_OFFSET + event["startBeatNumber"]
         enemy_id = next(
@@ -33,17 +41,18 @@ class EnemyEvent(ObjectEvent):
             for pair in iter(event["dataPairs"])
             if pair["_eventDataKey"] == "EnemyId"
         )
+        name = enemy_db[enemy_id]["name"]
 
-        attack_row = next(
-            (
+        if name == BASE_BLADEMASTER:
+            attack_row = next(
                 int(pair["_eventDataValue"])
                 for pair in iter(event["dataPairs"])
                 if pair["_eventDataKey"] == "BlademasterAttackRow"
-            ),
-            -1,
-        )
-        if attack_row != -1:
+            )
             return BlademasterEvent(lane, appear_beat, enemy_id, attack_row)
+        elif name == BASE_WYRM:
+            len_left = event["endBeatNumber"] - event["startBeatNumber"] - 1
+            return WyrmEvent(lane, appear_beat, enemy_id, len_left)
 
         facing = next(
             (
@@ -59,6 +68,14 @@ class EnemyEvent(ObjectEvent):
             Facing.LEFT,
         )
         return EnemyEvent(lane, appear_beat, enemy_id, facing)
+
+
+class WyrmEvent(EnemyEvent):
+    def __init__(self, lane, appear_beat, enemy_id, len_left):
+        self.lane = lane
+        self.appear_beat = appear_beat
+        self.enemy_id = enemy_id
+        self.len_left = len_left
 
 
 class BlademasterEvent(EnemyEvent):

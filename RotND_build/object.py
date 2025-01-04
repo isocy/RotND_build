@@ -307,6 +307,41 @@ class HeadlessBlackSkeleton(HeadlessSkeleton):
         return "HlBSk"
 
 
+class Wyrm(Enemy):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.flying = True
+        self.dist_per_move = 1
+        self.len_left = 0
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    def get_cooltime(self):
+        return getattr(WyrmHead, "beat_for_move")
+
+
+class WyrmHead(Wyrm):
+    def __init__(self, appear_lane, chained, len_left):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(WyrmHead, "max_health")
+        self.shield = getattr(WyrmHead, "max_shield")
+        self.len_left = len_left
+
+    def __repr__(self):
+        return "WH"
+
+
+class WyrmBody(Wyrm):
+    def __init__(self, appear_lane, chained, len_left):
+        super().__init__(appear_lane, chained)
+        self.len_left = len_left
+
+    def __repr__(self):
+        return "WB"
+
+
 class Harpy(Enemy):
     def __init__(self, appear_lane, chained):
         super().__init__(appear_lane, chained)
