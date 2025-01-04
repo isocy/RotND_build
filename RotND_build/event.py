@@ -6,6 +6,7 @@ from Global.const_def import (
     BASE_WYRM,
     BOUNCE,
     PORTAL,
+    COALS,
 )
 
 from abc import abstractmethod
@@ -112,6 +113,8 @@ class TrapEvent(ObjectEvent):
             return BounceEvent.load_dict(event)
         elif trap_type == PORTAL:
             return PortalEvent.load_dict(event)
+        elif trap_type == COALS:
+            return CoalsEvent.load_dict(event)
 
 
 class BounceEvent(TrapEvent):
@@ -210,6 +213,36 @@ class PortalEvent(TrapEvent):
                 for pair in iter(event["dataPairs"])
                 if pair["_eventDataKey"] == "TrapChildSpawnRow"
             ),
+        )
+
+
+class CoalsEvent(TrapEvent):
+    def __init__(
+        self,
+        lane: int,
+        row: int,
+        appear_beat: float,
+        duration: float,
+        trap_type: str,
+    ):
+        super().__init__(lane, row, appear_beat, duration, trap_type)
+
+    @classmethod
+    def load_dict(cls, event):
+        return CoalsEvent(
+            event["track"],
+            next(
+                int(pair["_eventDataValue"])
+                for pair in iter(event["dataPairs"])
+                if pair["_eventDataKey"] == "TrapDropRow"
+            ),
+            BEAT_OFFSET + event["startBeatNumber"],
+            next(
+                float(pair["_eventDataValue"])
+                for pair in iter(event["dataPairs"])
+                if pair["_eventDataKey"] == "TrapHealthInBeats"
+            ),
+            COALS,
         )
 
 

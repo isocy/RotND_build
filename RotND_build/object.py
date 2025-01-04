@@ -27,6 +27,7 @@ class Enemy(Object):
         self.dist_per_move = 0
         self.facing = Facing.LEFT
         self.flying = False
+        self.on_fire = False
         self.chained = chained
 
     @abstractmethod
@@ -62,7 +63,11 @@ class GreenSlime(Slime):
         return "GS"
 
     def get_cooltime(self):
-        return getattr(GreenSlime, "beat_for_move")
+        return (
+            getattr(GreenSlime, "beat_for_move")
+            if not self.on_fire
+            else getattr(GreenSlime, "beat_for_move") / 2
+        )
 
 
 class BlueSlime(Slime):
@@ -75,7 +80,11 @@ class BlueSlime(Slime):
         return "BS" + str(self.health)
 
     def get_cooltime(self):
-        return getattr(BlueSlime, "beat_for_move")
+        return (
+            getattr(BlueSlime, "beat_for_move")
+            if not self.on_fire
+            else getattr(BlueSlime, "beat_for_move") / 2
+        )
 
 
 class YellowSlime(Slime):
@@ -88,7 +97,11 @@ class YellowSlime(Slime):
         return "YS" + str(self.health)
 
     def get_cooltime(self):
-        return getattr(YellowSlime, "beat_for_move")
+        return (
+            getattr(YellowSlime, "beat_for_move")
+            if not self.on_fire
+            else getattr(YellowSlime, "beat_for_move") / 2
+        )
 
 
 class Bat(Enemy):
@@ -175,7 +188,11 @@ class GreenZombie(Zombie):
         return "GZ" + facing
 
     def get_cooltime(self):
-        return getattr(GreenZombie, "beat_for_move")
+        return (
+            getattr(GreenZombie, "beat_for_move")
+            if not self.on_fire
+            else getattr(GreenZombie, "beat_for_move") / 2
+        )
 
 
 class RedZombie(Zombie):
@@ -189,7 +206,11 @@ class RedZombie(Zombie):
         return "RZ" + facing
 
     def get_cooltime(self):
-        return getattr(RedZombie, "beat_for_move")
+        return (
+            getattr(RedZombie, "beat_for_move")
+            if not self.on_fire
+            else getattr(RedZombie, "beat_for_move") / 2
+        )
 
 
 class Skeleton(Enemy):
@@ -216,7 +237,11 @@ class BaseSkeleton(Skeleton):
         return "Sk"
 
     def get_cooltime(self):
-        return getattr(BaseSkeleton, "beat_for_move")
+        return (
+            getattr(BaseSkeleton, "beat_for_move")
+            if not self.on_fire
+            else getattr(BaseSkeleton, "beat_for_move") / 2
+        )
 
 
 class ShieldedBaseSkeleton(Skeleton):
@@ -229,7 +254,11 @@ class ShieldedBaseSkeleton(Skeleton):
         return "ShSk"
 
     def get_cooltime(self):
-        return getattr(ShieldedBaseSkeleton, "beat_for_move")
+        return (
+            getattr(ShieldedBaseSkeleton, "beat_for_move")
+            if not self.on_fire
+            else getattr(ShieldedBaseSkeleton, "beat_for_move") / 2
+        )
 
 
 class DoubleShieldedBaseSkeleton(Skeleton):
@@ -242,10 +271,11 @@ class DoubleShieldedBaseSkeleton(Skeleton):
         return "DShSk"
 
     def get_cooltime(self):
-        return getattr(DoubleShieldedBaseSkeleton, "beat_for_move")
-
-
-# TODO: add classes whose super class is Enemy
+        return (
+            getattr(DoubleShieldedBaseSkeleton, "beat_for_move")
+            if not self.on_fire
+            else getattr(DoubleShieldedBaseSkeleton, "beat_for_move") / 2
+        )
 
 
 class HeadlessSkeleton(Enemy):
@@ -275,7 +305,11 @@ class YellowSkeleton(Skeleton):
         return "YSk"
 
     def get_cooltime(self):
-        return getattr(YellowSkeleton, "beat_for_move")
+        return (
+            getattr(YellowSkeleton, "beat_for_move")
+            if not self.on_fire
+            else getattr(YellowSkeleton, "beat_for_move") / 2
+        )
 
 
 class ShieldedYellowSkeleton(Skeleton):
@@ -288,7 +322,11 @@ class ShieldedYellowSkeleton(Skeleton):
         return "ShYSk"
 
     def get_cooltime(self):
-        return getattr(ShieldedYellowSkeleton, "beat_for_move")
+        return (
+            getattr(ShieldedYellowSkeleton, "beat_for_move")
+            if not self.on_fire
+            else getattr(ShieldedYellowSkeleton, "beat_for_move") / 2
+        )
 
 
 class HeadlessYellowSkeleton(HeadlessSkeleton):
@@ -309,7 +347,11 @@ class BlackSkeleton(Skeleton):
         return "BSk" + str(self.health)
 
     def get_cooltime(self):
-        return getattr(BlackSkeleton, "beat_for_move")
+        return (
+            getattr(BlackSkeleton, "beat_for_move")
+            if not self.on_fire
+            else getattr(BlackSkeleton, "beat_for_move") / 2
+        )
 
 
 class ShieldedBlackSkeleton(Skeleton):
@@ -322,7 +364,11 @@ class ShieldedBlackSkeleton(Skeleton):
         return "ShBSk"
 
     def get_cooltime(self):
-        return getattr(ShieldedBlackSkeleton, "beat_for_move")
+        return (
+            getattr(ShieldedBlackSkeleton, "beat_for_move")
+            if not self.on_fire
+            else getattr(ShieldedBlackSkeleton, "beat_for_move") / 2
+        )
 
 
 class HeadlessBlackSkeleton(HeadlessSkeleton):
@@ -433,7 +479,11 @@ class Apple(Food):
         return "Ap"
 
     def get_cooltime(self):
-        return getattr(Apple, "beat_for_move")
+        return (
+            getattr(Apple, "beat_for_move")
+            if not self.on_fire
+            else getattr(Apple, "beat_for_move") / 2
+        )
 
 
 class Cheese(Food):
@@ -446,7 +496,11 @@ class Cheese(Food):
         return "Ch" + str(self.health)
 
     def get_cooltime(self):
-        return getattr(Cheese, "beat_for_move")
+        return (
+            getattr(Cheese, "beat_for_move")
+            if not self.on_fire
+            else getattr(Cheese, "beat_for_move") / 2
+        )
 
 
 class Drumstick(Food):
@@ -459,7 +513,11 @@ class Drumstick(Food):
         return "Dr" + str(self.health)
 
     def get_cooltime(self):
-        return getattr(Drumstick, "beat_for_move")
+        return (
+            getattr(Drumstick, "beat_for_move")
+            if not self.on_fire
+            else getattr(Drumstick, "beat_for_move") / 2
+        )
 
 
 class Ham(Food):
@@ -472,7 +530,11 @@ class Ham(Food):
         return "Ha" + str(self.health)
 
     def get_cooltime(self):
-        return getattr(Ham, "beat_for_move")
+        return (
+            getattr(Ham, "beat_for_move")
+            if not self.on_fire
+            else getattr(Ham, "beat_for_move") / 2
+        )
 
 
 class Blademaster(Enemy):
@@ -488,7 +550,11 @@ class Blademaster(Enemy):
         return "Bm" + ("R" if self.is_ready else "")
 
     def get_cooltime(self):
-        return getattr(Blademaster, "beat_for_move")
+        return (
+            getattr(Blademaster, "beat_for_move")
+            if not self.on_fire
+            else getattr(Blademaster, "beat_for_move") / 2
+        )
 
 
 class Trap(Object):
@@ -501,9 +567,8 @@ class Trap(Object):
     def __repr__(self):
         pass
 
-    @abstractmethod
     def get_cooltime(self):
-        pass
+        return self.duration
 
 
 class Bounce(Trap):
@@ -531,9 +596,6 @@ class Bounce(Trap):
         elif dir == TrapDir.DOWNRIGHT:
             return "BDR"
 
-    def get_cooltime(self):
-        return self.duration
-
 
 class Portal(Trap):
     def __init__(
@@ -551,6 +613,13 @@ class Portal(Trap):
     def __repr__(self):
         return "P" + str((self.child_lane - 1) * (ROWS - 1) + self.child_row)
 
-    @abstractmethod
     def get_cooltime(self):
         return self.duration
+
+
+class Coals(Trap):
+    def __init__(self, appear_lane: int, appear_row: int, duration: float):
+        super().__init__(appear_lane, appear_row, duration)
+
+    def __repr__(self):
+        return "C"

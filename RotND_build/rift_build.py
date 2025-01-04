@@ -265,9 +265,13 @@ class Node[T: Object]:
                         Portal(lane, row, child_lane, child_row, duration), appear_beat
                     )
                 )
-            # TODO: other traps
-            elif False:
-                pass
+            elif isinstance(obj_event, CoalsEvent):
+                lane = obj_event.lane
+                row = obj_event.row
+                appear_beat = obj_event.appear_beat
+                duration = obj_event.duration
+
+                nodes.append(Node(Coals(lane, row, duration), appear_beat))
 
         return (nodes, chain_cnts)
 
@@ -431,9 +435,10 @@ class Map:
                 init_j = trap.child_row
 
                 self.grids[init_i][init_j].enemies.append(enemy_node)
-            # TODO: other traps
-            elif False:
-                pass
+            elif isinstance(trap, Coals):
+                enemy_node.obj.on_fire = True
+
+                self.grids[init_i][init_j].enemies.append(enemy_node)
         else:
             self.grids[init_i][init_j].enemies.append(enemy_node)
 
@@ -877,7 +882,7 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat = round(cur_beat + min_cooltime, NDIGITS)
 
     # Debug: map
-    # if 20 < cur_beat < 40:
+    # if 332 < cur_beat < 352:
     #     print(cur_beat)
     #     print(map)
 
@@ -937,6 +942,7 @@ while node_idx < nodes_len or not map.is_clean():
             map.grids[i][0].enemies.remove(enemy_node)
 
             enemy = enemy_node.obj
+            enemy.on_fire = False
             if isinstance(enemy, WyrmBody):
                 # There is no enemy in the grid other than a wyrm body
                 wyrm_body_cnt += 1
@@ -1554,104 +1560,105 @@ def close_to_any(a, floats, **kwargs):
 max_one_vibe_beatcnts = []
 target_start_beats = [start_beat for (start_beat, _) in ONE_VIBE_START_BEATS_LOOSE]
 for beatcnts in one_vibe_beatcnts:
-    max_beatcnt = max(
-        [
-            beatcnt
-            for beatcnt in beatcnts
-            if not close_to_any(beatcnt.start_beat, ONE_VIBE_START_BEATS_EXCEPT)
-        ]
-    )
-    start_beat = max_beatcnt.start_beat
+    cand_beatcnts = [
+        beatcnt
+        for beatcnt in beatcnts
+        if not close_to_any(beatcnt.start_beat, ONE_VIBE_START_BEATS_EXCEPT)
+    ]
 
-    if start_beat in target_start_beats:
-        loose_idx = target_start_beats.index(start_beat)
-        loose_cnt = ONE_VIBE_START_BEATS_LOOSE[loose_idx][1]
+    for beatcnt in cand_beatcnts:
+        start_beat = beatcnt.start_beat
+        if start_beat in target_start_beats:
+            loose_idx = target_start_beats.index(start_beat)
+            loose_cnt = ONE_VIBE_START_BEATS_LOOSE[loose_idx][1]
 
-        if loose_cnt > 0:
-            end_beat = round(start_beat + max_beatcnt.beat_diff, NDIGITS)
+            if loose_cnt > 0:
+                end_beat = round(start_beat + beatcnt.beat_diff, NDIGITS)
 
-            beat_idx = bisect_left(raw_beats, start_beat)
-            target_end_beat_idx = bisect_right(raw_beats, end_beat)
+                beat_idx = bisect_left(raw_beats, start_beat)
+                target_end_beat_idx = bisect_right(raw_beats, end_beat)
 
-            target_end_beat_idx -= loose_cnt
-            if target_end_beat_idx - 1 < beat_idx:
-                target_end_beat_idx = beat_idx + 1
+                target_end_beat_idx -= loose_cnt
+                if target_end_beat_idx - 1 < beat_idx:
+                    target_end_beat_idx = beat_idx + 1
 
-            max_beatcnt.beat_diff = round(
-                raw_beats[target_end_beat_idx - 1] - start_beat, NDIGITS
-            )
-            max_beatcnt.cnt = target_end_beat_idx - beat_idx
+                beatcnt.beat_diff = round(
+                    raw_beats[target_end_beat_idx - 1] - start_beat, NDIGITS
+                )
+                beatcnt.cnt = target_end_beat_idx - beat_idx
 
+    max_beatcnt = max(cand_beatcnts)
     max_one_vibe_beatcnts.append(max_beatcnt)
 max_two_vibes_beatcnts = []
 target_start_beats = [start_beat for (start_beat, _) in TWO_VIBES_START_BEATS_LOOSE]
 for beatcnts in two_vibes_beatcnts:
-    max_beatcnt = max(
-        [
-            beatcnt
-            for beatcnt in beatcnts
-            if not close_to_any(beatcnt.start_beat, TWO_VIBES_START_BEATS_EXCEPT)
-        ]
-    )
-    start_beat = max_beatcnt.start_beat
+    cand_beatcnts = [
+        beatcnt
+        for beatcnt in beatcnts
+        if not close_to_any(beatcnt.start_beat, TWO_VIBES_START_BEATS_EXCEPT)
+    ]
 
-    if start_beat in target_start_beats:
-        loose_idx = target_start_beats.index(start_beat)
-        loose_cnt = TWO_VIBES_START_BEATS_LOOSE[loose_idx][1]
+    for beatcnt in cand_beatcnts:
+        start_beat = beatcnt.start_beat
+        if start_beat in target_start_beats:
+            loose_idx = target_start_beats.index(start_beat)
+            loose_cnt = TWO_VIBES_START_BEATS_LOOSE[loose_idx][1]
 
-        if loose_cnt > 0:
-            end_beat = round(start_beat + max_beatcnt.beat_diff, NDIGITS)
+            if loose_cnt > 0:
+                end_beat = round(start_beat + beatcnt.beat_diff, NDIGITS)
 
-            beat_idx = bisect_left(raw_beats, start_beat)
-            target_end_beat_idx = bisect_right(raw_beats, end_beat)
+                beat_idx = bisect_left(raw_beats, start_beat)
+                target_end_beat_idx = bisect_right(raw_beats, end_beat)
 
-            while (
-                loose_cnt > 0
-                and raw_beats[target_end_beat_idx - 1] not in vibe_beats
-                and target_end_beat_idx - 1 > beat_idx
-            ):
-                loose_cnt -= 1
-                target_end_beat_idx -= 1
+                while (
+                    loose_cnt > 0
+                    and raw_beats[target_end_beat_idx - 1] not in vibe_beats
+                    and target_end_beat_idx - 1 > beat_idx
+                ):
+                    loose_cnt -= 1
+                    target_end_beat_idx -= 1
 
-            max_beatcnt.beat_diff = round(
-                raw_beats[target_end_beat_idx - 1] - start_beat, NDIGITS
-            )
-            max_beatcnt.cnt = target_end_beat_idx - beat_idx
+                beatcnt.beat_diff = round(
+                    raw_beats[target_end_beat_idx - 1] - start_beat, NDIGITS
+                )
+                beatcnt.cnt = target_end_beat_idx - beat_idx
 
+    max_beatcnt = max(cand_beatcnts)
     max_two_vibes_beatcnts.append(max_beatcnt)
 max_three_vibes_beatcnts = []
 target_start_beats = [start_beat for (start_beat, _) in THREE_VIBES_START_BEATS_LOOSE]
 for beatcnts in three_vibes_beatcnts:
-    max_beatcnt = max(
-        [
-            beatcnt
-            for beatcnt in beatcnts
-            if not close_to_any(beatcnt.start_beat, THREE_VIBES_START_BEATS_EXCEPT)
-        ]
-    )
-    start_beat = max_beatcnt.start_beat
+    cand_beatcnts = [
+        beatcnt
+        for beatcnt in beatcnts
+        if not close_to_any(beatcnt.start_beat, THREE_VIBES_START_BEATS_EXCEPT)
+    ]
 
-    if start_beat in target_start_beats:
-        loose_idx = target_start_beats.index(start_beat)
-        loose_cnt = THREE_VIBES_START_BEATS_LOOSE[loose_idx][1]
+    for beatcnt in cand_beatcnts:
+        start_beat = beatcnt.start_beat
+        if start_beat in target_start_beats:
+            loose_idx = target_start_beats.index(start_beat)
+            loose_cnt = THREE_VIBES_START_BEATS_LOOSE[loose_idx][1]
 
-        if loose_cnt > 0:
-            end_beat = round(start_beat + max_beatcnt.beat_diff, NDIGITS)
+            if loose_cnt > 0:
+                end_beat = round(start_beat + beatcnt.beat_diff, NDIGITS)
 
-            beat_idx = bisect_left(raw_beats, start_beat)
-            target_end_beat_idx = bisect_right(raw_beats, end_beat)
+                beat_idx = bisect_left(raw_beats, start_beat)
+                target_end_beat_idx = bisect_right(raw_beats, end_beat)
 
-            while (
-                loose_cnt > 0 and raw_beats[target_end_beat_idx - 1] not in vibe_beats
-            ):
-                loose_cnt -= 1
-                target_end_beat_idx -= 1
+                while (
+                    loose_cnt > 0
+                    and raw_beats[target_end_beat_idx - 1] not in vibe_beats
+                ):
+                    loose_cnt -= 1
+                    target_end_beat_idx -= 1
 
-            max_beatcnt.beat_diff = round(
-                raw_beats[target_end_beat_idx - 1] - start_beat, NDIGITS
-            )
-            max_beatcnt.cnt = target_end_beat_idx - beat_idx
+                beatcnt.beat_diff = round(
+                    raw_beats[target_end_beat_idx - 1] - start_beat, NDIGITS
+                )
+                beatcnt.cnt = target_end_beat_idx - beat_idx
 
+    max_beatcnt = max(cand_beatcnts)
     max_three_vibes_beatcnts.append(max_beatcnt)
 
 print("\nBeatmap Path:")

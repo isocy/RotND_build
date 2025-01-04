@@ -48,6 +48,7 @@ RED_SKULL = "Red Skull"
 
 BOUNCE = "Bounce"
 PORTAL = "PortalIn"
+COALS = "Coals"
 
 ENEMY_DB_PATH = "exports/bundles/RREnemyDatabase.json"
 
