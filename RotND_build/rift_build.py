@@ -301,27 +301,28 @@ class Map:
                     return False
         return True
 
-    def is_node_blocked(self, i: int, j: int, target_nodes: list[Node[Enemy]]):
+    def is_node_blocked(self, i: int, j: int, target_enemy: Node[HeadlessSkeleton]):
         """Determine if the headless skeleton node is blocked at the current timestep."""
         is_blocked = False
         will_be_blocked = False
         for upper_enemy in self.grids[i][j].enemies:
-            if not isinstance(upper_enemy.obj, Harpy):
-                if (
-                    upper_enemy in target_nodes
-                    or upper_enemy.cooltime < ONBEAT_THRESHOLD
-                ):
-                    is_blocked = True
-                    break
-                else:
-                    will_be_blocked = True
+            if upper_enemy.cooltime - target_enemy.cooltime < ONBEAT_THRESHOLD:
+                is_blocked = True
+                break
+            else:
+                will_be_blocked = True
 
         upper_trap = self.grids[i][j].trap
-        if not is_blocked and upper_trap != None and isinstance(upper_trap.obj, Bounce):
+        if (
+            not is_blocked
+            and not will_be_blocked
+            and upper_trap != None
+            and isinstance(upper_trap.obj, Bounce)
+        ):
             return (False, False)
 
         for upper_enemy in self.grids[i][j + 1].enemies:
-            if not isinstance(upper_enemy, Harpy):
+            if upper_enemy.cooltime - target_enemy.cooltime < ONBEAT_THRESHOLD:
                 will_be_blocked = True
                 break
 
@@ -600,8 +601,10 @@ while node_idx < nodes_len or not map.is_clean():
                         continue
                     elif isinstance(obj, HeadlessSkeleton) and dist == -1:
                         (is_blocked, will_be_blocked) = map.is_node_blocked(
-                            i, j - dist, target_nodes
+                            i, j - dist, grid_enemy
                         )
+                        if is_blocked and j == 1:
+                            grid_enemy.cooltime = 0
                         if is_blocked or will_be_blocked:
                             obj.dist_per_move = 1
                             dist = 1
@@ -863,7 +866,7 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat = round(cur_beat + min_cooltime, NDIGITS)
 
     # Debug: map
-    # if 45 < cur_beat < 100:
+    # if 201 < cur_beat < 221:
     #     print(cur_beat)
     #     print(map)
 
