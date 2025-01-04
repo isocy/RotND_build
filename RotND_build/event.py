@@ -134,13 +134,18 @@ class BounceEvent(TrapEvent):
             for pair in iter(event["dataPairs"])
             if pair["_eventDataKey"] == "TrapDirection"
         )
-        # TODO: other directions
         if dir_num == 0:
             dir = TrapDir.UP
         elif dir_num == 1:
             dir = TrapDir.RIGHT
         elif dir_num == 2:
             dir = TrapDir.LEFT
+        elif dir_num == 3:
+            dir = TrapDir.DOWN
+        elif dir_num == 4:
+            dir = TrapDir.UPLEFT
+        elif dir_num == 5:
+            dir = TrapDir.UPRIGHT
         elif dir_num == 6:
             dir = TrapDir.DOWNLEFT
         elif dir_num == 7:

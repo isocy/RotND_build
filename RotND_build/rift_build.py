@@ -161,7 +161,7 @@ class Node[T: Object]:
                     cur_vibe_event = vibe_events[len(chain_cnts)]
                     if appear_beat < cur_vibe_event.start_beat:
                         break
-                    elif appear_beat < cur_vibe_event.end_beat:
+                    elif appear_beat <= cur_vibe_event.end_beat:
                         chain_cnt += 1
                         chained = True
                         break
@@ -173,7 +173,8 @@ class Node[T: Object]:
                     nodes.append(Node(GreenSlime(lane, chained), appear_beat))
                 elif name == BLUE_SLIME:
                     nodes.append(Node(BlueSlime(lane, chained), appear_beat))
-                # TODO: enemies
+                elif name == YELLOW_SLIME:
+                    nodes.append(Node(YellowSlime(lane, chained), appear_beat))
                 elif name == BLUE_BAT:
                     nodes.append(
                         Node(BlueBat(lane, obj_event.facing, chained), appear_beat)
@@ -198,6 +199,11 @@ class Node[T: Object]:
                     nodes.append(Node(BaseSkeleton(lane, chained), appear_beat))
                 elif name == SHIELDED_BASE_SKELETON:
                     nodes.append(Node(ShieldedBaseSkeleton(lane, chained), appear_beat))
+                elif name == TRIPLE_SHIELD_BASE_SKELETON:
+                    nodes.append(
+                        Node(DoubleShieldedBaseSkeleton(lane, chained), appear_beat)
+                    )
+                # TODO: enemies
                 elif name == YELLOW_SKELETON:
                     nodes.append(Node(YellowSkeleton(lane, chained), appear_beat))
                 elif name == SHIELDED_YELLOW_SKELETON:
@@ -259,7 +265,7 @@ class Node[T: Object]:
                         Portal(lane, row, child_lane, child_row, duration), appear_beat
                     )
                 )
-            # TODO: traps
+            # TODO: other traps
             elif False:
                 pass
 
@@ -398,21 +404,26 @@ class Map:
             trap = trap_node.obj
             if isinstance(trap, Bounce):
                 dir = trap.dir
-                # TODO: other directions
                 if dir == TrapDir.UP:
                     init_j += 1
                 elif dir == TrapDir.RIGHT:
                     init_i += 1
                 elif dir == TrapDir.LEFT:
                     init_i -= 1
+                elif dir == TrapDir.DOWN:
+                    init_j -= 1
+                elif dir == TrapDir.UPLEFT:
+                    init_i -= 1
+                    init_j += 1
+                elif dir == TrapDir.UPRIGHT:
+                    init_i += 1
+                    init_j += 1
                 elif dir == TrapDir.DOWNLEFT:
                     init_i -= 1
                     init_j -= 1
                 elif dir == TrapDir.DOWNRIGHT:
                     init_i += 1
                     init_j -= 1
-                else:
-                    pass
 
                 self.grids[init_i % self.lanes][init_j].enemies.append(enemy_node)
             elif isinstance(trap, Portal):
@@ -866,7 +877,7 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat = round(cur_beat + min_cooltime, NDIGITS)
 
     # Debug: map
-    # if 201 < cur_beat < 221:
+    # if 20 < cur_beat < 40:
     #     print(cur_beat)
     #     print(map)
 
@@ -874,11 +885,14 @@ while node_idx < nodes_len or not map.is_clean():
     for i in range(map.lanes):
         wyrm_node = None
         is_other_enemy = False
+        is_wyrm_head = False
         for enemy_node in map.grids[i][0].enemies:
-            if isinstance(enemy_node.obj, Wyrm):
+            if isinstance(enemy_node.obj, WyrmBody):
                 wyrm_node = enemy_node
             else:
                 is_other_enemy = True
+                if isinstance(enemy_node.obj, WyrmHead):
+                    is_wyrm_head = True
         # It becomes a problem when a wyrm body and other enemies collide
         if is_other_enemy:
             # collision possibly at wyrm tail
@@ -886,31 +900,34 @@ while node_idx < nodes_len or not map.is_clean():
                 assert not wyrm_node.obj.chained
                 map.grids[i][0].enemies.remove(wyrm_node)
 
-            target_j = 1
-            while target_j < map.rows:
-                wyrm_node: Node[WyrmBody] = next(
-                    (
-                        enemy_node
-                        for enemy_node in iter(map.grids[i][target_j].enemies)
-                        if isinstance(enemy_node.obj, WyrmBody)
-                    ),
-                    None,
-                )
-                if wyrm_node != None:
-                    assert not wyrm_node.obj.chained
-                    map.grids[i][target_j].enemies.remove(wyrm_node)
-                    if wyrm_node.obj.len_left < 1:
+            if not is_wyrm_head:
+                target_j = 1
+                while target_j < map.rows:
+                    wyrm_node: Node[WyrmBody] = next(
+                        (
+                            enemy_node
+                            for enemy_node in iter(map.grids[i][target_j].enemies)
+                            if isinstance(enemy_node.obj, WyrmBody)
+                        ),
+                        None,
+                    )
+                    if wyrm_node != None:
+                        assert not wyrm_node.obj.chained
+                        map.grids[i][target_j].enemies.remove(wyrm_node)
+                        if wyrm_node.obj.len_left < 1:
+                            break
+                        target_j += 1
+                    else:
                         break
-                    target_j += 1
-                else:
-                    break
 
-            if target_j == map.rows:
-                wyrm_node = next(
-                    node for node in nodes[node_idx:] if isinstance(node.obj, WyrmBody)
-                )
-                nodes.remove(wyrm_node)
-                nodes_len -= 1
+                if target_j == map.rows:
+                    wyrm_node = next(
+                        node
+                        for node in nodes[node_idx:]
+                        if isinstance(node.obj, WyrmBody)
+                    )
+                    nodes.remove(wyrm_node)
+                    nodes_len -= 1
 
         # Now a wyrm cannot be with other enemies
         for enemy_node in map.grids[i][0].enemies:
@@ -935,6 +952,12 @@ while node_idx < nodes_len or not map.is_clean():
                 if isinstance(enemy, ShieldedBaseSkeleton):
                     new_node: Node[Enemy] = Node(
                         BaseSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
+                    )
+                    map.grids[i][0].enemies.append(new_node)
+                elif isinstance(enemy, DoubleShieldedBaseSkeleton):
+                    new_node = Node(
+                        ShieldedBaseSkeleton(i + 1, enemy.chained),
+                        enemy.get_cooltime() / 2,
                     )
                     map.grids[i][0].enemies.append(new_node)
                 elif isinstance(enemy, ShieldedYellowSkeleton):

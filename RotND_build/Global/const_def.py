@@ -87,9 +87,11 @@ class Facing(Enum):
 
 
 class TrapDir(Enum):
-    # TODO: other directions
     UP = 0
     RIGHT = 1
     LEFT = 2
+    DOWN = 3
+    UPLEFT = 4
+    UPRIGHT = 5
     DOWNLEFT = 6
     DOWNRIGHT = 7

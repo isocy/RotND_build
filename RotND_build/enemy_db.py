@@ -51,6 +51,10 @@ class EnemyDB:
                 setattr(BlueSlime, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(BlueSlime, "max_health", enemy_def["health"])
                 setattr(BlueSlime, "max_shield", enemy_def["shield"])
+            elif name == YELLOW_SLIME:
+                setattr(YellowSlime, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(YellowSlime, "max_health", enemy_def["health"])
+                setattr(YellowSlime, "max_shield", enemy_def["shield"])
             elif name == BLUE_BAT:
                 setattr(BlueBat, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(BlueBat, "max_health", enemy_def["health"])
@@ -81,6 +85,14 @@ class EnemyDB:
                 )
                 setattr(ShieldedBaseSkeleton, "max_health", enemy_def["health"])
                 setattr(ShieldedBaseSkeleton, "max_shield", enemy_def["shield"])
+            elif name == TRIPLE_SHIELD_BASE_SKELETON:
+                setattr(
+                    DoubleShieldedBaseSkeleton,
+                    "beat_for_move",
+                    enemy_def["beat_for_move"],
+                )
+                setattr(DoubleShieldedBaseSkeleton, "max_health", enemy_def["health"])
+                setattr(DoubleShieldedBaseSkeleton, "max_shield", enemy_def["shield"])
             elif name == YELLOW_SKELETON:
                 setattr(YellowSkeleton, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(YellowSkeleton, "max_health", enemy_def["health"])

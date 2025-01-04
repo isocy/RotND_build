@@ -78,7 +78,17 @@ class BlueSlime(Slime):
         return getattr(BlueSlime, "beat_for_move")
 
 
-# TODO: add classes whose super class is Enemy
+class YellowSlime(Slime):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(YellowSlime, "max_health")
+        self.shield = getattr(YellowSlime, "max_shield")
+
+    def __repr__(self):
+        return "YS" + str(self.health)
+
+    def get_cooltime(self):
+        return getattr(YellowSlime, "beat_for_move")
 
 
 class Bat(Enemy):
@@ -220,6 +230,22 @@ class ShieldedBaseSkeleton(Skeleton):
 
     def get_cooltime(self):
         return getattr(ShieldedBaseSkeleton, "beat_for_move")
+
+
+class DoubleShieldedBaseSkeleton(Skeleton):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(DoubleShieldedBaseSkeleton, "max_health")
+        self.shield = getattr(DoubleShieldedBaseSkeleton, "max_shield")
+
+    def __repr__(self):
+        return "DShSk"
+
+    def get_cooltime(self):
+        return getattr(DoubleShieldedBaseSkeleton, "beat_for_move")
+
+
+# TODO: add classes whose super class is Enemy
 
 
 class HeadlessSkeleton(Enemy):
@@ -488,19 +514,22 @@ class Bounce(Trap):
         self.dir = dir
 
     def __repr__(self):
-        # TODO: other directions
         if dir == TrapDir.UP:
             return "BU"
         elif dir == TrapDir.RIGHT:
             return "BR"
         elif dir == TrapDir.LEFT:
             return "BL"
+        elif dir == TrapDir.DOWN:
+            return "BD"
+        elif dir == TrapDir.UPLEFT:
+            return "BUL"
+        elif dir == TrapDir.UPRIGHT:
+            return "BUR"
         elif dir == TrapDir.DOWNLEFT:
             return "BDL"
         elif dir == TrapDir.DOWNRIGHT:
             return "BDR"
-        else:
-            return "B"
 
     def get_cooltime(self):
         return self.duration
