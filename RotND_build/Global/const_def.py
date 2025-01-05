@@ -3,7 +3,7 @@ from enum import Enum
 BEAT_OFFSET = 1.5
 FRAME_IN_MSEC = 16 + 2 / 3
 ONBEAT_THRESHOLD = 0.95
-NDIGITS = 13
+NDIGITS = 12
 
 ROWS = 9
 LANES = 3
@@ -77,6 +77,9 @@ GLASS_CAGES_EASY_PATH = (
 )
 GLASS_CAGES_HARD_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Hard"
+)
+GLASS_CAGES_IMPOSSIBLE_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Expert"
 )
 RAVEVENGE_EASY_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Easy"
 RAVEVENGE_HARD_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Hard"

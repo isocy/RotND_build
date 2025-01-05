@@ -6,7 +6,7 @@ from event import *
 from bisect import bisect_right, bisect_left
 import itertools
 import json
-from math import floor
+from math import floor, isclose
 import numpy as np
 from typing import Self
 
@@ -66,7 +66,7 @@ class Beat:
             return self.beat < other
 
     def __repr__(self):
-        return f"{self.beat} {self.lane}"
+        return f"{self.beat:<17} {self.lane}"
 
 
 class BeatCnt:
@@ -374,12 +374,14 @@ class Map:
 
         return is_blocked
 
-    def is_left_open(self, i: int, j: int, target_enemy: Node[Enemy]):
+    def is_left_open(
+        self, i: int, j: int, target_enemy: Node[Enemy], nodes_done: list[Node]
+    ):
         """Determine if the zombie at position (i, j) can go to the left"""
         is_left_open = True
         for enemy in self.grids[i - 1][j - 1].enemies:
             is_zombie = isinstance(enemy.obj, Zombie)
-            if (
+            if not (isinstance(enemy.obj, Harpy) and enemy in nodes_done) and (
                 is_zombie
                 and enemy.cooltime - target_enemy.cooltime > 1 - ONBEAT_THRESHOLD
                 or not is_zombie
@@ -399,12 +401,14 @@ class Map:
 
         return is_left_open
 
-    def is_right_open(self, i: int, j: int, target_enemy: Node[Enemy]):
+    def is_right_open(
+        self, i: int, j: int, target_enemy: Node[Enemy], nodes_done: list[Node]
+    ):
         """Determine if the zombie at position (i, j) can go to the right"""
         is_right_open = True
         for enemy in self.grids[(i + 1) % self.lanes][j - 1].enemies:
             is_zombie = isinstance(enemy.obj, Zombie)
-            if (
+            if not (isinstance(enemy.obj, Harpy) and enemy in nodes_done) and (
                 is_zombie
                 and enemy.cooltime - target_enemy.cooltime > 1 - ONBEAT_THRESHOLD
                 or not is_zombie
@@ -531,18 +535,18 @@ while node_idx < nodes_len or not map.is_clean():
     for i in range(map.lanes):
         for j in range(map.rows):
             for enemy_node in map.grids[i][j].enemies:
-                if enemy_node.cooltime < min_cooltime:
+                if isclose(enemy_node.cooltime, min_cooltime):
+                    target_nodes.append(enemy_node)
+                elif enemy_node.cooltime < min_cooltime:
                     min_cooltime = enemy_node.cooltime
                     target_nodes = [enemy_node]
-                elif enemy_node.cooltime == min_cooltime:
-                    target_nodes.append(enemy_node)
             trap_node = map.grids[i][j].trap
             if trap_node != None:
-                if trap_node.cooltime < min_cooltime:
+                if isclose(trap_node.cooltime, min_cooltime):
+                    target_nodes.append(trap_node)
+                elif trap_node.cooltime < min_cooltime:
                     min_cooltime = trap_node.cooltime
                     target_nodes = [trap_node]
-                elif trap_node.cooltime == min_cooltime:
-                    target_nodes.append(trap_node)
 
     # decrement lifetime of traps
     #
@@ -575,7 +579,7 @@ while node_idx < nodes_len or not map.is_clean():
     if node_idx < nodes_len:
         next_node.cooltime = round(next_node.cooltime - min_cooltime, NDIGITS)
 
-        while next_node.cooltime == 0:
+        while isclose(next_node.cooltime, 0):
             obj: Object = next_node.obj
             next_node.cooltime = obj.get_cooltime()
             if isinstance(obj, Enemy):
@@ -598,7 +602,10 @@ while node_idx < nodes_len or not map.is_clean():
                         )
 
                         insert_idx = node_idx + 1
-                        while new_node.cooltime > nodes[insert_idx].cooltime:
+                        while (
+                            insert_idx < nodes_len
+                            and new_node.cooltime > nodes[insert_idx].cooltime
+                        ):
                             insert_idx += 1
                         nodes.insert(insert_idx, new_node)
                         nodes_len += 1
@@ -694,7 +701,9 @@ while node_idx < nodes_len or not map.is_clean():
                     if isinstance(obj, GreenZombie):
                         if obj.facing == Facing.LEFT:
                             is_left_open = (
-                                map.is_left_open(i, j, grid_enemy) if i != 0 else False
+                                map.is_left_open(i, j, grid_enemy, nodes_done)
+                                if i != 0
+                                else False
                             )
 
                             if is_left_open:
@@ -704,7 +713,7 @@ while node_idx < nodes_len or not map.is_clean():
                             else:
                                 obj.facing = Facing.RIGHT
                                 is_right_open = (
-                                    map.is_right_open(i, j, grid_enemy)
+                                    map.is_right_open(i, j, grid_enemy, nodes_done)
                                     if i != map.lanes - 1
                                     else False
                                 )
@@ -719,7 +728,7 @@ while node_idx < nodes_len or not map.is_clean():
                                     )
                         else:
                             is_right_open = (
-                                map.is_right_open(i, j, grid_enemy)
+                                map.is_right_open(i, j, grid_enemy, nodes_done)
                                 if i != map.lanes - 1
                                 else False
                             )
@@ -731,7 +740,7 @@ while node_idx < nodes_len or not map.is_clean():
                             else:
                                 obj.facing = Facing.LEFT
                                 is_left_open = (
-                                    map.is_left_open(i, j, grid_enemy)
+                                    map.is_left_open(i, j, grid_enemy, nodes_done)
                                     if i != 0
                                     else False
                                 )
@@ -804,7 +813,9 @@ while node_idx < nodes_len or not map.is_clean():
                                     obj.facing = Facing.LEFT
                     elif isinstance(obj, RedZombie):
                         if obj.facing == Facing.LEFT:
-                            is_left_open = map.is_left_open(i, j, grid_enemy)
+                            is_left_open = map.is_left_open(
+                                i, j, grid_enemy, nodes_done
+                            )
 
                             if is_left_open:
                                 (new_i, new_j) = map.step_trap(
@@ -812,7 +823,9 @@ while node_idx < nodes_len or not map.is_clean():
                                 )
                             else:
                                 obj.facing = Facing.RIGHT
-                                is_right_open = map.is_right_open(i, j, grid_enemy)
+                                is_right_open = map.is_right_open(
+                                    i, j, grid_enemy, nodes_done
+                                )
 
                                 if is_right_open:
                                     (new_i, new_j) = map.step_trap(
@@ -823,7 +836,9 @@ while node_idx < nodes_len or not map.is_clean():
                                         i, j - dist, grid_enemy
                                     )
                         else:
-                            is_right_open = map.is_right_open(i, j, grid_enemy)
+                            is_right_open = map.is_right_open(
+                                i, j, grid_enemy, nodes_done
+                            )
 
                             if is_right_open:
                                 (new_i, new_j) = map.step_trap(
@@ -831,7 +846,9 @@ while node_idx < nodes_len or not map.is_clean():
                                 )
                             else:
                                 obj.facing = Facing.LEFT
-                                is_left_open = map.is_left_open(i, j, grid_enemy)
+                                is_left_open = map.is_left_open(
+                                    i, j, grid_enemy, nodes_done
+                                )
 
                                 if is_left_open:
                                     (new_i, new_j) = map.step_trap(
@@ -906,7 +923,7 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat = round(cur_beat + min_cooltime, NDIGITS)
 
     # Debug: map
-    # if 332 < cur_beat < 352:
+    # if 99 < cur_beat < 120:
     #     print(cur_beat)
     #     print(map)
 
@@ -979,7 +996,7 @@ while node_idx < nodes_len or not map.is_clean():
                 # is not counted as a beat
                 break
             elif enemy.shield > 0:
-                # no decrement of shield required due to the node exchange
+                enemy.shield -= 1
                 if isinstance(enemy, ShieldedBaseSkeleton):
                     new_node: Node[Enemy] = Node(
                         BaseSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
@@ -991,21 +1008,14 @@ while node_idx < nodes_len or not map.is_clean():
                         enemy.get_cooltime() / 2,
                     )
                     map.grids[i][0].enemies.append(new_node)
-                elif isinstance(enemy, BlueArmadillo):
-                    new_node = Node(
-                        BlueArmadillo(i + 1, enemy.chained), enemy.get_cooltime() / 3
-                    )
-                    map.grids[i][0].enemies.append(new_node)
+                elif isinstance(enemy, BlueArmadillo) or isinstance(
+                    enemy, YellowArmadillo
+                ):
+                    enemy_node.cooltime = enemy.get_cooltime() / 3
+                    map.grids[i][0].enemies.append(enemy_node)
                 elif isinstance(enemy, RedArmadillo):
-                    new_node = Node(
-                        RedArmadillo(i + 1, enemy.chained), enemy.get_cooltime() * 2 / 3
-                    )
-                    map.grids[i][0].enemies.append(new_node)
-                elif isinstance(enemy, YellowArmadillo):
-                    new_node = Node(
-                        YellowArmadillo(i + 1, enemy.chained), enemy.get_cooltime() / 3
-                    )
-                    map.grids[i][0].enemies.append(new_node)
+                    enemy_node.cooltime = enemy.get_cooltime() * 2 / 3
+                    map.grids[i][0].enemies.append(enemy_node)
                 elif isinstance(enemy, ShieldedYellowSkeleton):
                     new_node = Node(
                         YellowSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2

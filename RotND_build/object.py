@@ -281,6 +281,7 @@ class DoubleShieldedBaseSkeleton(Skeleton):
 class Armadillo(Enemy):
     def __init__(self, appear_lane, chained):
         super().__init__(appear_lane, chained)
+        self.dist_per_move = 1
 
     @abstractmethod
     def __repr__(self):
@@ -292,13 +293,13 @@ class Armadillo(Enemy):
 
 
 class BlueArmadillo(Armadillo):
-    def __init__(self, appear_lane, chained):
+    def __init__(self, appear_lane, chained, shield=-1):
         super().__init__(appear_lane, chained)
         self.health = getattr(BlueArmadillo, "max_health")
-        self.shield = getattr(BlueArmadillo, "max_shield")
+        self.shield = getattr(BlueArmadillo, "max_shield") if shield == -1 else shield
 
     def __repr__(self):
-        return "BA"
+        return "BA" + str(self.health + self.shield)
 
     def get_cooltime(self):
         return (
@@ -309,13 +310,13 @@ class BlueArmadillo(Armadillo):
 
 
 class RedArmadillo(Armadillo):
-    def __init__(self, appear_lane, chained):
+    def __init__(self, appear_lane, chained, shield=-1):
         super().__init__(appear_lane, chained)
         self.health = getattr(RedArmadillo, "max_health")
-        self.shield = getattr(RedArmadillo, "max_shield")
+        self.shield = getattr(RedArmadillo, "max_shield") if shield == -1 else shield
 
     def __repr__(self):
-        return "RA"
+        return "RA" + str(self.health + self.shield)
 
     def get_cooltime(self):
         return (
@@ -326,13 +327,13 @@ class RedArmadillo(Armadillo):
 
 
 class YellowArmadillo(Armadillo):
-    def __init__(self, appear_lane, chained):
+    def __init__(self, appear_lane, chained, shield=-1):
         super().__init__(appear_lane, chained)
         self.health = getattr(YellowArmadillo, "max_health")
-        self.shield = getattr(YellowArmadillo, "max_shield")
+        self.shield = getattr(YellowArmadillo, "max_shield") if shield == -1 else shield
 
     def __repr__(self):
-        return "YA"
+        return "YA" + str(self.health + self.shield)
 
     def get_cooltime(self):
         return (
