@@ -311,28 +311,49 @@ class Map:
                     return False
         return True
 
-    def is_node_blocked(self, i: int, j: int, target_enemy: Node[HeadlessSkeleton]):
-        """Determine if the headless skeleton node is blocked at the current timestep."""
+    def is_node_blocked(
+        self,
+        i: int,
+        j: int,
+        nodes_done: list[Node],
+        target_enemy: Node[HeadlessSkeleton],
+    ):
+        """Determine if the headless skeleton node is blocked at the current timestep.
+        (i, j): target position of the node"""
         is_blocked = False
         will_be_blocked = False
         for upper_enemy in self.grids[i][j].enemies:
-            if upper_enemy.cooltime - target_enemy.cooltime < ONBEAT_THRESHOLD:
+            if (
+                upper_enemy in nodes_done
+                and upper_enemy.cooltime < ONBEAT_THRESHOLD
+                or upper_enemy not in nodes_done
+                and upper_enemy.cooltime - target_enemy.cooltime < ONBEAT_THRESHOLD
+            ):
                 is_blocked = True
                 break
             else:
                 will_be_blocked = True
 
+        # Enemies on (i, j) may be above a trap if it was blocked to move
+        # Once that case is dealt with, the headless skeleton is possible to step into the trap
         upper_trap = self.grids[i][j].trap
         if (
             not is_blocked
             and not will_be_blocked
             and upper_trap != None
-            and isinstance(upper_trap.obj, Bounce)
+            and (
+                isinstance(upper_trap.obj, Bounce) or isinstance(upper_trap.obj, Portal)
+            )
         ):
             return (False, False)
 
         for upper_enemy in self.grids[i][j + 1].enemies:
-            if upper_enemy.cooltime - target_enemy.cooltime < ONBEAT_THRESHOLD:
+            if (
+                upper_enemy in nodes_done
+                and upper_enemy.cooltime < ONBEAT_THRESHOLD
+                or upper_enemy not in nodes_done
+                and upper_enemy.cooltime - target_enemy.cooltime < ONBEAT_THRESHOLD
+            ):
                 will_be_blocked = True
                 break
 
@@ -342,9 +363,8 @@ class Map:
         """Determine if the newly created headless skeleton node is blocked immediately."""
         is_blocked = False
         for upper_enemy in self.grids[i][1].enemies + self.grids[i][2].enemies:
-            if not isinstance(upper_enemy.obj, Harpy):
-                is_blocked = True
-                break
+            is_blocked = True
+            break
 
         return is_blocked
 
@@ -429,18 +449,13 @@ class Map:
                     init_i += 1
                     init_j -= 1
 
-                self.grids[init_i % self.lanes][init_j].enemies.append(enemy_node)
+                init_i %= self.lanes
             elif isinstance(trap, Portal):
                 init_i = trap.child_lane - 1
                 init_j = trap.child_row
-
-                self.grids[init_i][init_j].enemies.append(enemy_node)
             elif isinstance(trap, Coals):
                 enemy_node.obj.on_fire = True
-
-                self.grids[init_i][init_j].enemies.append(enemy_node)
-        else:
-            self.grids[init_i][init_j].enemies.append(enemy_node)
+        self.grids[init_i][init_j].enemies.append(enemy_node)
 
         return init_i, init_j
 
@@ -543,7 +558,7 @@ while node_idx < nodes_len or not map.is_clean():
     # now 'target_nodes' only contains enemy nodes
 
     # exclusion of 'target_nodes'
-    nodes_done = []
+    nodes_done: list[Node] = []
 
     # introduce new nodes
     #
@@ -563,6 +578,7 @@ while node_idx < nodes_len or not map.is_clean():
                         next_node
                     )
 
+                    # insert new wyrm body into 'nodes'
                     if isinstance(obj, Wyrm) and obj.len_left >= 1:
                         new_obj = WyrmBody(
                             obj.appear_lane, obj.chained, obj.len_left - 1
@@ -599,13 +615,15 @@ while node_idx < nodes_len or not map.is_clean():
         for j in range(map.rows):
             grid = map.grids[i][j]
             grid_enemies = grid.enemies
+            # removal of 'grid_enemy' may cause impairment on the iteration of 'grid_enemies'
+            # so remove those enemies at the end
             enemies_removed = []
             for grid_enemy in grid_enemies:
                 if grid_enemy in nodes_done:
                     continue
 
                 # Update 'target_nodes'
-                # For enemies previously shielded, do not move
+                # For enemies previously shielded (j is 0), do not move
                 if grid_enemy in target_nodes and j != 0:
                     obj = grid_enemy.obj
                     dist = obj.dist_per_move
@@ -617,7 +635,7 @@ while node_idx < nodes_len or not map.is_clean():
                         continue
                     elif isinstance(obj, HeadlessSkeleton) and dist == -1:
                         (is_blocked, will_be_blocked) = map.is_node_blocked(
-                            i, j - dist, grid_enemy
+                            i, j - dist, nodes_done, grid_enemy
                         )
                         if is_blocked and j == 1:
                             grid_enemy.cooltime = 0
@@ -642,11 +660,11 @@ while node_idx < nodes_len or not map.is_clean():
                     else:
                         map.step_trap(i, j - dist, grid_enemy)
                     enemies_removed.append(grid_enemy)
-                    nodes_done.append(grid_enemy)
                 else:
                     grid_enemy.cooltime = round(
                         grid_enemy.cooltime - min_cooltime, NDIGITS
                     )
+                nodes_done.append(grid_enemy)
 
             for enemy_removed in enemies_removed:
                 grid_enemies.remove(enemy_removed)
@@ -888,6 +906,7 @@ while node_idx < nodes_len or not map.is_clean():
 
     # hit_notes()
     for i in range(map.lanes):
+        # It becomes a problem when a wyrm body and other enemies collide at j = 0
         wyrm_node = None
         is_other_enemy = False
         is_wyrm_head = False
@@ -898,7 +917,6 @@ while node_idx < nodes_len or not map.is_clean():
                 is_other_enemy = True
                 if isinstance(enemy_node.obj, WyrmHead):
                     is_wyrm_head = True
-        # It becomes a problem when a wyrm body and other enemies collide
         if is_other_enemy:
             # collision possibly at wyrm tail
             if wyrm_node != None:
@@ -952,6 +970,7 @@ while node_idx < nodes_len or not map.is_clean():
                     if chain_cnts[chain_idx] == 0:
                         vibe_beats.append(cur_beat)
                         chain_idx += 1
+                # is not counted as a beat
                 break
             elif enemy.shield > 0:
                 # no decrement of shield required due to the node exchange
@@ -976,13 +995,13 @@ while node_idx < nodes_len or not map.is_clean():
                         BlackSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
                     )
                     map.grids[i][0].enemies.append(new_node)
-                # TODO: other shielded enemies
+                # TODO: armadillos
                 elif False:
                     pass
             elif enemy.health > 1:
                 enemy.health -= 1
                 enemy_node.cooltime = enemy.get_cooltime()
-                # TODO: health > 1 enemies
+                # TODO: skulls
                 if isinstance(enemy, BlueBat) or isinstance(enemy, YellowBat):
                     if enemy.facing == Facing.LEFT:
                         map.grids[i - 1][1].enemies.append(enemy_node)
@@ -1705,18 +1724,22 @@ for partition in partitions:
         end_idx = beat_idx + max_beatcnt.cnt
 
         if partition == TARGET_PARTITION:
+            start_beat = raw_beats[beat_idx]
             for great_info in great_infos:
-                if raw_beats[beat_idx] == great_info[0] and great_info[1] > 0:
-                    if beat_idx >= 29:
-                        score_add += great_add_score * 4
-                    elif beat_idx >= 19:
-                        score_add += great_add_score * 3
-                    elif beat_idx >= 9:
-                        score_add += great_add_score * 2
-                    else:
-                        score_add += great_add_score
-                    beat_idx += 1
-                    great_info = (great_info[0], great_info[1] - 1)
+                (great_start_beat, great_cnt) = great_info
+                if start_beat == great_start_beat:
+                    while great_cnt > 0:
+                        if beat_idx >= 29:
+                            score_add += great_add_score * 4
+                        elif beat_idx >= 19:
+                            score_add += great_add_score * 3
+                        elif beat_idx >= 9:
+                            score_add += great_add_score * 2
+                        else:
+                            score_add += great_add_score
+                        beat_idx += 1
+                        great_cnt -= 1
+                    break
 
         while beat_idx < end_idx:
             if beat_idx >= 29:
