@@ -93,6 +93,18 @@ class EnemyDB:
                 )
                 setattr(DoubleShieldedBaseSkeleton, "max_health", enemy_def["health"])
                 setattr(DoubleShieldedBaseSkeleton, "max_shield", enemy_def["shield"])
+            elif name == BLUE_ARMADILLO:
+                setattr(BlueArmadillo, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(BlueArmadillo, "max_health", enemy_def["health"])
+                setattr(BlueArmadillo, "max_shield", enemy_def["shield"])
+            elif name == RED_ARMADILLO:
+                setattr(RedArmadillo, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(RedArmadillo, "max_health", enemy_def["health"])
+                setattr(RedArmadillo, "max_shield", enemy_def["shield"])
+            elif name == YELLOW_ARMADILLO:
+                setattr(YellowArmadillo, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(YellowArmadillo, "max_health", enemy_def["health"])
+                setattr(YellowArmadillo, "max_shield", enemy_def["shield"])
             elif name == YELLOW_SKELETON:
                 setattr(YellowSkeleton, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(YellowSkeleton, "max_health", enemy_def["health"])

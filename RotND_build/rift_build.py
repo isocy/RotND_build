@@ -203,7 +203,12 @@ class Node[T: Object]:
                     nodes.append(
                         Node(DoubleShieldedBaseSkeleton(lane, chained), appear_beat)
                     )
-                # TODO: enemies
+                elif name == BLUE_ARMADILLO:
+                    nodes.append(Node(BlueArmadillo(lane, chained), appear_beat))
+                elif name == RED_ARMADILLO:
+                    nodes.append(Node(RedArmadillo(lane, chained), appear_beat))
+                elif name == YELLOW_ARMADILLO:
+                    nodes.append(Node(YellowArmadillo(lane, chained), appear_beat))
                 elif name == YELLOW_SKELETON:
                     nodes.append(Node(YellowSkeleton(lane, chained), appear_beat))
                 elif name == SHIELDED_YELLOW_SKELETON:
@@ -226,6 +231,7 @@ class Node[T: Object]:
                     )
                 elif name == BASE_HARPY:
                     nodes.append(Node(BaseHarpy(lane, chained), appear_beat))
+                # TODO: enemies
                 elif name == BLUE_HARPY:
                     nodes.append(Node(BlueHarpy(lane, chained), appear_beat))
                 elif name == APPLE:
@@ -985,6 +991,21 @@ while node_idx < nodes_len or not map.is_clean():
                         enemy.get_cooltime() / 2,
                     )
                     map.grids[i][0].enemies.append(new_node)
+                elif isinstance(enemy, BlueArmadillo):
+                    new_node = Node(
+                        BlueArmadillo(i + 1, enemy.chained), enemy.get_cooltime() / 3
+                    )
+                    map.grids[i][0].enemies.append(new_node)
+                elif isinstance(enemy, RedArmadillo):
+                    new_node = Node(
+                        RedArmadillo(i + 1, enemy.chained), enemy.get_cooltime() * 2 / 3
+                    )
+                    map.grids[i][0].enemies.append(new_node)
+                elif isinstance(enemy, YellowArmadillo):
+                    new_node = Node(
+                        YellowArmadillo(i + 1, enemy.chained), enemy.get_cooltime() / 3
+                    )
+                    map.grids[i][0].enemies.append(new_node)
                 elif isinstance(enemy, ShieldedYellowSkeleton):
                     new_node = Node(
                         YellowSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
@@ -995,9 +1016,6 @@ while node_idx < nodes_len or not map.is_clean():
                         BlackSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
                     )
                     map.grids[i][0].enemies.append(new_node)
-                # TODO: armadillos
-                elif False:
-                    pass
             elif enemy.health > 1:
                 enemy.health -= 1
                 enemy_node.cooltime = enemy.get_cooltime()

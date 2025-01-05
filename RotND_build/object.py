@@ -278,6 +278,70 @@ class DoubleShieldedBaseSkeleton(Skeleton):
         )
 
 
+class Armadillo(Enemy):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    @abstractmethod
+    def get_cooltime(self):
+        pass
+
+
+class BlueArmadillo(Armadillo):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(BlueArmadillo, "max_health")
+        self.shield = getattr(BlueArmadillo, "max_shield")
+
+    def __repr__(self):
+        return "BA"
+
+    def get_cooltime(self):
+        return (
+            getattr(BlueArmadillo, "beat_for_move")
+            if not self.on_fire
+            else getattr(BlueArmadillo, "beat_for_move") / 2
+        )
+
+
+class RedArmadillo(Armadillo):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(RedArmadillo, "max_health")
+        self.shield = getattr(RedArmadillo, "max_shield")
+
+    def __repr__(self):
+        return "RA"
+
+    def get_cooltime(self):
+        return (
+            getattr(RedArmadillo, "beat_for_move")
+            if not self.on_fire
+            else getattr(RedArmadillo, "beat_for_move") / 2
+        )
+
+
+class YellowArmadillo(Armadillo):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(YellowArmadillo, "max_health")
+        self.shield = getattr(YellowArmadillo, "max_shield")
+
+    def __repr__(self):
+        return "YA"
+
+    def get_cooltime(self):
+        return (
+            getattr(YellowArmadillo, "beat_for_move")
+            if not self.on_fire
+            else getattr(YellowArmadillo, "beat_for_move") / 2
+        )
+
+
 class HeadlessSkeleton(Enemy):
     beat_for_move = 1
 
