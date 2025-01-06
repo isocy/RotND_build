@@ -507,6 +507,19 @@ class BaseHarpy(Harpy):
         return getattr(BaseHarpy, "beat_for_move")
 
 
+class RedHarpy(Harpy):
+    def __init__(self, appear_lane, chained):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(RedHarpy, "max_health")
+        self.shield = getattr(RedHarpy, "max_shield")
+
+    def __repr__(self):
+        return "RH"
+
+    def get_cooltime(self):
+        return getattr(RedHarpy, "beat_for_move")
+
+
 class BlueHarpy(Harpy):
     def __init__(self, appear_lane, chained):
         super().__init__(appear_lane, chained)
@@ -620,6 +633,63 @@ class Blademaster(Enemy):
             if not self.on_fire
             else getattr(Blademaster, "beat_for_move") / 2
         )
+
+
+class Skull(Enemy):
+    def __init__(self, appear_lane, facing, chained):
+        super().__init__(appear_lane, chained)
+        self.dist_per_move = 1
+        self.facing = facing
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    @abstractmethod
+    def get_cooltime(self):
+        pass
+
+
+class BaseSkull(Skull):
+    def __init__(self, appear_lane, facing, chained):
+        super().__init__(appear_lane, facing, chained)
+        self.health = getattr(BaseSkull, "max_health")
+        self.shield = getattr(BaseSkull, "max_shield")
+
+    def __repr__(self):
+        facing = "L" if self.facing == Facing.LEFT else "R"
+        return "Sku" + facing + str(self.health)
+
+    def get_cooltime(self):
+        return getattr(BaseSkull, "beat_for_move")
+
+
+class BlueSkull(Skull):
+    def __init__(self, appear_lane, facing, chained):
+        super().__init__(appear_lane, facing, chained)
+        self.health = getattr(BlueSkull, "max_health")
+        self.shield = getattr(BlueSkull, "max_shield")
+
+    def __repr__(self):
+        facing = "L" if self.facing == Facing.LEFT else "R"
+        return "BSku" + facing + str(self.health)
+
+    def get_cooltime(self):
+        return getattr(BlueSkull, "beat_for_move")
+
+
+class RedSkull(Skull):
+    def __init__(self, appear_lane, facing, chained):
+        super().__init__(appear_lane, facing, chained)
+        self.health = getattr(RedSkull, "max_health")
+        self.shield = getattr(RedSkull, "max_shield")
+
+    def __repr__(self):
+        facing = "L" if self.facing == Facing.LEFT else "R"
+        return "RSku" + facing + str(self.health)
+
+    def get_cooltime(self):
+        return getattr(RedSkull, "beat_for_move")
 
 
 class Trap(Object):

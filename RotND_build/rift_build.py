@@ -162,7 +162,7 @@ class Node[T: Object]:
                     if appear_beat < cur_vibe_event.start_beat:
                         break
                     elif appear_beat <= cur_vibe_event.end_beat:
-                        chain_cnt += 1
+                        chain_cnt += enemy_def["total_enemies"]
                         chained = True
                         break
                     else:
@@ -231,7 +231,8 @@ class Node[T: Object]:
                     )
                 elif name == BASE_HARPY:
                     nodes.append(Node(BaseHarpy(lane, chained), appear_beat))
-                # TODO: enemies
+                elif name == RED_HARPY:
+                    nodes.append(Node(RedHarpy(lane, chained), appear_beat))
                 elif name == BLUE_HARPY:
                     nodes.append(Node(BlueHarpy(lane, chained), appear_beat))
                 elif name == APPLE:
@@ -249,6 +250,18 @@ class Node[T: Object]:
                             Blademaster(lane, chained, obj_event.attack_row),
                             appear_beat,
                         )
+                    )
+                elif name == BASE_SKULL:
+                    nodes.append(
+                        Node(BaseSkull(lane, obj_event.facing, chained), appear_beat)
+                    )
+                elif name == BLUE_SKULL:
+                    nodes.append(
+                        Node(BlueSkull(lane, obj_event.facing, chained), appear_beat)
+                    )
+                elif name == RED_SKULL:
+                    nodes.append(
+                        Node(RedSkull(lane, obj_event.facing, chained), appear_beat)
                     )
             elif isinstance(obj_event, BounceEvent):
                 lane = obj_event.lane
@@ -589,7 +602,7 @@ while node_idx < nodes_len or not map.is_clean():
                     )
 
                     # insert new wyrm body into 'nodes'
-                    if isinstance(obj, Wyrm) and obj.len_left >= 1:
+                    if isinstance(obj, Wyrm) and obj.len_left > 0:
                         new_obj = WyrmBody(
                             obj.appear_lane, obj.chained, obj.len_left - 1
                         )
@@ -923,7 +936,7 @@ while node_idx < nodes_len or not map.is_clean():
     cur_beat = round(cur_beat + min_cooltime, NDIGITS)
 
     # Debug: map
-    # if 99 < cur_beat < 120:
+    # if 221 < cur_beat < 235:
     #     print(cur_beat)
     #     print(map)
 
@@ -984,6 +997,7 @@ while node_idx < nodes_len or not map.is_clean():
 
             enemy = enemy_node.obj
             enemy.on_fire = False
+
             if isinstance(enemy, WyrmBody):
                 # There is no enemy in the grid other than a wyrm body
                 wyrm_body_cnt += 1
@@ -995,7 +1009,10 @@ while node_idx < nodes_len or not map.is_clean():
                         chain_idx += 1
                 # is not counted as a beat
                 break
-            elif enemy.shield > 0:
+
+            beats.append(Beat(i, cur_beat))
+
+            if enemy.shield > 0:
                 enemy.shield -= 1
                 if isinstance(enemy, ShieldedBaseSkeleton):
                     new_node: Node[Enemy] = Node(
@@ -1026,10 +1043,10 @@ while node_idx < nodes_len or not map.is_clean():
                         BlackSkeleton(i + 1, enemy.chained), enemy.get_cooltime() / 2
                     )
                     map.grids[i][0].enemies.append(new_node)
+                continue
             elif enemy.health > 1:
                 enemy.health -= 1
                 enemy_node.cooltime = enemy.get_cooltime()
-                # TODO: skulls
                 if isinstance(enemy, BlueBat) or isinstance(enemy, YellowBat):
                     if enemy.facing == Facing.LEFT:
                         map.grids[i - 1][1].enemies.append(enemy_node)
@@ -1067,17 +1084,40 @@ while node_idx < nodes_len or not map.is_clean():
                     )
                     map.step_trap(i, 1, new_node)
                 elif isinstance(enemy, WyrmHead):
-                    pass
+                    if enemy.chained:
+                        chain_cnts[chain_idx] -= 1
+
+                        if chain_cnts[chain_idx] == 0:
+                            vibe_beats.append(cur_beat)
+                            chain_idx += 1
+                elif isinstance(enemy, RedSkull):
+                    if enemy.facing == Facing.LEFT:
+                        map.step_trap(i - 1, 1, enemy_node)
+                    else:
+                        map.step_trap((i + 1) % 3, 1, enemy_node)
                 else:
                     map.step_trap(i, 1, enemy_node)
-            elif enemy.chained:
+                continue
+            elif isinstance(enemy, Skull):
+                new_obj = BaseSkeleton(i + 1, enemy.chained)
+                new_node = Node(new_obj, new_obj.get_cooltime())
+                map.grids[i][1].enemies.append(new_node)
+
+                if enemy.facing == Facing.LEFT:
+                    new_obj = BaseSkeleton(i + 2, enemy.chained)
+                    new_node = Node(new_obj, new_obj.get_cooltime())
+                    map.grids[(i + 1) % 3][1].enemies.append(new_node)
+                else:
+                    new_obj = BaseSkeleton(i, enemy.chained)
+                    new_node = Node(new_obj, new_obj.get_cooltime())
+                    map.grids[i - 1][1].enemies.append(new_node)
+
+            if enemy.chained:
                 chain_cnts[chain_idx] -= 1
 
                 if chain_cnts[chain_idx] == 0:
                     vibe_beats.append(cur_beat)
                     chain_idx += 1
-
-            beats.append(Beat(i, cur_beat))
 
 
 # Debug: beats

@@ -16,11 +16,11 @@ class EnemyDB:
             id = enemy_def.pop("_id")
 
             # keys of enemy_def:
-            #   name, health, total_hits, beat_for_move, priority,
+            #   name, health, total_enemies, beat_for_move, priority,
             #   properties, shield, enemy_on_death_id
             enemy_def["name"] = enemy_def["_displayName"]
             enemy_def["health"] = enemy_def["_maxHealth"]
-            enemy_def["total_hits"] = enemy_def["_totalHitsAddedToStage"]
+            enemy_def["total_enemies"] = enemy_def["_totalEnemiesGenerated"]
             del enemy_def["_totalEnemiesGenerated"]
             del enemy_def["_playerDamage"]
             del enemy_def["_hpAwardedOnDeath"]
@@ -42,7 +42,6 @@ class EnemyDB:
     def init_objs(cls, enemy_db: dict):
         for enemy_def in enemy_db.values():
             name = enemy_def["name"]
-            # TODO: enemies
             if name == GREEN_SLIME:
                 setattr(GreenSlime, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(GreenSlime, "max_health", enemy_def["health"])
@@ -137,6 +136,10 @@ class EnemyDB:
                 setattr(BlueHarpy, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(BlueHarpy, "max_health", enemy_def["health"])
                 setattr(BlueHarpy, "max_shield", enemy_def["shield"])
+            elif name == RED_HARPY:
+                setattr(RedHarpy, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(RedHarpy, "max_health", enemy_def["health"])
+                setattr(RedHarpy, "max_shield", enemy_def["shield"])
             elif name == APPLE:
                 setattr(Apple, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(Apple, "max_health", enemy_def["health"])
@@ -157,3 +160,15 @@ class EnemyDB:
                 setattr(Blademaster, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(Blademaster, "max_health", enemy_def["health"])
                 setattr(Blademaster, "max_shield", enemy_def["shield"])
+            elif name == BASE_SKULL:
+                setattr(BaseSkull, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(BaseSkull, "max_health", enemy_def["health"])
+                setattr(BaseSkull, "max_shield", enemy_def["shield"])
+            elif name == BLUE_SKULL:
+                setattr(BlueSkull, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(BlueSkull, "max_health", enemy_def["health"])
+                setattr(BlueSkull, "max_shield", enemy_def["shield"])
+            elif name == RED_SKULL:
+                setattr(RedSkull, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(RedSkull, "max_health", enemy_def["health"])
+                setattr(RedSkull, "max_shield", enemy_def["shield"])

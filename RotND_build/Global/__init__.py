@@ -1,12 +1,12 @@
 from Global.const_def import *
 
-RAW_BEATMAP_PATH = DISCO_DISASTER_IMPOSSIBLE_PATH
+RAW_BEATMAP_PATH = GLASS_CAGES_IMPOSSIBLE_PATH
 
-ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = [258.83334]
 TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
 THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
 
-ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(77.5, 1)]
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = []
 TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
