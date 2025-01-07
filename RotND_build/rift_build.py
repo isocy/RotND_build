@@ -602,7 +602,11 @@ while node_idx < nodes_len or not map.is_clean():
                     )
 
                     # insert new wyrm body into 'nodes'
-                    if isinstance(obj, Wyrm) and obj.len_left > 0:
+                    if (
+                        isinstance(obj, WyrmHead)
+                        or isinstance(obj, Wyrm)
+                        and obj.len_left > ONBEAT_THRESHOLD
+                    ):
                         new_obj = WyrmBody(
                             obj.appear_lane, obj.chained, obj.len_left - 1
                         )
