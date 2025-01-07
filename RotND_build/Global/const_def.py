@@ -83,6 +83,9 @@ GLASS_CAGES_IMPOSSIBLE_PATH = (
 )
 RAVEVENGE_EASY_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Easy"
 RAVEVENGE_HARD_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Hard"
+RAVEVENGE_IMPOSSIBLE_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Expert_DoubleSpeed"
+)
 
 
 class Facing(Enum):
