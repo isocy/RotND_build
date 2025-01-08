@@ -259,3 +259,16 @@ class VibeEvent(Event):
         return VibeEvent(
             BEAT_OFFSET + event["startBeatNumber"], BEAT_OFFSET + event["endBeatNumber"]
         )
+
+
+class BpmEvent(Event):
+    def __init__(self, target_beat, bpm):
+        self.target_beat = target_beat
+        self.bpm = bpm
+
+    @classmethod
+    def load_dict(cls, event):
+        return BpmEvent(
+            BEAT_OFFSET + event["startBeatNumber"],
+            int(event["dataPairs"][0]["_eventDataValue"]),
+        )
