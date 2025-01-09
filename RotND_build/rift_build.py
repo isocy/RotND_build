@@ -960,7 +960,7 @@ while node_idx < nodes_len or not map.is_clean():
     #     print(cur_beat)
     #     print(map)
 
-    # hit_notes()
+    # hit notes
     for i in range(map.lanes):
         # It becomes a problem when a wyrm body and other enemies collide at j = 0
         wyrm_node = None
