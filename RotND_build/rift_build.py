@@ -516,7 +516,7 @@ class RawBeatmap:
         return RawBeatmap(
             raw_beatmap["bpm"],
             raw_beatmap["beatDivisions"],
-            raw_beatmap["BeatTimings"],
+            raw_beatmap["BeatTimings"] if "BeatTimings" in raw_beatmap else [],
             [ObjectEvent.load_dict(event, enemy_db) for event in obj_events],
             [VibeEvent.load_dict(vibe_event) for vibe_event in vibe_events],
             [BpmEvent.load_dict(bpm_event) for bpm_event in bpm_events],
@@ -1820,6 +1820,8 @@ for partition in partitions:
         beat_idx = bisect_left(raw_beats, max_beatcnt.start_beat)
         end_idx = beat_idx + max_beatcnt.cnt
 
+        # There may be different 'max_beatcnt's with the same start_beat in different partition
+        # parition should be specified to eliminate interference
         if partition == TARGET_PARTITION:
             start_beat = raw_beats[beat_idx]
             for great_info in great_infos:
