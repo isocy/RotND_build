@@ -955,11 +955,6 @@ while node_idx < nodes_len or not map.is_clean():
 
     cur_beat = round(cur_beat + min_cooltime, NDIGITS)
 
-    # Debug: map
-    # if 221 < cur_beat < 235:
-    #     print(cur_beat)
-    #     print(map)
-
     # hit_notes()
     for i in range(map.lanes):
         # It becomes a problem when a wyrm body and other enemies collide at j = 0
@@ -1138,17 +1133,6 @@ while node_idx < nodes_len or not map.is_clean():
                 if chain_cnts[chain_idx] == 0:
                     vibe_beats.append(cur_beat)
                     chain_idx += 1
-
-
-# Debug: beats
-# same_beats = [beats[0]]
-# for beat in beats[1:]:
-#     if same_beats[0].beat == beat.beat:
-#         same_beats.append(beat)
-#     else:
-#         print(same_beats)
-#         same_beats = [beat]
-# print(same_beats)
 
 
 def get_max_end_beat(target_beat, stack, time_discount=0):
@@ -1608,29 +1592,6 @@ for vibe_idx in range(vibe_beats_len - 2):
                         extra_beatcnts_cnt -= 1
                         beat_idx += 1
     three_vibes_beatcnts.append(vibe_beatcnts)
-
-# For Debug
-# for vibe_beatcnts in one_vibe_beatcnts:
-#     for beatcnt in vibe_beatcnts:
-#         print(beatcnt)
-#     print()
-#     print(max(vibe_beatcnts))
-#     print()
-# print()
-# for vibe_beatcnts in two_vibes_beatcnts:
-#     for beatcnt in vibe_beatcnts:
-#         print(beatcnt)
-#     print()
-#     print(max(vibe_beatcnts))
-#     print()
-# print()
-# for vibe_beatcnts in three_vibes_beatcnts:
-#     for beatcnt in vibe_beatcnts:
-#         print(beatcnt)
-#     print()
-#     print(max(vibe_beatcnts))
-#     print()
-# print()
 
 
 # originated from efficient integer partitioning code from
