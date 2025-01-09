@@ -72,6 +72,9 @@ OVERTHINKER_MEDIUM_PATH = (
 OVERTHINKER_HARD_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Hard"
 )
+OVERTHINKER_IMPOSSIBLE_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Expert"
+)
 GLASS_CAGES_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Easy"
 )
