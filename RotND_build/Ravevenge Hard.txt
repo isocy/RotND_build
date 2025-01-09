@@ -4,8 +4,12 @@ ONE_VIBE_START_BEATS_EXCEPT: list[float] = [163.5, 241.5]
 TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
 THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
 
-ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(97.5, 1)]
-TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = [(360.5, 1)]
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(97.5, 1), (180, 1)]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = [
+    (347.5, 1),
+    (348.5, 1),
+    (360.5, 1),
+]
 THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
 TARGET_PARTITION: tuple[int, ...] = (1, 1, 1, 2)

@@ -1,12 +1,24 @@
 RAW_BEATMAP_PATH = DISCO_DISASTER_EASY_PATH
 
-ONE_VIBE_START_BEATS_EXCEPT = [224.5, 230.5, 273.5, 344.5]
-TWO_VIBES_START_BEATS_EXCEPT = []
-THREE_VIBES_START_BEATS_EXCEPT = []
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [
+    (224.5, 1),
+    (230.5, 1),
+    (273.5, 1),
+    (344.5, 3),
+]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
 
 
 Practice Start Numbers:
-[78.0, 133.0, 255.0, 303.0]
+[78, 133, 255, 303]
 
 (1, 1, 1, 1), 25
-[119.5 6 10.0, 227.5 6 8.0, 269.5 6 9.0, 347.5 7 8.0]
+[119.5 6 10.0, 227.5 6 8.0, 269.5 6 9.0, 347.5 7 8.0], 328643

@@ -1,12 +1,19 @@
 RAW_BEATMAP_PATH = OVERTHINKER_EASY_PATH
 
-ONE_VIBE_START_BEATS_EXCEPT = [116.5]
-TWO_VIBES_START_BEATS_EXCEPT = []
-THREE_VIBES_START_BEATS_EXCEPT = []
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(116.5, 1)]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
 
 
 Practice Start Numbers:
-[104.0, 167.0, 246.0, 327.0]
+[104, 167, 246, 327]
 
 (1, 2, 1), 38
-[115.5 9 10.5, 282.5 21 21.5, 364.5 8 10.0]
+[115.5 9 10.5, 282.5 21 21.5, 364.5 8 10.0], 546626

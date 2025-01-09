@@ -1,12 +1,19 @@
 RAW_BEATMAP_PATH = RAVEVENGE_EASY_PATH
 
-ONE_VIBE_START_BEATS_EXCEPT = [326.5]
-TWO_VIBES_START_BEATS_EXCEPT = []
-THREE_VIBES_START_BEATS_EXCEPT = []
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(326.5, 1)]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = [(377.5, 1)]
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
 
 
 Practice Start Numbers:
-[85.5, 197.0, 296.5, 345.5]
+[85, 197, 296, 345]
 
 (1, 1, 1, 1), 61
-[156.5 18 11.0, 269.5 17 11.0, 323.5 12 10.0, 389.5 14 10.0]
+[156.5 18 11.0, 269.5 17 11.0, 323.5 12 10.0, 389.5 14 10.0], 918088

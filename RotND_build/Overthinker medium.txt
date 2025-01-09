@@ -1,10 +1,10 @@
 RAW_BEATMAP_PATH = OVERTHINKER_MEDIUM_PATH
 
-ONE_VIBE_START_BEATS_EXCEPT: list[float] = [138, 298]
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
 TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
 THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
 
-ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = []
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(138, 2), (298, 2)]
 TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
