@@ -9,8 +9,6 @@ from Global.const_def import (
     COALS,
 )
 
-from abc import abstractmethod
-
 
 class Event:
     pass

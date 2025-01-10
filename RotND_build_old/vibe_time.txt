@@ -1,9 +1,0 @@
-// refer to RRStageController Update()
-
-maximum time for vibe power:
-let vibe_max1 = 5000. + 16.6 + 16.66.. * ceil((afterWindowInMSec % (beatLenInMSec / beatDivisions)) / 16.66..);
-let vibe_max2 = vibeWindow1 + 5000.;
-
-the vibe power window for calculation:
-let vibe_window1 = perfectAfterWindowInMSec + vibe_max1 + perfectBeforeWindowInMSec;
-let vibe_window2 = vibe_window1 + 5000.;
