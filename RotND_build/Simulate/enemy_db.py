@@ -1,5 +1,6 @@
 from Global.const_def import *
-from object import *
+
+from Simulate.object import *
 
 import json
 

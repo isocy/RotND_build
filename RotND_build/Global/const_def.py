@@ -3,6 +3,7 @@ from enum import Enum
 BEAT_OFFSET = 1.5
 FRAME_IN_MSEC = 16 + 2 / 3
 ONBEAT_THRESHOLD = 0.95
+# number of significant digits after decimal point when round()
 NDIGITS = 12
 
 ROWS = 9
@@ -49,46 +50,6 @@ RED_SKULL = "Red Skull"
 BOUNCE = "Bounce"
 PORTAL = "PortalIn"
 COALS = "Coals"
-
-ENEMY_DB_PATH = "exports/bundles/RREnemyDatabase.json"
-
-INPUT_RATINGS_DEF_PATH = "exports/bundles/Assets/Shared/Prefabs/ScoreResults/RhythmRift_InputRatingsDefinition.json"
-
-DISCO_DISASTER_EASY_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Easy"
-)
-DISCO_DISASTER_HARD_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Hard"
-)
-DISCO_DISASTER_IMPOSSIBLE_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Expert"
-)
-OVERTHINKER_EASY_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Easy"
-)
-OVERTHINKER_MEDIUM_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Medium"
-)
-OVERTHINKER_HARD_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Hard"
-)
-OVERTHINKER_IMPOSSIBLE_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Overthinker_Expert"
-)
-GLASS_CAGES_EASY_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Easy"
-)
-GLASS_CAGES_HARD_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Hard"
-)
-GLASS_CAGES_IMPOSSIBLE_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Expert"
-)
-RAVEVENGE_EASY_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Easy"
-RAVEVENGE_HARD_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Hard"
-RAVEVENGE_IMPOSSIBLE_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Expert_DoubleSpeed"
-)
 
 
 class Facing(Enum):

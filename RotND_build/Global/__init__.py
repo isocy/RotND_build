@@ -1,3 +1,4 @@
+from Global.Path import *
 from Global.const_def import *
 
 RAW_BEATMAP_PATH = OVERTHINKER_IMPOSSIBLE_PATH
