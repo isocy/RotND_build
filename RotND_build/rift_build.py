@@ -626,6 +626,17 @@ while node_idx < nodes_len or not map.is_clean():
                     chain_idx += 1
 
 
+# Debug: beats
+# same_beats = [beats[0]]
+# for beat in beats[1:]:
+#     if same_beats[0].beat == beat.beat:
+#         same_beats.append(beat)
+#     else:
+#         print(same_beats)
+#         same_beats = [beat]
+# print(same_beats)
+
+
 def get_max_end_beat(target_beat, stack, time_discount=0):
     """Given the vibe stacks, return the maximum beat that could be reached from 'target_beat'"""
     if beat_timings == []:

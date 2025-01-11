@@ -1,7 +1,3 @@
-from Global.Path import *
-from Global.const_def import *
-from Global.input_ratings_def import *
-
 RAW_BEATMAP_PATH = RAVEVENGE_MEDIUM_PATH
 
 ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
@@ -14,3 +10,10 @@ THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
 TARGET_PARTITION: tuple[int, ...] = ()
 GREAT_START_BEATS: list[tuple[float, int]] = []
+
+
+Practice Start Numbers:
+[85, 141, 281, 345]
+
+(2, 1, 1), 74
+[146.5 34 22.0, 347.5 19 11.0, 405.5 21 11.0], 1202801
