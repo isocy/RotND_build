@@ -1,10 +1,10 @@
 RAW_BEATMAP_PATH = GLASS_CAGES_HARD_PATH
 
-ONE_VIBE_START_BEATS_EXCEPT: list[float] = [76.5, 139.5]
-TWO_VIBES_START_BEATS_EXCEPT: list[float] = [241.5, 242.5]
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
 THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
 
-ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = []
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(76.5, 1), (139.5, 1)]
 TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
@@ -15,5 +15,7 @@ GREAT_START_BEATS: list[tuple[float, int]] = [(77.5, 1)]
 Practice Start Numbers:
 [69, 101, 204, 231]
 
-(1, 1, 2), 67
-[77.5 14 9.0, 140.0 16 8.5, 244.5 37 17.5], 1083131
+(1, 1, 2), 63
+[77.5 15 9.0, 181.0 16 8.0, 257.5 32 17.5], 1039782
+(2, 2), 62
+[131.5 30 17.0, 257.5 32 17.5], 1039338

@@ -208,7 +208,7 @@ class Map:
         str = ""
         for j in reversed(range(self.rows)):
             for i in range(self.lanes):
-                str += "{:<30}".format(map.grids[i][j].__repr__())
+                str += "{:<30}".format(self.grids[i][j].__repr__())
             str += "\n"
         return str
 

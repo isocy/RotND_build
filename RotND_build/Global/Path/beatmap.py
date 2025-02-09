@@ -1,12 +1,6 @@
 DISCO_DISASTER_EASY_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Easy"
 )
-DISCO_DISASTER_MEDIUM_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Medium"
-)
-DISCO_DISASTER_HARD_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Hard"
-)
 DISCO_DISASTER_IMPOSSIBLE_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Expert"
 )
@@ -28,17 +22,34 @@ GLASS_CAGES_EASY_PATH = (
 GLASS_CAGES_MEDIUM_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Medium"
 )
-GLASS_CAGES_HARD_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Hard"
-)
 GLASS_CAGES_IMPOSSIBLE_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Expert"
 )
 RAVEVENGE_EASY_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Easy"
-RAVEVENGE_MEDIUM_PATH = (
-    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Ravevenge_Medium"
-)
 RAVEVENGE_HARD_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Hard"
 RAVEVENGE_IMPOSSIBLE_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_RAVEvenge_Expert_DoubleSpeed"
 )
+
+DISCO_DISASTER_MEDIUM_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Medium"
+)
+DISCO_DISASTER_HARD_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Hard"
+)
+AMALGAMANIAC_HARD_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Amalgamaniac_Hard"
+)
+HANG_TEN_HEPH_MEDIUM_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Hang Ten Heph_Medium"
+)
+GLASS_CAGES_HARD_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Hard"
+)
+ELDRITCH_HOUSE_HARD_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Eldritch_House_Hard"
+)
+RAVEVENGE_MEDIUM_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Ravevenge_Medium"
+)
+SHE_BANNED_HARD_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Harmonie_Hard"
