@@ -37,6 +37,9 @@ DISCO_DISASTER_MEDIUM_PATH = (
 DISCO_DISASTER_HARD_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_DiscoDisaster_Hard"
 )
+VISUALIZE_YOURSELF_HARD_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Visualize_Yourself_Hard"
+)
 AMALGAMANIAC_HARD_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Amalgamaniac_Hard"
 )
@@ -46,10 +49,16 @@ HANG_TEN_HEPH_MEDIUM_PATH = (
 GLASS_CAGES_HARD_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Hard"
 )
+HALLOW_QUEEN_IMPOSSIBLE_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Hallow Queen_Expert"
+)
 ELDRITCH_HOUSE_HARD_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Eldritch_House_Hard"
 )
 RAVEVENGE_MEDIUM_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Ravevenge_Medium"
+)
+RIFT_WITHIN_HARD_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Rift Within_Hard"
 )
 SHE_BANNED_HARD_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Harmonie_Hard"

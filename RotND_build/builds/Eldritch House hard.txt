@@ -1,0 +1,23 @@
+RAW_BEATMAP_PATH = ELDRITCH_HOUSE_HARD_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [
+    (230.5, 1),
+    (300.5, 1),
+    (318.5, 1),
+]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = (1, 1, 1, 1)
+GREAT_START_BEATS: list[tuple[float, int]] = [(133.5, 1), (230.5, 1)]
+
+
+Practice Start Numbers:
+[93, 169, 242, 305]
+
+(1, 1, 1, 1), 88
+[133.5 20 10.0, 231.0 21 9.5, 300.5 24 9.666666666666, 318.5 23 9.666666666667], 1215211
