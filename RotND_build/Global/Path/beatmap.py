@@ -46,6 +46,9 @@ AMALGAMANIAC_HARD_PATH = (
 HANG_TEN_HEPH_MEDIUM_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Hang Ten Heph_Medium"
 )
+HANG_TEN_HEPH_HARD_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Hang Ten Heph_Hard"
+)
 GLASS_CAGES_HARD_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Glass Cages_Hard"
 )
@@ -58,7 +61,13 @@ ELDRITCH_HOUSE_HARD_PATH = (
 RAVEVENGE_MEDIUM_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Ravevenge_Medium"
 )
+RIFT_WITHIN_MEDIUM_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Rift Within_Medium"
+)
 RIFT_WITHIN_HARD_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Rift Within_Hard"
 )
 SHE_BANNED_HARD_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Harmonie_Hard"
+SHE_BANNED_IMPOSSIBLE_PATH = (
+    "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Harmonie_Expert"
+)
