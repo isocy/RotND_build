@@ -158,9 +158,13 @@ class EnemyDB:
                 setattr(Ham, "max_health", enemy_def["health"])
                 setattr(Ham, "max_shield", enemy_def["shield"])
             elif name == BASE_BLADEMASTER:
-                setattr(Blademaster, "beat_for_move", enemy_def["beat_for_move"])
-                setattr(Blademaster, "max_health", enemy_def["health"])
-                setattr(Blademaster, "max_shield", enemy_def["shield"])
+                setattr(BaseBlademaster, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(BaseBlademaster, "max_health", enemy_def["health"])
+                setattr(BaseBlademaster, "max_shield", enemy_def["shield"])
+            elif name == STRONG_BLADEMASTER:
+                setattr(StrongBlademaster, "beat_for_move", enemy_def["beat_for_move"])
+                setattr(StrongBlademaster, "max_health", enemy_def["health"])
+                setattr(StrongBlademaster, "max_shield", enemy_def["shield"])
             elif name == BASE_SKULL:
                 setattr(BaseSkull, "beat_for_move", enemy_def["beat_for_move"])
                 setattr(BaseSkull, "max_health", enemy_def["health"])

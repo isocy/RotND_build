@@ -183,7 +183,7 @@ while node_idx < nodes_len or not map.is_clean():
                         if obj.is_ready:
                             grid_enemy.cooltime = 0
                             map.grids[i][0].enemies.append(grid_enemy)
-                        elif obj.attack_row == j:
+                        elif j <= obj.attack_row:
                             obj.is_ready = True
                             grid_enemy.cooltime = obj.get_cooltime()
                             map.grids[i][j].enemies.append(grid_enemy)
@@ -596,6 +596,9 @@ while node_idx < nodes_len or not map.is_clean():
                         if chain_cnts[chain_idx] == 0:
                             vibe_beats.append(cur_beat)
                             chain_idx += 1
+                elif isinstance(enemy, StrongBlademaster):
+                    enemy.is_ready = False
+                    map.grids[i][3].enemies.append(enemy_node)
                 elif isinstance(enemy, RedSkull):
                     if enemy.facing == Facing.LEFT:
                         map.step_trap(i - 1, 1, enemy_node)

@@ -136,7 +136,15 @@ class Node[T: Object]:
                     assert isinstance(obj_event, BlademasterEvent)
                     nodes.append(
                         Node(
-                            Blademaster(lane, chained, obj_event.attack_row),
+                            BaseBlademaster(lane, chained, obj_event.attack_row),
+                            appear_beat,
+                        )
+                    )
+                elif name == STRONG_BLADEMASTER:
+                    assert isinstance(obj_event, BlademasterEvent)
+                    nodes.append(
+                        Node(
+                            StrongBlademaster(lane, chained, obj_event.attack_row),
                             appear_beat,
                         )
                     )
