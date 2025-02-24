@@ -1,11 +1,11 @@
-RAW_BEATMAP_PATH = RAVEVENGE_EASY_PATH
+RAW_BEATMAP_PATH = KING_S_RUSE_HARD_PATH
 
 ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
 TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
 THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
 
-ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(326.5, 1)]
-TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = [(377.5, 1)]
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(253.83333, 1)]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
 TARGET_PARTITION: tuple[int, ...] = ()
@@ -13,7 +13,7 @@ GREAT_START_BEATS: list[tuple[float, int]] = []
 
 
 Practice Start Numbers:
-[85, 197, 296, 345]
+[37, 89, 200]
 
-(1, 1, 1, 1), 61
-[156.5 18 11.0, 269.5 17 11.0, 323.5 12 10.0, 389.5 14 10.0], 918088
+(1, 1, 1), 72
+[57.16667 21 9.33333, 180.16666666667 26 9.33333333333, 254.16667 25 9.333329999997], 1165659

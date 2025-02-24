@@ -1,4 +1,4 @@
-RAW_BEATMAP_PATH = GLASS_CAGES_EASY_PATH
+RAW_BEATMAP_PATH = NECRO_SONATICA_MEDIUM_PATH
 
 ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
 TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
@@ -8,12 +8,12 @@ ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = []
 TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
-TARGET_PARTITION: tuple[int, ...] = ()
-GREAT_START_BEATS: list[tuple[float, int]] = []
+TARGET_PARTITION: tuple[int, ...] = (1, 1, 1, 1)
+GREAT_START_BEATS: list[tuple[float, int]] = [(340, 1)]
 
 
 Practice Start Numbers:
-[72, 101, 175, 228]
+[86, 157, 241, 321]
 
-(1, 1, 2), 26
-[81.5 6 8.0, 160.0 6 7.5, 259.0 14 17.0], 404270
+(1, 1, 1, 1), 90
+[120.5 19 12.0, 221.5 21 13.0, 246.5 24 13.0, 340.0 26 13.5], 1164210

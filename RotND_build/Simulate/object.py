@@ -616,22 +616,54 @@ class Ham(Food):
 
 
 class Blademaster(Enemy):
-    def __init__(self, appear_lane, chained, attack_row):
+    def __init__(self, appear_lane, chained):
         super().__init__(appear_lane, chained)
         self.dist_per_move = 1
-        self.health = getattr(Blademaster, "max_health")
-        self.shield = getattr(Blademaster, "max_shield")
-        self.attack_row = attack_row
         self.is_ready = False
+        self.attack_row = 3
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+    @abstractmethod
+    def get_cooltime(self):
+        pass
+
+
+class BaseBlademaster(Blademaster):
+    def __init__(self, appear_lane, chained, attack_row):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(BaseBlademaster, "max_health")
+        self.shield = getattr(BaseBlademaster, "max_shield")
+        self.attack_row = attack_row
 
     def __repr__(self):
         return "Bm" + ("R" if self.is_ready else "")
 
     def get_cooltime(self):
         return (
-            getattr(Blademaster, "beat_for_move")
+            getattr(BaseBlademaster, "beat_for_move")
             if not self.on_fire
-            else getattr(Blademaster, "beat_for_move") / 2
+            else getattr(BaseBlademaster, "beat_for_move") / 2
+        )
+
+
+class StrongBlademaster(Blademaster):
+    def __init__(self, appear_lane, chained, attack_row):
+        super().__init__(appear_lane, chained)
+        self.health = getattr(StrongBlademaster, "max_health")
+        self.shield = getattr(StrongBlademaster, "max_shield")
+        self.attack_row = attack_row
+
+    def __repr__(self):
+        return "SBm" + ("R" if self.is_ready else "")
+
+    def get_cooltime(self):
+        return (
+            getattr(StrongBlademaster, "beat_for_move")
+            if not self.on_fire
+            else getattr(StrongBlademaster, "beat_for_move") / 2
         )
 
 

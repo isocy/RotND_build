@@ -3,6 +3,7 @@ from Global.const_def import (
     Facing,
     TrapDir,
     BASE_BLADEMASTER,
+    STRONG_BLADEMASTER,
     BASE_WYRM,
     BOUNCE,
     PORTAL,
@@ -42,7 +43,7 @@ class EnemyEvent(ObjectEvent):
         )
         name = enemy_db[enemy_id]["name"]
 
-        if name == BASE_BLADEMASTER:
+        if name == BASE_BLADEMASTER or name == STRONG_BLADEMASTER:
             attack_row = next(
                 int(pair["_eventDataValue"])
                 for pair in iter(event["dataPairs"])

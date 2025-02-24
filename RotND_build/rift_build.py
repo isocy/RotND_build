@@ -183,7 +183,7 @@ while node_idx < nodes_len or not map.is_clean():
                         if obj.is_ready:
                             grid_enemy.cooltime = 0
                             map.grids[i][0].enemies.append(grid_enemy)
-                        elif obj.attack_row == j:
+                        elif j <= obj.attack_row:
                             obj.is_ready = True
                             grid_enemy.cooltime = obj.get_cooltime()
                             map.grids[i][j].enemies.append(grid_enemy)
@@ -596,6 +596,9 @@ while node_idx < nodes_len or not map.is_clean():
                         if chain_cnts[chain_idx] == 0:
                             vibe_beats.append(cur_beat)
                             chain_idx += 1
+                elif isinstance(enemy, StrongBlademaster):
+                    enemy.is_ready = False
+                    map.grids[i][3].enemies.append(enemy_node)
                 elif isinstance(enemy, RedSkull):
                     if enemy.facing == Facing.LEFT:
                         map.step_trap(i - 1, 1, enemy_node)
@@ -735,7 +738,10 @@ while vibe_idx < vibe_beats_len - 3:
     # one vibe is used for ignitition
     target_end_beat = get_max_end_beat(vibe_beats[vibe_idx + 2], vibe_in_row - 1)
 
-    if target_end_beat < vibe_beats[vibe_idx + vibe_in_row]:
+    if (
+        not vibe_idx + vibe_in_row < vibe_beats_len
+        or target_end_beat < vibe_beats[vibe_idx + vibe_in_row]
+    ):
         vibe_idx += 1
         vibe_in_row = 3
     else:
@@ -1249,17 +1255,17 @@ practice_start_nums = [
 print("\nPractice Start Numbers:")
 print(practice_start_nums, end="\n\n")
 
-note_score_avg = (
-    perf_score
-    + perf_bonus * PERF_BONUS_SCORE_MULT
-    + true_perf_bonus * TRUE_PERF_BONUS_SCORE_MULT
-)
 score_base = (
-    min(9, raw_beats_len) * note_score_avg
-    + max(0, min(10, raw_beats_len - 9)) * note_score_avg * 2
-    + max(0, min(10, raw_beats_len - 19)) * note_score_avg * 3
-    + max(0, raw_beats_len - 29) * note_score_avg * 4
-) + wyrm_body_cnt * WYRM_BODY_SCORE
+    (
+        min(10, raw_beats_len) * perf_score
+        + max(0, min(10, raw_beats_len - 10)) * perf_score * 2
+        + max(0, min(10, raw_beats_len - 20)) * perf_score * 3
+        + max(0, raw_beats_len - 30) * perf_score * 4
+    )
+    + raw_beats_len * perf_bonus * PERF_BONUS_SCORE_MULT
+    + raw_beats_len * true_perf_bonus * TRUE_PERF_BONUS_SCORE_MULT
+    + wyrm_body_cnt * WYRM_BODY_SCORE
+)
 great_add_score = 2 * great_score - perf_score
 
 great_infos = GREAT_START_BEATS
@@ -1274,9 +1280,11 @@ for partition in partitions:
         elif num == 2:
             max_beatcnts.append(max_two_vibes_beatcnts[vibe_idx])
             vibe_idx += 2
-        else:
+        elif num == 3:
             max_beatcnts.append(max_three_vibes_beatcnts[vibe_idx])
             vibe_idx += 3
+        else:
+            break
 
     score_add = 0
     for max_beatcnt in max_beatcnts:
@@ -1291,11 +1299,11 @@ for partition in partitions:
                 (great_start_beat, great_cnt) = great_info
                 if start_beat == great_start_beat:
                     while great_cnt > 0:
-                        if beat_idx >= 29:
+                        if beat_idx >= 30:
                             score_add += great_add_score * 4
-                        elif beat_idx >= 19:
+                        elif beat_idx >= 20:
                             score_add += great_add_score * 3
-                        elif beat_idx >= 9:
+                        elif beat_idx >= 10:
                             score_add += great_add_score * 2
                         else:
                             score_add += great_add_score
@@ -1304,15 +1312,15 @@ for partition in partitions:
                     break
 
         while beat_idx < end_idx:
-            if beat_idx >= 29:
-                score_add += (end_idx - beat_idx) * note_score_avg * 4
+            if beat_idx >= 30:
+                score_add += (end_idx - beat_idx) * perf_score * 4
                 break
-            elif beat_idx >= 19:
-                score_add += note_score_avg * 3
-            elif beat_idx >= 9:
-                score_add += note_score_avg * 2
+            elif beat_idx >= 20:
+                score_add += perf_score * 3
+            elif beat_idx >= 10:
+                score_add += perf_score * 2
             else:
-                score_add += note_score_avg
+                score_add += perf_score
             beat_idx += 1
 
     build = Build(
@@ -1324,9 +1332,5 @@ for partition in partitions:
     builds.append(build)
 
 builds.sort(reverse=True)
-for build in builds:
-    if build.partition == TARGET_PARTITION:
-        builds.remove(build)
-        builds.insert(0, build)
 for build in builds:
     print(build)

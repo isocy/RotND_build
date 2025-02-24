@@ -36,7 +36,7 @@ class Build:
             self_len = len(self.partition)
             other_len = len(other.partition)
             if self_len == other_len:
-                return self.partition > self.partition
+                return self.partition > other.partition
             return self_len > other_len
         return self.cnt_sum < other.cnt_sum
 
