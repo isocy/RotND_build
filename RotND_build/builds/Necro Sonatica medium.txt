@@ -1,0 +1,19 @@
+RAW_BEATMAP_PATH = NECRO_SONATICA_MEDIUM_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = []
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = (1, 1, 1, 1)
+GREAT_START_BEATS: list[tuple[float, int]] = [(340, 1)]
+
+
+Practice Start Numbers:
+[86, 157, 241, 321]
+
+(1, 1, 1, 1), 90
+[120.5 19 12.0, 221.5 21 13.0, 246.5 24 13.0, 340.0 26 13.5], 1164210

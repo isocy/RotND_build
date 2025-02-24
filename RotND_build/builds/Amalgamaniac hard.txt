@@ -1,0 +1,26 @@
+RAW_BEATMAP_PATH = AMALGAMANIAC_HARD_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [
+    (140.5, 1),
+    (185.5, 1),
+    (186.5, 1),
+    (202.5, 3),
+    (244.5, 1),
+    (344.5, 2),
+]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
+
+
+Practice Start Numbers:
+[117, 150, 229, 304]
+
+(1, 1, 1, 1), 85
+[139.5 17 10.0, 185.5 21 10.0, 244.5 22 10.5, 344.5 25 10.0], 1348886

@@ -1,0 +1,27 @@
+RAW_BEATMAP_PATH = SHE_BANNED_IMPOSSIBLE_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [
+    (73, 3),
+    (73.5, 2),
+    (90.5, 2),
+    (91.5, 1),
+    (170, 1),
+    (170.5, 1),
+    (248, 3),
+]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
+
+
+Practice Start Numbers:
+[24, 86, 161, 227]
+
+(1, 1, 1, 1), 131
+[74.0 36 11.0, 90.5 33 10.0, 170.0 31 11.0, 246.5 31 11.0], 1563725

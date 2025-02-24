@@ -1,0 +1,19 @@
+RAW_BEATMAP_PATH = KING_S_RUSE_HARD_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(253.83333, 1)]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
+
+
+Practice Start Numbers:
+[37, 89, 200]
+
+(1, 1, 1), 72
+[57.16667 21 9.33333, 180.16666666667 26 9.33333333333, 254.16667 25 9.333329999997], 1165659
