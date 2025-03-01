@@ -32,13 +32,13 @@ class Build:
         self.expected_score = expected_score
 
     def __lt__(self, other: Self):
-        if self.cnt_sum == other.cnt_sum:
+        if self.expected_score == other.expected_score:
             self_len = len(self.partition)
             other_len = len(other.partition)
             if self_len == other_len:
                 return self.partition > other.partition
             return self_len > other_len
-        return self.cnt_sum < other.cnt_sum
+        return self.expected_score < other.expected_score
 
     def __repr__(self):
         return "{}, {}\n{}, {}".format(
