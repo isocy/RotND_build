@@ -9,13 +9,13 @@ TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
 
 TARGET_PARTITION: tuple[int, ...] = (1, 1, 2)
-GREAT_START_BEATS: list[tuple[float, int]] = [(77.5, 1)]
+GREAT_START_BEATS: list[tuple[float, int]] = [(77.5, 1), (139.5, 1)]
 
 
 Practice Start Numbers:
 [69, 101, 204, 231]
 
 (1, 1, 2), 63
-[77.5 15 9.0, 181.0 16 8.0, 257.5 32 17.5], 1039782
+[77.5 15 9.0, 181.0 16 8.0, 257.5 32 17.5], 1039858
 (2, 2), 62
-[131.5 30 17.0, 257.5 32 17.5], 1039338
+[131.5 30 17.0, 257.5 32 17.5], 1039414

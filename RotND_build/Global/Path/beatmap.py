@@ -88,3 +88,6 @@ SHE_BANNED_IMPOSSIBLE_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Harmonie_Expert"
 )
 KING_S_RUSE_HARD_PATH = "exports/unity3d/beatmaps/rhythmrift/RhythmRift_Deep_Blues_Hard"
+
+BEAT_EATER_HARD_PATH = "C:/Program Files (x86)/Steam/steamapps/workshop/content/2073250/3424468557/Beat_Eater_1.json"
+CRYSTALLIZED_IMPOSSIBLE_PATH = "C:/Program Files (x86)/Steam/steamapps/workshop/content/2073250/3424606276/crystallized_1.json"

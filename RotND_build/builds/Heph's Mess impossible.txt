@@ -1,0 +1,46 @@
+RAW_BEATMAP_PATH = HEPH_S_MESS_IMPOSSIBLE_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = [299.5, 307.5, 375.5]
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [
+    (303.5, 1),
+    (383.5, 1),
+    (467.5, 1),
+    (574.5, 1),
+    (575, 1),
+    (575.5, 1),
+    (578.5, 1),
+    (579, 1),
+    (579.5, 1),
+    (582.5, 1),
+    (638.5, 1),
+    (639, 1),
+    (639.5, 1),
+    (642.5, 1),
+    (643, 1),
+    (643.5, 1),
+    (646.5, 1),
+    (647, 1),
+    (647.5, 1),
+]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = (1, 1, 1, 1, 1)
+GREAT_START_BEATS: list[tuple[float, int]] = [
+    (299.5, 2),
+    (303.5, 1),
+    (307.5, 2),
+    (375.5, 1),
+    (383.5, 1),
+    (467.5, 1),
+]
+
+
+Practice Start Numbers:
+[81, 181, 329, 499, 598]
+
+(1, 1, 1, 1, 1), 149
+[115.5 38 18.0, 304.5 27 17.0, 468.0 26 17.5, 574.5 29 17.5, 638.5 29 17.5], 2046662

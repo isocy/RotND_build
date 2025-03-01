@@ -1,0 +1,19 @@
+RAW_BEATMAP_PATH = CRYSTALLIZED_IMPOSSIBLE_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(120.5, 1), (514.5, 1)]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
+
+
+Practice Start Numbers:
+[65, 135, 217, 289, 417, 582]
+
+(1, 2, 1, 1, 1), 266
+[120.5 44 14.5, 225.5 80 29.0, 347.5 54 14.5, 471.0 47 14.5, 601.5 41 14.5], 4193548
