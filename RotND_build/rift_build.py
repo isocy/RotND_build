@@ -45,7 +45,7 @@ next_node = nodes[node_idx]
 # so the cooltime corrections occur for each node when the node is 'next_node'.
 while node_idx < nodes_len or not map.is_clean():
     # derive 'min_cooltime'
-    min_cooltime = next_node.cooltime
+    min_cooltime = next_node.cooltime if node_idx < nodes_len else float("inf")
     target_nodes: list = []
     for i in range(map.lanes):
         for j in range(map.rows):
@@ -639,6 +639,9 @@ while node_idx < nodes_len or not map.is_clean():
 #         same_beats = [beat]
 # print(same_beats)
 
+# Debug: vibe_beats
+# print(vibe_beats)
+
 
 def get_max_end_beat(target_beat, stack, time_discount=0):
     """Given the vibe stacks, return the maximum beat that could be reached from 'target_beat'"""
@@ -1172,7 +1175,7 @@ for beatcnts in one_vibe_beatcnts:
                 )
                 beatcnt.cnt = target_end_beat_idx - beat_idx
 
-    max_beatcnt = max(cand_beatcnts)
+    max_beatcnt = max(cand_beatcnts, default=None)
     max_one_vibe_beatcnts.append(max_beatcnt)
 max_two_vibes_beatcnts = []
 target_start_beats = [start_beat for (start_beat, _) in TWO_VIBES_START_BEATS_LOOSE]
@@ -1208,7 +1211,7 @@ for beatcnts in two_vibes_beatcnts:
                 )
                 beatcnt.cnt = target_end_beat_idx - beat_idx
 
-    max_beatcnt = max(cand_beatcnts)
+    max_beatcnt = max(cand_beatcnts, default=None)
     max_two_vibes_beatcnts.append(max_beatcnt)
 max_three_vibes_beatcnts = []
 target_start_beats = [start_beat for (start_beat, _) in THREE_VIBES_START_BEATS_LOOSE]
@@ -1243,7 +1246,7 @@ for beatcnts in three_vibes_beatcnts:
                 )
                 beatcnt.cnt = target_end_beat_idx - beat_idx
 
-    max_beatcnt = max(cand_beatcnts)
+    max_beatcnt = max(cand_beatcnts, default=None)
     max_three_vibes_beatcnts.append(max_beatcnt)
 
 print("\nBeatmap Path:")
@@ -1285,6 +1288,9 @@ for partition in partitions:
             vibe_idx += 3
         else:
             break
+
+    if None in max_beatcnts:
+        continue
 
     score_add = 0
     for max_beatcnt in max_beatcnts:

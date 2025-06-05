@@ -45,9 +45,12 @@ class EnemyEvent(ObjectEvent):
 
         if name == BASE_BLADEMASTER or name == STRONG_BLADEMASTER:
             attack_row = next(
-                int(pair["_eventDataValue"])
-                for pair in iter(event["dataPairs"])
-                if pair["_eventDataKey"] == "BlademasterAttackRow"
+                (
+                    int(pair["_eventDataValue"])
+                    for pair in iter(event["dataPairs"])
+                    if pair["_eventDataKey"] == "BlademasterAttackRow"
+                ),
+                3,
             )
             return BlademasterEvent(lane, appear_beat, enemy_id, attack_row)
         elif name == BASE_WYRM:
