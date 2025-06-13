@@ -1,0 +1,24 @@
+RAW_BEATMAP_PATH = ELUSIONAL_IMPOSSIBLE_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [
+    (249.5, 1),
+    (251.5, 1),
+    (281.5, 1),
+    (352.5, 1),
+]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
+
+
+Practice Start Numbers:
+[69, 228, 265, 319, 412, 419]
+
+(1, 1, 1, 1, 2), 180
+[214.5 27 16.0, 256.5 25 14.333333333333, 282.0 33 15.5, 353.5 36 15.0, 473.5 59 31.5], 1990437

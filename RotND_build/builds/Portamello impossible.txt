@@ -1,0 +1,26 @@
+RAW_BEATMAP_PATH = PORTAMELLO_IMPOSSIBLE_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = [186.5, 273.5, 273.833333333333]
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [
+    (186.16666666667, 1),
+    (242.833333333333, 3),
+    (273.5, 1),
+    (273.833333333333, 1),
+    (274, 1),
+    (274.16666666667, 1),
+]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = (1, 1, 1)
+GREAT_START_BEATS: list[tuple[float, int]] = [(186.16666666667, 1)]
+
+
+Practice Start Numbers:
+[117, 213, 250]
+
+(1, 1, 1), 103
+[189.5 33 11.0, 243.166666666666 35 11.000003333334, 274.5 35 11.0], 1682950
