@@ -1,0 +1,19 @@
+RAW_BEATMAP_PATH = MIKUFIESTA_IMPOSSIBLE_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [(378.5, 2), (382, 2)]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = [(525.75, 1)]
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
+
+
+Practice Start Numbers:
+[73, 185, 283, 415]
+
+(1, 1, 2), 121
+[157.75 27 10.5, 203.0 28 10.5, 525.5 66 21.25], 2701056

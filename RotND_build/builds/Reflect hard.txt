@@ -1,0 +1,36 @@
+RAW_BEATMAP_PATH = REFLECT_HARD_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [
+    (134.5, 1),
+    (135, 1),
+    (234.16666666667, 1),
+    (394.833333333333, 3),
+    (472.5, 1),
+    (473.5, 1),
+    (474, 1),
+    (474.5, 1),
+    (475, 1),
+    (488.5, 1),
+    (489, 1),
+    (489.5, 1),
+    (490, 1),
+    (490.5, 1),
+    (491, 1),
+    (495, 1),
+]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
+
+
+Practice Start Numbers:
+[60, 161, 237, 335, 393, 449]
+
+(1, 1, 1, 1, 1, 1), 134
+[134.5 21 10.0, 235.16666666667 25 9.66666666666, 251.16666666667 23 10.33333333333, 394.5 23 10.0, 408.0 21 10.25, 472.5 21 10.0], 1971445

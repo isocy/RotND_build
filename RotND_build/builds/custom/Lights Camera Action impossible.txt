@@ -1,0 +1,37 @@
+RAW_BEATMAP_PATH = LIGHTS_CAMERA_ACTION_IMPOSSIBLE_PATH
+
+ONE_VIBE_START_BEATS_EXCEPT: list[float] = []
+TWO_VIBES_START_BEATS_EXCEPT: list[float] = []
+THREE_VIBES_START_BEATS_EXCEPT: list[float] = []
+
+ONE_VIBE_START_BEATS_LOOSE: list[tuple[float, int]] = [
+    (329.5, 2),
+    (330, 1),
+    (330.5, 1),
+    (331, 1),
+    (331.5, 1),
+    (332, 2),
+    (540, 3),
+    (623.5, 2),
+    (625.5, 2),
+    (627.5, 2),
+    (629.5, 2),
+    (641.5, 2),
+    (643.5, 2),
+    (645.5, 2),
+    (647.5, 2),
+    (649.5, 2),
+    (651.5, 2),
+]
+TWO_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+THREE_VIBES_START_BEATS_LOOSE: list[tuple[float, int]] = []
+
+TARGET_PARTITION: tuple[int, ...] = ()
+GREAT_START_BEATS: list[tuple[float, int]] = []
+
+
+Practice Start Numbers:
+[92, 162, 296, 354, 552, 683]
+
+(1, 1, 1, 1, 1, 1), 236
+[138.0 43 20.0, 230.0 37 19.5, 330.0 43 19.5, 540.0 51 19.166666666666, 633.5 30 19.5, 765.5 32 8.0], 2786183

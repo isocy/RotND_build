@@ -98,6 +98,13 @@ REACH_FOR_THE_SUMMIT_IMPOSSIBLE_PATH = (
     "exports/unity3d/beatmaps/rhythmrift/dlc banana/RhythmRift_DLCBanana03_Expert"
 )
 
+JUST_1DB_LOUDER_HARD_PATH = "exports/beatmaps/Kiwi04_3"
+MIKUFIESTA_IMPOSSIBLE_PATH = "exports/beatmaps/Kiwi05_4"
+
+REFLECT_HARD_PATH = "exports/beatmaps/Guava02_3"
+
 BEAT_EATER_HARD_PATH = "C:/Program Files (x86)/Steam/steamapps/workshop/content/2073250/3424468557/Beat_Eater_1.json"
 CRYSTALLIZED_IMPOSSIBLE_PATH = "C:/Program Files (x86)/Steam/steamapps/workshop/content/2073250/3424606276/crystallized_1.json"
 GHOST_HARD_PATH = "C:/Program Files (x86)/Steam/steamapps/workshop/content/2073250/3437745113/GHOST_2.json"
+LIGHTS_CAMERA_ACTION_IMPOSSIBLE_PATH = "C:/Program Files (x86)/Steam/steamapps/workshop/content/2073250/3447586386/Lights_Camera_Action_1.json"
+TYPE_A_PERSONALITY_IMPOSSIBLE_PATH = "C:/Program Files (x86)/Steam/steamapps/workshop/content/2073250/3460067462/Type_a_Personality_4.json"
