@@ -448,53 +448,8 @@ while node_idx < nodes_len or not map.is_clean():
 
     # hit notes
     for i in range(map.lanes):
-        # It becomes a problem when a wyrm body and other enemies collide at j = 0
-        wyrm_node = None
-        is_other_enemy = False
-        is_wyrm_head = False
-        for enemy_node in map.grids[i][0].enemies:
-            if isinstance(enemy_node.obj, WyrmBody):
-                wyrm_node = enemy_node
-            else:
-                is_other_enemy = True
-                if isinstance(enemy_node.obj, WyrmHead):
-                    is_wyrm_head = True
-        if is_other_enemy:
-            # collision possibly at wyrm tail
-            if wyrm_node != None:
-                assert not wyrm_node.obj.chained
-                map.grids[i][0].enemies.remove(wyrm_node)
-
-            if not is_wyrm_head:
-                target_j = 1
-                while target_j < map.rows:
-                    wyrm_node: Node[WyrmBody] = next(
-                        (
-                            enemy_node
-                            for enemy_node in iter(map.grids[i][target_j].enemies)
-                            if isinstance(enemy_node.obj, WyrmBody)
-                        ),
-                        None,
-                    )
-                    if wyrm_node != None:
-                        assert not wyrm_node.obj.chained
-                        map.grids[i][target_j].enemies.remove(wyrm_node)
-                        if wyrm_node.obj.len_left < 1:
-                            break
-                        target_j += 1
-                    else:
-                        break
-
-                if target_j == map.rows:
-                    wyrm_node = next(
-                        node
-                        for node in nodes[node_idx:]
-                        if isinstance(node.obj, WyrmBody)
-                    )
-                    nodes.remove(wyrm_node)
-                    nodes_len -= 1
-
-        # Now a wyrm cannot be with other enemies
+        # It was a problem when a wyrm body and other enemies collide at j = 0 before full release
+        # However, now the game allows this kind of overlapping
         for enemy_node in map.grids[i][0].enemies:
             if enemy_node.cooltime != 0:
                 continue
@@ -505,7 +460,6 @@ while node_idx < nodes_len or not map.is_clean():
             enemy.on_fire = False
 
             if isinstance(enemy, WyrmBody):
-                # There is no enemy in the grid other than a wyrm body
                 wyrm_body_cnt += 1
                 if enemy.len_left < 1 and enemy.chained:
                     chain_cnts[chain_idx] -= 1
@@ -514,7 +468,7 @@ while node_idx < nodes_len or not map.is_clean():
                         vibe_beats.append(cur_beat)
                         chain_idx += 1
                 # is not counted as a beat
-                break
+                continue
 
             beats.append(Beat(i, cur_beat))
 
@@ -1338,5 +1292,6 @@ for partition in partitions:
     builds.append(build)
 
 builds.sort(reverse=True)
+builds = builds[:3]
 for build in builds:
     print(build)

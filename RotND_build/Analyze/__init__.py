@@ -15,7 +15,7 @@ class BeatCnt:
         return False
 
     def __repr__(self):
-        return f"{self.start_beat} {self.cnt} {self.beat_diff}"
+        return f"{self.start_beat} {self.cnt} {self.beat_diff:.8g}"
 
 
 class Build:
